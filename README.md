@@ -1,6 +1,6 @@
-# dojo-<< package-name >>
+# dojo-compose
 
-TODO: Replace with a description of this package
+A composition library.
 
 ## Features
 
@@ -28,4 +28,3 @@ TODO: If third-party code was used to write this library, make a list of project
 * [Third-party lib one](https//github.com/foo/bar) ([New BSD](http://opensource.org/licenses/BSD-3-Clause))
 
 © 2004–2015 Dojo Foundation & contributors. [New BSD](http://opensource.org/licenses/BSD-3-Clause) license.
-

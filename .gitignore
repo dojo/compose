@@ -3,6 +3,7 @@
 *.js
 *.js.map
 !/*.js
+!/_modules/**/*.js
 dist
 _build
 node_modules

@@ -1,15 +1,15 @@
 {
-	"name": "dojo-<< package-name >>",
+	"name": "dojo-compose",
 	"version": "2.0.0-pre",
-	"description": "<< DESCRIPTION GOES HERE >>",
+	"description": "A composition library",
 	"homepage": "http://dojotoolkit.org",
 	"bugs": {
-		"url": "https://github.com/dojo/<< package-name >>/issues"
+		"url": "https://github.com/kitsonk/compose/issues"
 	},
 	"license": "BSD-3-Clause",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/dojo/<< package-name >>.git"
+		"url": "https://github.com/kitsonk/compose.git"
 	},
 	"devDependencies": {
 		"dts-generator": "1.5.0",
