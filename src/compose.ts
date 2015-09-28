@@ -59,20 +59,20 @@ function cloneCreator(base?: any): any {
 
 /* General Interfaces */
 
-interface GenericClass<T> {
+export interface GenericClass<T> {
 	new (...args: any[]): T;
 }
 
-interface ComposeInitializationFunction<O> {
+export interface ComposeInitializationFunction<O> {
 	(options?: O): void;
 }
 
 /* Extension API */
-interface ComposeClass<O, T> {
+export interface ComposeClass<O, T> {
 	extend<U>(extension: U): ComposeClass<O, T & U>;
 }
 
-interface Compose {
+export interface Compose {
 	extend<O, A, B>(base: ComposeClass<O, A>, extension: B): ComposeClass<O, A & B>;
 }
 
@@ -84,12 +84,12 @@ function extend<O>(base: ComposeClass<O, any>, extension: any): ComposeClass<O, 
 }
 
 /* Mixin API */
-interface ComposeClass<O, T> {
+export interface ComposeClass<O, T> {
 	mixin<P, U>(mixin: ComposeClass<P, U>): ComposeClass<O&P, T & U>;
 	mixin<P, U>(mixin: GenericClass<U>): ComposeClass<O, T & U>;
 }
 
-interface Compose {
+export interface Compose {
 	mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 	mixin<O, A, B>(base: ComposeClass<O, A>, mixin: GenericClass<B>): ComposeClass<O, A & B>;
 }
@@ -103,15 +103,15 @@ function mixin<O>(base: ComposeClass<O, any>, mixin: any): ComposeClass<O, any> 
 }
 
 /* Overlay API */
-interface OverlayFunction<T> {
+export interface OverlayFunction<T> {
 	(proto: T): void;
 }
 
-interface ComposeClass<O, T> {
+export interface ComposeClass<O, T> {
 	 overlay(overlayFunction: OverlayFunction<T>): ComposeClass<O, T>;
 }
 
-interface Compose {
+export interface Compose {
 	overlay<O, A>(base: ComposeClass<O, A>, overlayFunction: OverlayFunction<A>): ComposeClass<O, A>;
 }
 
@@ -122,11 +122,11 @@ function overlay<O, A>(base: ComposeClass<O, A>, overlayFunction: OverlayFunctio
 }
 
 /* Creation API */
-interface ComposeClass<O, T> {
+export interface ComposeClass<O, T> {
 	new (options?: O): T;
 }
 
-interface Compose {
+export interface Compose {
 	<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeClass<O, A>;
 	<O, A, P>(base: ComposeClass<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeClass<O & P, A>;
 	<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeClass<O, A>;
