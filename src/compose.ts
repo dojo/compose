@@ -28,6 +28,7 @@ function stamp(base: any): void {
    base.extend = doExtend;
    base.mixin = doMixin;
    base.overlay = doOverlay;
+   base.from = doFrom;
 }
 
 /**
@@ -121,6 +122,32 @@ function overlay<O, A>(base: ComposeClass<O, A>, overlayFunction: OverlayFunctio
 	return base;
 }
 
+/* AOP/Inheritance API */
+
+export interface ComposeClass<O, T> {
+    from(base: GenericClass<any>, method: string): ComposeClass<O, T>;
+    from(base: ComposeClass<any, any>, method: string): ComposeClass<O, T>;
+}
+
+export interface Compose {
+    from<T extends Function>(base: GenericClass<any>, method: string): T;
+    from<T extends Function>(base: ComposeClass<any, any>, method: string): T;
+}
+
+function from<T extends Function>(base: GenericClass<any>, method: string): T;
+function from<T extends Function>(base: ComposeClass<any, any>, method: string): T;
+function from<T extends Function>(base: any, method: string): T {
+    return base.prototype[method];
+}
+
+function doFrom<O, T>(base: GenericClass<any>, method: string): ComposeClass<O, T>;
+function doFrom<O, T>(base: ComposeClass<any, any>, method: string): ComposeClass<O, T>;
+function doFrom(base: any, method: string): ComposeClass<any, any> {
+    const clone = cloneCreator(this);
+    clone.prototype[method] = base.prototype[method];
+    return clone;
+}
+
 /* Creation API */
 export interface ComposeClass<O, T> {
 	new (options?: O): T;
@@ -156,6 +183,7 @@ function create<O>(base: any, initFunction?: ComposeInitializationFunction<O>): 
 (<Compose> create).extend = extend;
 (<Compose> create).mixin = mixin;
 (<Compose> create).overlay = overlay;
+(<Compose> create).from = from;
 
 const compose: Compose = <Compose> create;
 
