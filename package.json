@@ -21,7 +21,7 @@
 		"grunt-ts": "3.0.0",
 		"grunt-tslint": "2.5.0",
 		"tslint": "2.5.0",
-		"intern": "3.0.3",
+		"intern": "~3.0.0",
 		"typescript": "1.6.2"
 	}
 }
