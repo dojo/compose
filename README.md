@@ -1,5 +1,7 @@
 # dojo-compose
 
+[![Build Status](https://travis-ci.org/dojo/compose.svg?branch=master)](https://travis-ci.org/dojo/compose)
+
 A composition library.
 
 This library embraces the concepts of "composition" versus classical Object Oriented inheritance.  The classical model follows a pattern whereby you add functionality to an ancestor by extending it.  Subsequently all other descendants from that class will also inherit that functionality.
