@@ -46,5 +46,74 @@ registerSuite({
 			const foobar = new FooBar();
 			assert.strictEqual(foobar.foo(), 'qat', 'Return from ".foo()" should equal "qat"');
 		}
+	},
+	'advice': {
+		'before advice': {
+			'compose API': function () {
+				class Foo {
+					foo(a: string): string {
+						return a;
+					}
+				}
+
+				function advice(...args: any[]): any[] {
+					args[0] = args[0] + 'bar';
+					return args;
+				}
+
+				const FooBar = compose({
+					foo: compose.before(Foo, 'foo', advice)
+				});
+
+				const foobar = new FooBar();
+				const result = foobar.foo('foo');
+				assert.strictEqual(result, 'foobar', '"result" shoud equal "foobar"');
+			}
+		},
+		'after advice': {
+			'compose API': function () {
+				class Foo {
+					foo(a: string): string {
+						return 'foo';
+					}
+				}
+
+				function advice(previousResult: string, ...args: any[]) {
+					return previousResult + 'bar' + args[0];
+				}
+
+				const FooBar = compose({
+					foo: compose.after(Foo, 'foo', advice)
+				});
+
+				const foobar = new FooBar();
+				const result = foobar.foo('qat');
+				assert.strictEqual(result, 'foobarqat', '"restult" should equal "foobarqat"');
+			}
+		},
+		'around advice': {
+			'compose API': function() {
+				class Foo {
+					foo(a: string): string {
+						return a;
+					}
+				}
+
+				function advice(origFn: (a: string) => string): (...args: any[]) => string {
+					return function(...args: any[]): string {
+						args[0] = args[0] + 'bar';
+						return origFn.apply(this, args) + 'qat';
+					}
+				}
+
+				const FooBar = compose({
+					foo: compose.around(Foo, 'foo', advice)
+				});
+
+				const foobar = new FooBar();
+				const result = foobar.foo('foo');
+				assert.strictEqual(result, 'foobarqat', '"result" should equal "foobarqat"');
+			}
+		}
 	}
 });
