@@ -6,9 +6,9 @@ export interface AdvisingFunction extends Function {
 }
 
 export interface DispatchAdvice<T> {
-	before?: BeforeAdvice[],
-	after?: AfterAdvice<T>[],
-	joinPoint: Function
+	before?: BeforeAdvice[];
+	after?: AfterAdvice<T>[];
+	joinPoint: Function;
 }
 
 export interface BeforeAdvice {

@@ -103,7 +103,7 @@ registerSuite({
 					return function(...args: any[]): string {
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
-					}
+					};
 				}
 
 				const FooBar = compose({
