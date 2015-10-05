@@ -1,17 +1,17 @@
 {
-	"name": "dojo-<< package-name >>",
-	"description": "<< DESCRIPTION GOES HERE >>",
+	"name": "dojo-compose",
+	"description": "A composition library.",
 	"keywords": [
 		"dojo",
 		"dojo2"
 	],
 	"authors": [
 	],
-	"main": "main.js",
+	"main": "compose.js",
 	"homepage": "http://dojotoolkit.org/",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/dojo/<< package-name >>.git"
+		"url": "git://github.com/dojo/compose.git"
 	},
 	"dependencies": {
 	},
