@@ -65,6 +65,7 @@ function cloneCreator(base?: any): any {
 	}
 	Creator.prototype.constructor = Creator;
 	stamp(Creator);
+	Object.freeze(Creator);
 
 	return Creator;
 }
@@ -92,6 +93,7 @@ function extend<O, A, B>(base: ComposeClass<O, A>, extension: B): ComposeClass<O
 function extend<O>(base: ComposeClass<O, any>, extension: any): ComposeClass<O, any> {
 	base = cloneCreator(base);
 	Object.keys(extension).forEach(key => base.prototype[key] = extension[key]);
+	Object.freeze(base.prototype);
 	return base;
 }
 
@@ -111,6 +113,7 @@ function mixin<O, A, B>(base: ComposeClass<O, A>, mixin: GenericClass<B>): Compo
 function mixin<O>(base: ComposeClass<O, any>, mixin: any): ComposeClass<O, any> {
 	base = cloneCreator(base);
 	Object.keys(mixin.prototype).forEach(key => base.prototype[key] = mixin.prototype[key]);
+	Object.freeze(base.prototype);
 	return base;
 }
 

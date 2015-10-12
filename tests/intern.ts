@@ -11,27 +11,26 @@ export var proxyUrl = 'http://localhost:9000/';
 // automatically
 export var capabilities = {
 	project: 'Dojo 2',
-	name: 'dojo-compose'
+	name: 'dojo-compose',
+	fixSessionCapabilities: false
 };
 
 // Browsers to run integration testing against. Note that version numbers must be strings if used with Sauce
 // OnDemand. Options that will be permutated are browserName, version, platform, and platformVersion; any other
 // capabilities options specified for an environment will be copied as-is
 export var environments = [
-	{ browser: 'IE', browser_version: '11', os: 'WINDOWS', os_version: '8.1' },
-	{ browser: 'IE', browser_version: '10', os: 'WINDOWS', os_version: '8' },
-	{ browser: 'IE', browser_version: '9', os: 'WINDOWS', os_version: '7' },
-	{ browser: 'Firefox', os: 'WINDOWS', os_version: '8.1' },
-	{ browser: 'Firefox', os: 'WINDOWS', os_version: 'XP' },
-	{ browser: 'Firefox', os: 'OS X' },
-	{ browser: 'Chrome', os: 'WINDOWS', os_version: '8.1' },
-	{ browser: 'Chrome', os: 'WINDOWS', os_version: 'XP' },
-	{ browser: 'Chrome', os: 'OS X' },
-	{ browser: 'Safari', browser_version: '8', os: 'OS X' }
+	{ browserName: 'internet explorer', version: [ '9', '10', '11' ], platform: 'WINDOWS' },
+	{ browserName: 'edge', version: '12', platform: 'WINDOWS' },
+	{ browserName: 'firefox', platform: [ 'WINDOWS', 'MAC' ] },
+	{ browserName: 'chrome', platform: [ 'WINDOWS', 'MAC' ] }/*,
+	{ browserName: 'safari', version: '8', platform: 'MAC' },
+	{ browserName: 'iPad', platform: 'MAC' },
+	{ browserName: 'iPhone', platform: 'MAC' },
+	{ broswerName: 'Android', platform: 'ANDROID' }*/
 ];
 
 // Maximum number of simultaneous integration tests that should be executed on the remote WebDriver service
-export var maxConcurrency = 2;
+export var maxConcurrency = 1;
 
 // Name of the tunnel class to use for WebDriver tests
 export var tunnel = 'BrowserStackTunnel';

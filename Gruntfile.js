@@ -11,11 +11,13 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-exec');
 	grunt.loadNpmTasks('grunt-text-replace');
 	grunt.loadNpmTasks('grunt-ts');
 	grunt.loadNpmTasks('grunt-tslint');
 	grunt.loadNpmTasks('dts-generator');
 	grunt.loadNpmTasks('intern');
+	grunt.loadNpmTasks('remap-istanbul');
 
 	var tsconfigContent = grunt.file.read('tsconfig.json');
 	var tsconfig = JSON.parse(tsconfigContent);
@@ -61,7 +63,7 @@ module.exports = function (grunt) {
 				}
 			},
 			coverage: {
-				src: [ 'html-report/' ]
+				src: [ 'html-report/', 'coverage*.json', 'lcov.info' ]
 			}
 		},
 
@@ -99,6 +101,10 @@ module.exports = function (grunt) {
 			}
 		},
 
+		exec: {
+			codecov: 'cat lcov.info | ./node_modules/.bin/codecov'
+		},
+
 		intern: {
 			options: {
 				grep: grunt.option('grep') || '.*',
@@ -107,7 +113,13 @@ module.exports = function (grunt) {
 			},
 			runner: {
 				options: {
-					reporters: [ 'Runner', 'LcovHtml' ]
+					reporters: [
+						'Combined',
+						{
+							id: 'node_modules/remap-istanbul/lib/intern-reporters/JsonCoverage',
+							filename: 'coverage-runner.json'
+						}
+					]
 				}
 			},
 			local: {
@@ -119,13 +131,38 @@ module.exports = function (grunt) {
 			client: {
 				options: {
 					runType: 'client',
-					reporters: [ 'Console', 'LcovHtml' ]
+					reporters: [
+						'Combined',
+						{
+							id: 'node_modules/remap-istanbul/lib/intern-reporters/JsonCoverage',
+							filename: 'coverage-client.json'
+						}
+					]
 				}
 			},
 			proxy: {
 				options: {
 					proxyOnly: true
 				}
+			}
+		},
+
+		remapIstanbul: {
+			options: {
+				reports: {
+					'text': undefined,
+					'html': 'html-report',
+					'lcovonly': 'lcov.info'
+				}
+			},
+			client: {
+				src: [ 'coverage-client.json' ]
+			},
+			runner: {
+				src: [ 'coverage-runner.json' ]
+			},
+			combined: {
+				src: [ 'coverage-client.json', 'coverage-runner.json' ]
 			}
 		},
 
@@ -250,6 +287,10 @@ module.exports = function (grunt) {
 		}
 	});
 
+	grunt.registerTask('coverage', [
+		'remapIstanbul:combined',
+		'exec:codecov'
+	]);
 	grunt.registerTask('dev', [
 		'ts:dev',
 		'copy:staticTestFiles',
@@ -264,9 +305,9 @@ module.exports = function (grunt) {
 		'copy:staticFiles',
 		'dtsGenerator:dist'
 	]);
-	grunt.registerTask('test', [ 'dev', 'intern:client' ]);
+	grunt.registerTask('test', [ 'dev', 'intern:client', 'remapIstanbul:client' ]);
 	grunt.registerTask('test-local', [ 'dev', 'intern:local' ]);
 	grunt.registerTask('test-proxy', [ 'dev', 'intern:proxy' ]);
-	grunt.registerTask('ci', [ 'tslint', 'test' ]);
+	grunt.registerTask('ci', [ 'tslint', 'dev', 'intern:client', 'intern:runner', 'coverage', 'clean' ]);
 	grunt.registerTask('default', [ 'clean', 'dev' ]);
 };

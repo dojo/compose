@@ -1,0 +1,1 @@
+{"version":3,"file":"global.js","sourceRoot":"","sources":["global.ts"],"names":[],"mappings":";;;;;;;;IAAA,IAAM,YAAY,GAAQ,CAAC;QAC1B,MAAM,CAAC,IAAI,CAAC;IACb,CAAC,CAAC,EAAE,CAAC;IACL;sBAAe,YAAY,CAAC","sourcesContent":["const globalObject: any = (function () {\n\treturn this;\n})();\nexport default globalObject;\n"]}
