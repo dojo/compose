@@ -5,6 +5,8 @@ import compose from '../../../src/compose';
 registerSuite({
 	name: 'lib/compose',
 	create: function () {
+		'use strict';
+
 		const Foo = compose({ foo: 'bar' });
 		const foo = new Foo();
 		assert(foo);
