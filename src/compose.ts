@@ -162,7 +162,7 @@ export interface Compose {
 
     around<T>(base: GenericClass<any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
     around<T>(base: ComposeClass<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
-    around<T>(method: T, advice: AroundAdvice<T>): GenericFunction<T>;
+    around<T>(method: GenericFunction<T>, advice: AroundAdvice<T>): GenericFunction<T>;
 }
 
 function from<T extends Function>(base: GenericClass<any>, method: string): T;
@@ -227,7 +227,7 @@ function doAfter<O, P, T>(method: string, advice: AfterAdvice<P>): ComposeClass<
 
 function around<T>(base: GenericClass<any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
 function around<T>(base: ComposeClass<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
-function around<T>(method: T, advice: AroundAdvice<T>): GenericFunction<T>;
+function around<T>(method: GenericFunction<T>, advice: AroundAdvice<T>): GenericFunction<T>;
 function around(...args: any[]): GenericFunction<any> {
     let base: GenericFunction<any>;
     let method: string | GenericFunction<any>;
@@ -244,7 +244,7 @@ function around(...args: any[]): GenericFunction<any> {
 
 function doAround<O, P, T>(method: string, advice: AroundAdvice<P>): ComposeClass<O, T> {
     const clone = cloneCreator(this);
-    clone.prototype[method] = aspectAfter(clone.prototype[method], advice);
+    clone.prototype[method] = aspectAround(clone.prototype[method], advice);
     return <ComposeClass <O, T>> clone;
 }
 

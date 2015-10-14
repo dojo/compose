@@ -301,7 +301,44 @@ registerSuite({
 
 				const foobar = new FooBar();
 				const result = foobar.foo('foo');
-				assert.strictEqual(result, 'foobar', '"result" shoud equal "foobar"');
+				assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
+			},
+			'generic function': function () {
+				function foo(a: string): string {
+					return a;
+				}
+
+				function advice(...args: any[]): any[] {
+					args[0] = args[0] + 'bar';
+					return args;
+				}
+
+				const Foo = compose({
+					foo: compose.before(foo, advice)
+				});
+
+				const instance = new Foo();
+				const result = instance.foo('foo');
+				assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
+			},
+			'chaining': function () {
+				class Foo {
+					foo(a: string): string {
+						return a;
+					}
+				}
+
+				function advice(...args: any[]): any[] {
+					args[0] = args[0] + 'bar';
+					return args;
+				}
+
+				const FooBar = compose(Foo)
+					.before('foo', advice);
+
+				const foobar = new FooBar();
+				const result = foobar.foo('foo');
+				assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
 			}
 		},
 		'after advice': {
@@ -312,7 +349,7 @@ registerSuite({
 					}
 				}
 
-				function advice(previousResult: string, ...args: any[]) {
+				function advice(previousResult: string, ...args: any[]): string {
 					return previousResult + 'bar' + args[0];
 				}
 
@@ -322,11 +359,46 @@ registerSuite({
 
 				const foobar = new FooBar();
 				const result = foobar.foo('qat');
-				assert.strictEqual(result, 'foobarqat', '"restult" should equal "foobarqat"');
+				assert.strictEqual(result, 'foobarqat', '"result" should equal "foobarqat"');
+			},
+			'generic function': function () {
+				function foo(a: string): string {
+					return 'foo';
+				}
+
+				function advice(previousResult: string, ...args: any[]): string {
+					return previousResult + 'bar' + args[0];
+				}
+
+				const Foo = compose({
+					foo: compose.after(foo, advice)
+				});
+
+				const instance = new Foo();
+				const result = instance.foo('qat');
+				assert.strictEqual(result, 'foobarqat', '"result" should equal "foobarqat"');
+			},
+			'chaining': function () {
+				class Foo {
+					foo(a: string): string {
+						return 'foo';
+					}
+				}
+
+				function advice(previousResult: string, ...args: any[]): string {
+					return previousResult + 'bar' + args[0];
+				}
+
+				const FooBar = compose(Foo)
+					.after('foo', advice);
+
+				const foobar = new FooBar();
+				const result = foobar.foo('qat');
+				assert.strictEqual(result, 'foobarqat', '"result" should equal "foobarqat"');
 			}
 		},
 		'around advice': {
-			'compose API': function() {
+			'compose API': function () {
 				class Foo {
 					foo(a: string): string {
 						return a;
@@ -347,6 +419,47 @@ registerSuite({
 				const foobar = new FooBar();
 				const result = foobar.foo('foo');
 				assert.strictEqual(result, 'foobarqat', '"result" should equal "foobarqat"');
+			},
+			'generic function': function () {
+				function foo(a: string): string {
+					return a;
+				}
+
+				function advice(origFn: (a: string) => string): (...args: any[]) => string {
+					return function(...args: any[]): string {
+						args[0] = args[0] + 'bar';
+						return origFn.apply(this, args) + 'qat';
+					};
+				}
+
+				const Foo = compose({
+					foo: compose.around(foo, advice)
+				});
+
+				const instance = new Foo();
+				const result = instance.foo('foo');
+				assert.strictEqual(result, 'foobarqat', '"result" should equal "foobarqat"');
+			},
+			'chaining': function () {
+				class Foo {
+					foo(a: string): string {
+						return a;
+					}
+				}
+
+				function advice(origFn: (a: string) => string): (...args: any[]) => string {
+					return function(...args: any[]): string {
+						args[0] = args[0] + 'bar';
+						return origFn.apply(this, args) + 'qat';
+					};
+				}
+
+				const FooBar = compose(Foo)
+					.around('foo', advice);
+
+				const foobar = new FooBar();
+				const result = foobar.foo('foo');
+				assert.strictEqual(result, 'foobarqat', '"result" should qual "foobarqat"');
 			}
 		}
 	}
