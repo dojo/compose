@@ -84,17 +84,17 @@ function extend<O>(base: ComposeClass<O, any>, extension: any): ComposeClass<O, 
 
 /* Mixin API */
 export interface ComposeClass<O, T> {
-	mixin<P, U>(mixin: ComposeClass<P, U>): ComposeClass<O&P, T & U>;
 	mixin<P, U>(mixin: GenericClass<U>): ComposeClass<O, T & U>;
+	mixin<P, U>(mixin: ComposeClass<P, U>): ComposeClass<O&P, T & U>;
 }
 
 export interface Compose {
-	mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 	mixin<O, A, B>(base: ComposeClass<O, A>, mixin: GenericClass<B>): ComposeClass<O, A & B>;
+	mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 }
 
-function mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 function mixin<O, A, B>(base: ComposeClass<O, A>, mixin: GenericClass<B>): ComposeClass<O, A & B>;
+function mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 function mixin<O>(base: ComposeClass<O, any>, mixin: any): ComposeClass<O, any> {
 	base = cloneCreator(base);
 	Object.keys(mixin.prototype).forEach(key => base.prototype[key] = mixin.prototype[key]);

@@ -213,6 +213,24 @@ registerSuite({
 
 			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
 			assert.strictEqual(foobar.bar, 2, 'instance contains foo');
+		},
+		'es6 class': function () {
+			class Bar {
+				bar(): number {
+					return 2;
+				}
+			}
+
+			const Foo = compose({
+				foo: 'foo'
+			});
+
+			const FooBar = compose.mixin(Foo, Bar);
+
+			const foobar = new FooBar();
+
+			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
+			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
 		}
 	},
 	overlay: {
