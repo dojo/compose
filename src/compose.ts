@@ -50,10 +50,7 @@ function stamp(base: any): void {
 function cloneCreator<O, T>(base?: ComposeClass<O, T>): ComposeClass<O, T>;
 function cloneCreator(base?: any): any {
 	function Creator(...args: any[]): any {
-		const initFns = initFnMap.get(this.constructor);
-		if (initFns) {
-			initFns.forEach(fn => fn.apply(this, args));
-		}
+		initFnMap.get(this.constructor).forEach(fn => fn.apply(this, args));
 	}
 
 	if (base) {
