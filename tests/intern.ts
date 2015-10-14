@@ -23,9 +23,9 @@ export var environments = [
 	{ browserName: 'edge', version: '12', platform: 'WINDOWS' },
 	{ browserName: 'firefox', platform: [ 'WINDOWS', 'MAC' ] },
 	{ browserName: 'chrome', platform: [ 'WINDOWS', 'MAC' ] },
-	{ browserName: 'safari', version: '8', platform: 'MAC' },
+	{ browserName: 'safari', version: '8', platform: 'MAC' }/*,
 	{ browserName: 'iPad', platform: 'MAC' },
-	{ browserName: 'iPhone', platform: 'MAC' }/*,
+	{ browserName: 'iPhone', platform: 'MAC' },
 	{ broswerName: 'Android', platform: 'ANDROID' }*/
 ];
 
