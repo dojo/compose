@@ -59,6 +59,7 @@ function cloneCreator(base?: any): any {
 
 export interface GenericClass<T> {
 	new (...args: any[]): T;
+	prototype: T;
 }
 
 export interface ComposeInitializationFunction<O> {
@@ -124,6 +125,7 @@ function overlay<O, A>(base: ComposeClass<O, A>, overlayFunction: OverlayFunctio
 /* Creation API */
 export interface ComposeClass<O, T> {
 	new (options?: O): T;
+	prototype: T;
 }
 
 export interface Compose {
