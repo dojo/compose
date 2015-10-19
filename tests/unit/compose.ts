@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import compose, { GenericClass } from '../../../src/compose';
+import compose, { GenericClass } from '../../src/compose';
 
 registerSuite({
 	name: 'lib/compose',
@@ -460,6 +460,181 @@ registerSuite({
 				const foobar = new FooBar();
 				const result = foobar.foo('foo');
 				assert.strictEqual(result, 'foobarqat', '"result" should qual "foobarqat"');
+			}
+		},
+		'aspect': {
+			'compose API': {
+				'before advice': function () {
+					const Foo = compose({
+						foo: function (a: string): string {
+							return a;
+						}
+					});
+
+					const BeforeFoo = compose.aspect(Foo, {
+						before: {
+							foo: function(...args: any[]): any[] {
+								args[0] = args[0] + 'bar';
+								return args;
+							}
+						}
+					});
+
+					const foo = new BeforeFoo();
+					const result = foo.foo('foo');
+					assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
+				},
+				'after advice': function () {
+					const Foo = compose({
+						foo: function (a: string): string {
+							return 'foo';
+						}
+					});
+
+					const AfterFoo = compose.aspect(Foo, {
+						after: {
+							foo: function (previousResult: string, ...args: any[]): string {
+								return previousResult + 'bar' + args[0];
+							}
+						}
+					});
+
+					const foo = new AfterFoo();
+					const result = foo.foo('qat');
+					assert.strictEqual(result, 'foobarqat', '"result" should equal "foobarqat"');
+				},
+				'around advice': function () {
+					const Foo = compose({
+						foo: function (a: string): string {
+							return a;
+						}
+					});
+
+					const AroundFoo = compose.aspect(Foo, {
+						around: {
+							foo: function (origFn: (a: string) => string): (...args: any[]) => string {
+								return function(...args: any[]): string {
+									args[0] = args[0] + 'bar';
+									return origFn.apply(this, args) + 'qat';
+								};
+							}
+						}
+					});
+
+					const foo = new AroundFoo();
+					const result = foo.foo('foo');
+					assert.strictEqual(result, 'foobarqat', '"result" should qual "foobarqat"');
+				},
+				'mixed': function () {
+					const Foo = compose({
+						foo: function (a: string): string {
+							return a;
+						},
+						bar: function (a: string): string {
+							return a;
+						}
+					});
+
+					const AspectFoo = compose.aspect(Foo, {
+						before: {
+							foo: function(...args: any[]): any[] {
+								args[0] = args[0] + 'bar';
+								return args;
+							}
+						},
+						after: {
+							foo: function (previousResult: string, ...args: any[]): string {
+								return previousResult + 'bar' + args[0];
+							}
+						},
+						around: {
+							bar: function (origFn: (a: string) => string): (...args: any[]) => string {
+								return function(...args: any[]): string {
+									args[0] = args[0] + 'bar';
+									return origFn.apply(this, args) + 'qat';
+								};
+							}
+						}
+					});
+
+					const foo = new AspectFoo();
+					const resultFoo = foo.foo('foo');
+					const resultBar = foo.bar('foo');
+					assert.strictEqual(resultFoo, 'foobarbarfoobar', '"resultFoo" should equal "foobarbarfoobar"');
+					assert.strictEqual(resultBar, 'foobarqat', '"resultBar" should equal "foobarqat"');
+				},
+				'empty': function () {
+					const Foo = compose({
+						foo: function (a: string): string {
+							return a;
+						},
+						bar: function (a: string): string {
+							return a;
+						}
+					});
+
+					const AspectFoo = compose.aspect(Foo, {});
+					const foo = new AspectFoo();
+
+					const resultFoo = foo.foo('foo');
+					const resultBar = foo.bar('foo');
+					assert.strictEqual(resultFoo, 'foo', '"resultFoo" should equal "foo"');
+					assert.strictEqual(resultBar, 'foo', '"resultBar" should equal "foo"');
+				}
+			},
+			'chaining': function () {
+				const Foo = compose({
+					foo: function (a: string): string {
+						return a;
+					},
+					bar: function (a: string): string {
+						return a;
+					}
+				}).aspect({
+					before: {
+						foo: function(...args: any[]): any[] {
+							args[0] = args[0] + 'bar';
+							return args;
+						}
+					},
+					after: {
+						foo: function (previousResult: string, ...args: any[]): string {
+							return previousResult + 'bar' + args[0];
+						}
+					},
+					around: {
+						bar: function (origFn: (a: string) => string): (...args: any[]) => string {
+							return function(...args: any[]): string {
+								args[0] = args[0] + 'bar';
+								return origFn.apply(this, args) + 'qat';
+							};
+						}
+					}
+				});
+
+				const foo = new Foo();
+				const resultFoo = foo.foo('foo');
+				const resultBar = foo.bar('foo');
+				assert.strictEqual(resultFoo, 'foobarbarfoobar', '"resultFoo" should equal "foobarbarfoobar"');
+				assert.strictEqual(resultBar, 'foobarqat', '"resultBar" should equal "foobarqat"');
+			},
+			'missing method': function () {
+				const Foo = compose({
+					foo: function (a: string): string {
+						return a;
+					}
+				});
+
+				assert.throws(function () {
+					const BeforeFoo = compose.aspect(Foo, {
+						before: {
+							bar: function(...args: any[]): any[] {
+								args[0] = args[0] + 'bar';
+								return args;
+							}
+						}
+					});
+				}, Error, 'Trying to advise non-existing method: "bar"');
 			}
 		}
 	}

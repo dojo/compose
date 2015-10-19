@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import { before, after, around } from '../../../src/aspect';
+import { before, after, around } from '../../src/aspect';
 
 registerSuite({
 	name: 'lib/aspect',

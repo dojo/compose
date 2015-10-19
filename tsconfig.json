@@ -17,22 +17,22 @@
 		"./_modules/**/*.d.ts"
 	],
 	"files": [
-		"./typings/tsd.d.ts",
-		"./src/aspect.ts",
-		"./src/compose.ts",
-		"./tests/functional/all.ts",
-		"./tests/intern-local.ts",
-		"./tests/intern.ts",
-		"./tests/typings/chai/chai.d.ts",
-		"./tests/typings/digdug/digdug.d.ts",
-		"./tests/typings/dojo2/dojo.d.ts",
-		"./tests/typings/intern/intern.d.ts",
-		"./tests/typings/leadfoot/leadfoot.d.ts",
-		"./tests/typings/tsd.d.ts",
-		"./tests/unit/all.ts",
-		"./tests/unit/lib/aspect.ts",
-		"./tests/unit/lib/compose.ts",
-		"./_modules/dojo-core/_typings/dojo-core/dojo-core-2.0.0-pre.d.ts"
+		"typings/tsd.d.ts",
+		"src/aspect.ts",
+		"src/compose.ts",
+		"tests/functional/all.ts",
+		"tests/intern-local.ts",
+		"tests/intern.ts",
+		"tests/typings/chai/chai.d.ts",
+		"tests/typings/digdug/digdug.d.ts",
+		"tests/typings/dojo2/dojo.d.ts",
+		"tests/typings/intern/intern.d.ts",
+		"tests/typings/leadfoot/leadfoot.d.ts",
+		"tests/typings/tsd.d.ts",
+		"tests/unit/all.ts",
+		"tests/unit/aspect.ts",
+		"tests/unit/compose.ts",
+		"_modules/dojo-core/_typings/dojo-core/dojo-core-2.0.0-pre.d.ts"
 	],
 	"exclude": []
 }

@@ -1,2 +1,2 @@
-import './lib/aspect';
-import './lib/compose';
+import './aspect';
+import './compose';
