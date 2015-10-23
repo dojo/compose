@@ -73,6 +73,7 @@ function cloneCreator(base?: any): any {
 
 export interface GenericClass<T> {
 	new (...args: any[]): T;
+	prototype: T;
 }
 
 export interface ComposeInitializationFunction<O> {
@@ -98,17 +99,17 @@ function extend<O>(base: ComposeClass<O, any>, extension: any): ComposeClass<O, 
 
 /* Mixin API */
 export interface ComposeClass<O, T> {
-	mixin<P, U>(mixin: ComposeClass<P, U>): ComposeClass<O&P, T & U>;
 	mixin<P, U>(mixin: GenericClass<U>): ComposeClass<O, T & U>;
+	mixin<P, U>(mixin: ComposeClass<P, U>): ComposeClass<O&P, T & U>;
 }
 
 export interface Compose {
-	mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 	mixin<O, A, B>(base: ComposeClass<O, A>, mixin: GenericClass<B>): ComposeClass<O, A & B>;
+	mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 }
 
-function mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 function mixin<O, A, B>(base: ComposeClass<O, A>, mixin: GenericClass<B>): ComposeClass<O, A & B>;
+function mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
 function mixin<O>(base: ComposeClass<O, any>, mixin: any): ComposeClass<O, any> {
 	base = cloneCreator(base);
 	Object.keys(mixin.prototype).forEach(key => base.prototype[key] = mixin.prototype[key]);
@@ -137,7 +138,7 @@ function overlay<O, A>(base: ComposeClass<O, A>, overlayFunction: OverlayFunctio
 
 /* AOP/Inheritance API */
 
-interface AspectAdvice {
+export interface AspectAdvice {
 	before?: { [method: string]: BeforeAdvice };
 	after?: { [method: string]: AfterAdvice<any> };
 	around?: { [method: string]: AroundAdvice<any> };
@@ -187,7 +188,7 @@ function doFrom<O, T>(base: GenericClass<any>, method: string): ComposeClass<O, 
 function doFrom<O, T>(base: ComposeClass<any, any>, method: string): ComposeClass<O, T>;
 function doFrom(base: any, method: string): ComposeClass<any, any> {
 	const clone = cloneCreator(this);
-	clone.prototype[method] = base.prototype[method];
+	(<any> clone.prototype)[method] = base.prototype[method];
 	return clone;
 }
 
@@ -210,7 +211,7 @@ function before(...args: any[]): GenericFunction<any> {
 
 function doBefore<O, T>(method: string, advice: BeforeAdvice): ComposeClass<O, T> {
 	const clone = cloneCreator(this);
-	clone.prototype[method] = aspectBefore(clone.prototype[method], advice);
+	(<any> clone.prototype)[method] = aspectBefore((<any> clone.prototype)[method], advice);
 	return <ComposeClass<O, T>> clone;
 }
 
@@ -233,7 +234,7 @@ function after(...args: any[]): GenericFunction<any> {
 
 function doAfter<O, P, T>(method: string, advice: AfterAdvice<P>): ComposeClass<O, T> {
 	const clone = cloneCreator(this);
-	clone.prototype[method] = aspectAfter(clone.prototype[method], advice);
+	(<any> clone.prototype)[method] = aspectAfter((<any> clone.prototype)[method], advice);
 	return <ComposeClass <O, T>> clone;
 }
 
@@ -256,7 +257,7 @@ function around(...args: any[]): GenericFunction<any> {
 
 function doAround<O, P, T>(method: string, advice: AroundAdvice<P>): ComposeClass<O, T> {
 	const clone = cloneCreator(this);
-	clone.prototype[method] = aspectAround(clone.prototype[method], advice);
+	(<any> clone.prototype)[method] = aspectAround((<any> clone.prototype)[method], advice);
 	return <ComposeClass <O, T>> clone;
 }
 
@@ -266,7 +267,7 @@ function aspect<O, A>(base: ComposeClass<O, A>, advice: AspectAdvice): ComposeCl
 	function mapAdvice(adviceHash: { [method: string ]: Function }, advisor: Function): void {
 		for (let key in adviceHash) {
 			if (key in clone.prototype) {
-				clone.prototype[key] = advisor(clone.prototype[key], adviceHash[key]);
+				(<any> clone.prototype)[key] = advisor((<any> clone.prototype)[key], adviceHash[key]);
 			}
 			else {
 				throw new Error('Trying to advise non-existing method: "' + key + '"');
@@ -289,6 +290,7 @@ function aspect<O, A>(base: ComposeClass<O, A>, advice: AspectAdvice): ComposeCl
 /* Creation API */
 export interface ComposeClass<O, T> {
 	new (options?: O): T;
+	prototype: T;
 }
 
 export interface Compose {
