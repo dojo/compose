@@ -5,7 +5,7 @@
 
 A composition library.
 
-**NOTE** At this stage, this is a functional prototype [for a proposal](https://docs.google.com/document/d/10i5agK1Ot1eiB_R5JVEVHY41B0rEvjVyeQ1rl50DTdY/edit#heading=h.mknz10lo6jxp) that is under discussion.  This is not yet intended for production use.  Consider it *pre-alpha* and is intended to allow people to asses the API. **Use at your own risk and the final API may or may not look anything like this**
+**NOTE** At this stage, this is a functional prototype [for a proposal](https://docs.google.com/document/d/10i5agK1Ot1eiB_R5JVEVHY41B0rEvjVyeQ1rl50DTdY/edit#heading=h.mknz10lo6jxp) that is under discussion.  This is not yet intended for production use.  Consider it *pre-alpha* and is intended to allow people to assess the API. **Use at your own risk and the final API may or may not look anything like this**
 
 This library embraces the concepts of "composition" versus classical Object Oriented inheritance.  The classical model follows a pattern whereby you add functionality to an ancestor by extending it.  Subsequently all other descendants from that class will also inherit that functionality.
 
