@@ -1,8 +1,16 @@
 import WeakMap from 'dojo-core/WeakMap';
 import { assign } from 'dojo-core/lang';
+import {
+	before as aspectBefore,
+	after as aspectAfter,
+	around as aspectAround,
+	BeforeAdvice,
+	AfterAdvice,
+	AroundAdvice
+} from './aspect';
 
 /* A weakmap that will store initialization functions for compose constructors */
-let initFnMap = new WeakMap<Function, Function[]>();
+const initFnMap = new WeakMap<Function, ComposeInitializationFunction<any>[]>();
 
 /**
  * A helper funtion to return a function that is rebased
@@ -19,6 +27,7 @@ function rebase(fn: Function): Function {
 const doExtend = rebase(extend);
 const doMixin = rebase(mixin);
 const doOverlay = rebase(overlay);
+const doAspect = rebase(aspect);
 
 /**
  * A convience function to decorate a compose class constructors
@@ -28,6 +37,11 @@ function stamp(base: any): void {
    base.extend = doExtend;
    base.mixin = doMixin;
    base.overlay = doOverlay;
+   base.from = doFrom;
+   base.before = doBefore;
+   base.after = doAfter;
+   base.around = doAround;
+   base.aspect = doAspect;
 }
 
 /**
@@ -122,6 +136,157 @@ function overlay<O, A>(base: ComposeClass<O, A>, overlayFunction: OverlayFunctio
 	return base;
 }
 
+/* AOP/Inheritance API */
+
+export interface AspectAdvice {
+	before?: { [method: string]: BeforeAdvice };
+	after?: { [method: string]: AfterAdvice<any> };
+	around?: { [method: string]: AroundAdvice<any> };
+}
+
+export interface GenericFunction<T> {
+	(...args: any[]): T;
+}
+
+export interface ComposeClass<O, T> {
+	from(base: GenericClass<any>, method: string): ComposeClass<O, T>;
+	from(base: ComposeClass<any, any>, method: string): ComposeClass<O, T>;
+
+	before(method: string, advice: BeforeAdvice): ComposeClass<O, T>;
+	after<P>(method: string, advice: AfterAdvice<P>): ComposeClass<O, T>;
+	around<P>(method: string, advice: AroundAdvice<P>): ComposeClass<O, T>;
+
+	aspect(advice: AspectAdvice): ComposeClass<O, T>;
+}
+
+export interface Compose {
+	from<T extends Function>(base: GenericClass<any>, method: string): T;
+	from<T extends Function>(base: ComposeClass<any, any>, method: string): T;
+
+	before<T>(base: GenericClass<any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
+	before<T>(base: ComposeClass<any, any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
+	before<T>(method: GenericFunction<T>, advice: BeforeAdvice): GenericFunction<T>;
+
+	after<T>(base: GenericClass<any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+	after<T>(base: ComposeClass<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+	after<T>(method: GenericFunction<T>, advice: AfterAdvice<T>): GenericFunction<T>;
+
+	around<T>(base: GenericClass<any>, method: string, advice: AroundAdvice<T>): GenericFunction<T>;
+	around<T>(base: ComposeClass<any, any>, method: string, advice: AroundAdvice<T>): GenericFunction<T>;
+	around<T>(method: GenericFunction<T>, advice: AroundAdvice<T>): GenericFunction<T>;
+
+	aspect<O, A>(base: ComposeClass<O, A>, advice: AspectAdvice): ComposeClass<O, A>;
+}
+
+function from<T extends Function>(base: GenericClass<any>, method: string): T;
+function from<T extends Function>(base: ComposeClass<any, any>, method: string): T;
+function from<T extends Function>(base: any, method: string): T {
+	return base.prototype[method];
+}
+
+function doFrom<O, T>(base: GenericClass<any>, method: string): ComposeClass<O, T>;
+function doFrom<O, T>(base: ComposeClass<any, any>, method: string): ComposeClass<O, T>;
+function doFrom(base: any, method: string): ComposeClass<any, any> {
+	const clone = cloneCreator(this);
+	(<any> clone.prototype)[method] = base.prototype[method];
+	return clone;
+}
+
+function before<T>(base: GenericClass<any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
+function before<T>(base: ComposeClass<any, any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
+function before<T>(method: GenericFunction<T>, advice: BeforeAdvice): GenericFunction<T>;
+function before(...args: any[]): GenericFunction<any> {
+	let base: GenericFunction<any>;
+	let method: string | GenericFunction<any>;
+	let advice: BeforeAdvice;
+	if (args.length >= 3) {
+		[ base, method, advice ] = args;
+		method = base.prototype[<string> method];
+	}
+	else {
+		[ method, advice ] = args;
+	}
+	return aspectBefore(<GenericFunction<any>> method, advice);
+}
+
+function doBefore<O, T>(method: string, advice: BeforeAdvice): ComposeClass<O, T> {
+	const clone = cloneCreator(this);
+	(<any> clone.prototype)[method] = aspectBefore((<any> clone.prototype)[method], advice);
+	return <ComposeClass<O, T>> clone;
+}
+
+function after<T>(base: GenericClass<any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+function after<T>(base: ComposeClass<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+function after<T>(method: GenericFunction<T>, advice: AfterAdvice<T>): GenericFunction<T>;
+function after(...args: any[]): GenericFunction<any> {
+	let base: GenericFunction<any>;
+	let method: string | GenericFunction<any>;
+	let advice: AfterAdvice<any>;
+	if (args.length >= 3) {
+		[ base, method, advice ] = args;
+		method = base.prototype[<string> method];
+	}
+	else {
+		[ method, advice ] = args;
+	}
+	return aspectAfter(<GenericFunction<any>> method, advice);
+}
+
+function doAfter<O, P, T>(method: string, advice: AfterAdvice<P>): ComposeClass<O, T> {
+	const clone = cloneCreator(this);
+	(<any> clone.prototype)[method] = aspectAfter((<any> clone.prototype)[method], advice);
+	return <ComposeClass <O, T>> clone;
+}
+
+function around<T>(base: GenericClass<any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+function around<T>(base: ComposeClass<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+function around<T>(method: GenericFunction<T>, advice: AroundAdvice<T>): GenericFunction<T>;
+function around(...args: any[]): GenericFunction<any> {
+	let base: GenericFunction<any>;
+	let method: string | GenericFunction<any>;
+	let advice: AfterAdvice<any>;
+	if (args.length >= 3) {
+		[ base, method, advice ] = args;
+		method = base.prototype[<string> method];
+	}
+	else {
+		[ method, advice ] = args;
+	}
+	return aspectAround(<GenericFunction<any>> method, advice);
+}
+
+function doAround<O, P, T>(method: string, advice: AroundAdvice<P>): ComposeClass<O, T> {
+	const clone = cloneCreator(this);
+	(<any> clone.prototype)[method] = aspectAround((<any> clone.prototype)[method], advice);
+	return <ComposeClass <O, T>> clone;
+}
+
+function aspect<O, A>(base: ComposeClass<O, A>, advice: AspectAdvice): ComposeClass<O, A> {
+	const clone = cloneCreator(base);
+
+	function mapAdvice(adviceHash: { [method: string ]: Function }, advisor: Function): void {
+		for (let key in adviceHash) {
+			if (key in clone.prototype) {
+				(<any> clone.prototype)[key] = advisor((<any> clone.prototype)[key], adviceHash[key]);
+			}
+			else {
+				throw new Error('Trying to advise non-existing method: "' + key + '"');
+			}
+		}
+	}
+
+	if (advice.before) {
+		mapAdvice(advice.before, before);
+	}
+	if (advice.after) {
+		mapAdvice(advice.after, after);
+	}
+	if (advice.around) {
+		mapAdvice(advice.around, around);
+	}
+	return clone;
+}
+
 /* Creation API */
 export interface ComposeClass<O, T> {
 	new (options?: O): T;
@@ -158,6 +323,11 @@ function create<O>(base: any, initFunction?: ComposeInitializationFunction<O>): 
 (<Compose> create).extend = extend;
 (<Compose> create).mixin = mixin;
 (<Compose> create).overlay = overlay;
+(<Compose> create).from = from;
+(<Compose> create).before = before;
+(<Compose> create).after = after;
+(<Compose> create).around = around;
+(<Compose> create).aspect = aspect;
 
 const compose: Compose = <Compose> create;
 
