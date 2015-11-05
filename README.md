@@ -114,21 +114,154 @@ const foo2 = new Foo({
 
 ### Class Extension
 
-TODO: Complete
+The `compose` module's default export also has a property, `extend`, which allows the enumerable, own properties of a literal object to be added to the prototype of a class. The type of the resulting class will be inferred and include all properties of the extending object. It can be used to extend an existing compose class like this:
+
+```typescript
+import * as compose from 'dojo/compose';
+
+let Foo = compose.create({
+    foo: 'bar'
+});
+
+Foo = compose.extend(Foo, {
+    bar: 1
+});
+
+let foo = new Foo();
+
+foo.foo = 'baz';
+foo.bar = 2;
+```
+
+Or using chaining:
+
+```typescript
+import * as compose from 'dojo/compose';
+
+const Foo = compose.create({
+    foo: 'bar'
+}).extend({
+    bar: 1
+});
+
+let foo = new Foo();
+
+foo.foo = 'baz';
+foo.bar = 2;
+```
+
+#### Implementing an interface
+
+`extend` can also be used to implement an interface:
+
+```typescript
+import * as compose from 'dojo/compose';
+
+interface Bar {
+    bar?: number;
+}
+
+const Foo = compose.create({
+    foo: 'bar'
+}).extend<Bar>({});
+```
+
+Or
+
+```typescript
+const Foo = compose.create({
+    foo: 'bar'
+}).extend(<Bar> {});
+```
 
 ### Mixing in Traits/State
 
-TODO: Complete
+Oftentimes the need arises to take an existing class and add not just properties, but also behavior, or traits. The `compose` module's default export has a `mixin` property that provides this functionality. It can be used to mix in another compose class:
+
+```typescript
+import * as compose from 'dojo/compose';
+
+const Foo = compose.create({
+    foo: 'bar'
+});
+
+const Bar = compose.create({
+    bar: function () {
+        console.log('bar');
+    }
+});
+
+const FooBar = compose.mixin(Foo, Bar);
+
+const fooBar = new FooBar();
+
+fooBar.bar(); // logs "bar"
+``` 
+
+Or to mix in an ES6 class:
+
+```typescript
+import * as compose from 'dojo/compose';
+
+const Foo = compose.create({
+    foo: 'bar'
+});
+
+class Bar {
+    bar() { console.log('bar'); }
+}
+
+const FooBar = compose.mixin(Foo, Bar);
+
+const fooBar = new FooBar();
+
+fooBar.bar(); // logs "bar"
+```
+Note that when mixing in an ES6 class only methods will be mixed into the resulting class, not state.
 
 ### Using Generics
 
-`compose` utilizes TypeScript generics and type inference to type the resulting classes.  Most of the time, this will work without any need to declare your types.  There are situations though where you may want to be more explicit about your interfaces and `compose` can accommodate that by passing in generics when using the API.
+`compose` utilizes TypeScript generics and type inference to type the resulting classes.  Most of the time, this will work without any need to declare your types.  There are situations though where you may want to be more explicit about your interfaces and `compose` can accommodate that by passing in generics when using the API. Here is an example of creating a class that requires generics using `compose`:
 
-TODO: Complete
+```typescript
+class Foo<T> {
+    foo: T;
+}
+
+class Bar<T> {
+    bar(opt: T): void {
+        console.log(opt);
+    }
+}
+
+interface FooBarClass {
+	new <T, U>(): Foo<T>&Bar<U>;
+}
+
+let FooBar: FooBarClass = compose(Foo).mixin(<any>  Bar);
+
+let fooBar = new FooBar<number, any>();
+```
 
 ### Overlaying Functionality
 
-TODO: Complete
+If you want to make modifications to the prototype of a class that are difficult to perform with simple mixins or extensions, you can use the `overlay` function provided on the default export of the `compose` module. `overlay` takes one argument, a function which will be passed a copy of the prototype of the existing class, and returns a new class whose type reflects the modifications made to the existing prototype: 
+
+```typescript
+import * as compose from 'dojo/compose';
+
+const Foo = compose.create({
+    foo: 'bar'
+});
+
+const MyFoo = Foo.overlay(function (proto) {
+    proto.foo = 'qat';
+});
+
+const myFoo = new MyFoo();
+console.log(myFoo.foo); // logs "qat"
+```
+Note that as with all the functionality provided by `compose`, the existing class is not modified.
 
 ## How do I use this package?
 
