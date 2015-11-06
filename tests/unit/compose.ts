@@ -176,6 +176,93 @@ registerSuite({
 			assert.throws(function () {
 				(<any> createFoo).bar = 'qat';
 			}, TypeError);
+		},
+
+		'getters and setters': function() {
+			const createFoo = compose({
+				_foo: '',
+				set foo(foo) {
+					this._foo = foo;
+				},
+				get foo() {
+					return this._foo;
+				}
+			});
+
+			const foo = createFoo();
+			foo.foo = 'bar';
+
+			assert.strictEqual(foo._foo, 'bar', 'Should have used setter and set value');
+			assert.strictEqual(foo.foo, 'bar', 'Should use getter and return set value');
+		},
+
+		'only getter': function() {
+			const createFoo = compose({
+				_foo: '',
+				get foo() {
+					return this._foo + 'bar';
+				}
+			});
+
+			const foo = createFoo();
+
+			assert.strictEqual(foo.foo, 'bar', 'Should have returned value from getter');
+			foo._foo = 'foo';
+			assert.strictEqual(foo.foo, 'foobar', 'Getter didn\'t get updated value');
+		},
+
+		'only setter': function() {
+			const createFoo = compose({
+				_foo: '',
+				set foo(foo) {
+					this._foo = foo;
+				}
+			});
+
+			const foo = createFoo();
+			foo.foo = 'bar';
+
+			assert.strictEqual(foo._foo, 'bar', 'Setter should have set value');
+			assert.notOk(foo.foo, 'No getter should be defined');
+		},
+
+		'non-configurable property': function() {
+			const composeObj = {};
+			Object.defineProperty(composeObj, 'nonConfigurable', { configurable: false });
+			Object.defineProperty(composeObj, 'configurable', { configurable: true });
+			const createFoo = compose(composeObj);
+
+			const foo = createFoo();
+
+			Object.defineProperty(foo, 'configurable', { configurable: true });
+			assert.throws(function () {
+				Object.defineProperty(foo, 'nonConfigurable', { configurable: true });
+			}, TypeError);
+		},
+
+		'non-writable property': function() {
+			const composeObj = {};
+			Object.defineProperty(composeObj, 'nonWritable', { value: 'constant', writable: false });
+			const createFoo = compose(composeObj);
+
+			const foo = createFoo();
+
+			assert.strictEqual(foo.nonWritable, 'constant', 'Didn\'t copy property value');
+			foo.nonWritable = 'variable';
+			assert.strictEqual(foo.nonWritable, 'constant', 'Changed immutable value');
+		},
+
+		'non-enumerable property': function() {
+			const composeObj = {};
+			Object.defineProperty(composeObj, 'nonEnumerable', { value: 'value', enumerable: false });
+			const createFoo = compose(composeObj);
+
+			const foo = createFoo();
+
+			assert.strictEqual(foo.nonEnumerable, 'value', 'Didn\'t copy non-enumerable property');
+			assert.notInclude(Object.keys(foo), 'nonEnumerable', 'Keys included non-enumerable property');
+			assert.include(Object.getOwnPropertyNames(foo), 'nonEnumerable',
+				'Own property names did not include non-enumerable property');
 		}
 	},
 	extend: {

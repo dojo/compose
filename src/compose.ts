@@ -1,5 +1,4 @@
 import WeakMap from 'dojo-core/WeakMap';
-import { assign } from 'dojo-core/lang';
 import {
 	before as aspectBefore,
 	after as aspectAfter,
@@ -23,6 +22,26 @@ function rebase(fn: Function): Function {
    };
 }
 
+/**
+ * A helper function that copies own properties and their descriptors
+ * from one or more sources to a target object. Includes non-enumerable properties
+ */
+function copyProperties(target: {}, ...sources: {}[]) {
+  sources.forEach(source => {
+    Object.defineProperties(
+		target,
+		Object.getOwnPropertyNames(source).reduce(
+			(descriptors: { [ index: string ]: any }, key: string) => {
+				descriptors[ key ] = Object.getOwnPropertyDescriptor(source, key);
+				return descriptors;
+			},
+			{}
+		)
+	);
+  });
+  return target;
+}
+
 /* The rebased functions we need to decorate compose constructors with */
 const doExtend = rebase(extend);
 const doMixin = rebase(mixin);
@@ -30,7 +49,7 @@ const doOverlay = rebase(overlay);
 const doAspect = rebase(aspect);
 
 /**
- * A convience function to decorate a compose class constructors
+ * A convenience function to decorate compose class constructors
  * @param {any} base The target constructor
  */
 function stamp(base: any): void {
@@ -61,7 +80,7 @@ function cloneFactory(base?: any): any {
 	}
 
 	if (base) {
-		assign(factory.prototype, base.prototype);
+		copyProperties(factory.prototype, base.prototype);
 		initFnMap.set(factory, [].concat(initFnMap.get(base)));
 	}
 	else {
@@ -97,8 +116,7 @@ export interface Compose {
 function extend<O, A, B>(base: ComposeFactory<O, A>, extension: B): ComposeFactory<O, A & B>;
 function extend<O>(base: ComposeFactory<O, any>, extension: any): ComposeFactory<O, any> {
 	base = cloneFactory(base);
-	Object.keys(extension).forEach(key => base.prototype[key] = extension[key]);
-	Object.freeze(base.prototype);
+	copyProperties(base.prototype, extension);
 	return base;
 }
 
@@ -117,8 +135,7 @@ function mixin<O, A, B>(base: ComposeFactory<O, A>, mixin: GenericClass<B>): Com
 function mixin<O, P, A, B>(base: ComposeFactory<O, A>, mixin: ComposeFactory<P, B>): ComposeFactory<O & P, A & B>;
 function mixin<O>(base: ComposeFactory<O, any>, mixin: any): ComposeFactory<O, any> {
 	base = cloneFactory(base);
-	Object.keys(mixin.prototype).forEach(key => base.prototype[key] = mixin.prototype[key]);
-	Object.freeze(base.prototype);
+	copyProperties(base.prototype, mixin.prototype);
 	return base;
 }
 
@@ -317,7 +334,7 @@ function create<O>(base: any, initFunction?: ComposeInitializationFunction<O>): 
 	}
 
 	/* mixin the base into the prototype */
-	assign(factory.prototype, typeof base === 'function' ? base.prototype : base);
+	copyProperties(factory.prototype, typeof base === 'function' ? base.prototype : base);
 
    /* return the new constructor */
    return factory;
