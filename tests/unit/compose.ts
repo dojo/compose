@@ -163,7 +163,7 @@ registerSuite({
 		'immutability': function () {
 			'use strict';
 
-			if (navigator && navigator.userAgent.match('Trident/5.0')) {
+			if (typeof navigator !== 'undefined' && navigator.userAgent.match('Trident/5.0')) {
 				this.skip('IE9 does not throw on frozen objects?!');
 			}
 
