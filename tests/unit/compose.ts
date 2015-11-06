@@ -170,7 +170,7 @@ registerSuite({
 
 			assert.throws(function () {
 				(<any> createFoo).bar = 'qat';
-			}, TypeError, 'object is not extensible');
+			}, TypeError);
 		}
 	},
 	extend: {
