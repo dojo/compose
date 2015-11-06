@@ -46,27 +46,32 @@ function stamp(base: any): void {
 
 /**
  * Take a compose constructor and clone it
- * @param  {ComposeClass<O, T>} base The base to clone
- * @return {ComposeClass<O, T>}      The cloned constructor function
+ * @param  {ComposeFactory<O, T>} base The base to clone
+ * @return {ComposeFactory<O, T>}      The cloned constructor function
  */
-function cloneCreator<O, T>(base?: ComposeClass<O, T>): ComposeClass<O, T>;
-function cloneCreator(base?: any): any {
-	function Creator(...args: any[]): any {
-		initFnMap.get(this.constructor).forEach(fn => fn.apply(this, args));
+function cloneFactory<O, T>(base?: ComposeFactory<O, T>): ComposeFactory<O, T>;
+function cloneFactory(base?: any): any {
+	function factory(...args: any[]): any {
+		if (this && this.constructor === factory) {
+			throw new SyntaxError('Factories cannot be called with "new".');
+		}
+		const instance = Object.create(factory.prototype);
+		initFnMap.get(factory).forEach(fn => fn.apply(instance, args));
+		return instance;
 	}
 
 	if (base) {
-		assign(Creator.prototype, base.prototype);
-		initFnMap.set(Creator, [].concat(initFnMap.get(base)));
+		assign(factory.prototype, base.prototype);
+		initFnMap.set(factory, [].concat(initFnMap.get(base)));
 	}
 	else {
-		initFnMap.set(Creator, []);
+		initFnMap.set(factory, []);
 	}
-	Creator.prototype.constructor = Creator;
-	stamp(Creator);
-	Object.freeze(Creator);
+	factory.prototype.constructor = factory;
+	stamp(factory);
+	Object.freeze(factory);
 
-	return Creator;
+	return factory;
 }
 
 /* General Interfaces */
@@ -81,37 +86,37 @@ export interface ComposeInitializationFunction<O> {
 }
 
 /* Extension API */
-export interface ComposeClass<O, T> {
-	extend<U>(extension: U): ComposeClass<O, T & U>;
+export interface ComposeFactory<O, T> {
+	extend<U>(extension: U): ComposeFactory<O, T & U>;
 }
 
 export interface Compose {
-	extend<O, A, B>(base: ComposeClass<O, A>, extension: B): ComposeClass<O, A & B>;
+	extend<O, A, B>(base: ComposeFactory<O, A>, extension: B): ComposeFactory<O, A & B>;
 }
 
-function extend<O, A, B>(base: ComposeClass<O, A>, extension: B): ComposeClass<O, A & B>;
-function extend<O>(base: ComposeClass<O, any>, extension: any): ComposeClass<O, any> {
-	base = cloneCreator(base);
+function extend<O, A, B>(base: ComposeFactory<O, A>, extension: B): ComposeFactory<O, A & B>;
+function extend<O>(base: ComposeFactory<O, any>, extension: any): ComposeFactory<O, any> {
+	base = cloneFactory(base);
 	Object.keys(extension).forEach(key => base.prototype[key] = extension[key]);
 	Object.freeze(base.prototype);
 	return base;
 }
 
 /* Mixin API */
-export interface ComposeClass<O, T> {
-	mixin<P, U>(mixin: GenericClass<U>): ComposeClass<O, T & U>;
-	mixin<P, U>(mixin: ComposeClass<P, U>): ComposeClass<O&P, T & U>;
+export interface ComposeFactory<O, T> {
+	mixin<P, U>(mixin: GenericClass<U>): ComposeFactory<O, T & U>;
+	mixin<P, U>(mixin: ComposeFactory<P, U>): ComposeFactory<O & P, T & U>;
 }
 
 export interface Compose {
-	mixin<O, A, B>(base: ComposeClass<O, A>, mixin: GenericClass<B>): ComposeClass<O, A & B>;
-	mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
+	mixin<O, A, B>(base: ComposeFactory<O, A>, mixin: GenericClass<B>): ComposeFactory<O, A & B>;
+	mixin<O, P, A, B>(base: ComposeFactory<O, A>, mixin: ComposeFactory<P, B>): ComposeFactory<O & P, A & B>;
 }
 
-function mixin<O, A, B>(base: ComposeClass<O, A>, mixin: GenericClass<B>): ComposeClass<O, A & B>;
-function mixin<O, P, A, B>(base: ComposeClass<O, A>, mixin: ComposeClass<P, B>): ComposeClass<O & P, A & B>;
-function mixin<O>(base: ComposeClass<O, any>, mixin: any): ComposeClass<O, any> {
-	base = cloneCreator(base);
+function mixin<O, A, B>(base: ComposeFactory<O, A>, mixin: GenericClass<B>): ComposeFactory<O, A & B>;
+function mixin<O, P, A, B>(base: ComposeFactory<O, A>, mixin: ComposeFactory<P, B>): ComposeFactory<O & P, A & B>;
+function mixin<O>(base: ComposeFactory<O, any>, mixin: any): ComposeFactory<O, any> {
+	base = cloneFactory(base);
 	Object.keys(mixin.prototype).forEach(key => base.prototype[key] = mixin.prototype[key]);
 	Object.freeze(base.prototype);
 	return base;
@@ -122,16 +127,16 @@ export interface OverlayFunction<T> {
 	(proto: T): void;
 }
 
-export interface ComposeClass<O, T> {
-	 overlay(overlayFunction: OverlayFunction<T>): ComposeClass<O, T>;
+export interface ComposeFactory<O, T> {
+	 overlay(overlayFunction: OverlayFunction<T>): ComposeFactory<O, T>;
 }
 
 export interface Compose {
-	overlay<O, A>(base: ComposeClass<O, A>, overlayFunction: OverlayFunction<A>): ComposeClass<O, A>;
+	overlay<O, A>(base: ComposeFactory<O, A>, overlayFunction: OverlayFunction<A>): ComposeFactory<O, A>;
 }
 
-function overlay<O, A>(base: ComposeClass<O, A>, overlayFunction: OverlayFunction<A>): ComposeClass<O, A> {
-	base = cloneCreator(base);
+function overlay<O, A>(base: ComposeFactory<O, A>, overlayFunction: OverlayFunction<A>): ComposeFactory<O, A> {
+	base = cloneFactory(base);
 	overlayFunction(base.prototype);
 	return base;
 }
@@ -148,52 +153,52 @@ export interface GenericFunction<T> {
 	(...args: any[]): T;
 }
 
-export interface ComposeClass<O, T> {
-	from(base: GenericClass<any>, method: string): ComposeClass<O, T>;
-	from(base: ComposeClass<any, any>, method: string): ComposeClass<O, T>;
+export interface ComposeFactory<O, T> {
+	from(base: GenericClass<any>, method: string): ComposeFactory<O, T>;
+	from(base: ComposeFactory<any, any>, method: string): ComposeFactory<O, T>;
 
-	before(method: string, advice: BeforeAdvice): ComposeClass<O, T>;
-	after<P>(method: string, advice: AfterAdvice<P>): ComposeClass<O, T>;
-	around<P>(method: string, advice: AroundAdvice<P>): ComposeClass<O, T>;
+	before(method: string, advice: BeforeAdvice): ComposeFactory<O, T>;
+	after<P>(method: string, advice: AfterAdvice<P>): ComposeFactory<O, T>;
+	around<P>(method: string, advice: AroundAdvice<P>): ComposeFactory<O, T>;
 
-	aspect(advice: AspectAdvice): ComposeClass<O, T>;
+	aspect(advice: AspectAdvice): ComposeFactory<O, T>;
 }
 
 export interface Compose {
 	from<T extends Function>(base: GenericClass<any>, method: string): T;
-	from<T extends Function>(base: ComposeClass<any, any>, method: string): T;
+	from<T extends Function>(base: ComposeFactory<any, any>, method: string): T;
 
 	before<T>(base: GenericClass<any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
-	before<T>(base: ComposeClass<any, any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
+	before<T>(base: ComposeFactory<any, any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
 	before<T>(method: GenericFunction<T>, advice: BeforeAdvice): GenericFunction<T>;
 
 	after<T>(base: GenericClass<any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
-	after<T>(base: ComposeClass<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+	after<T>(base: ComposeFactory<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
 	after<T>(method: GenericFunction<T>, advice: AfterAdvice<T>): GenericFunction<T>;
 
 	around<T>(base: GenericClass<any>, method: string, advice: AroundAdvice<T>): GenericFunction<T>;
-	around<T>(base: ComposeClass<any, any>, method: string, advice: AroundAdvice<T>): GenericFunction<T>;
+	around<T>(base: ComposeFactory<any, any>, method: string, advice: AroundAdvice<T>): GenericFunction<T>;
 	around<T>(method: GenericFunction<T>, advice: AroundAdvice<T>): GenericFunction<T>;
 
-	aspect<O, A>(base: ComposeClass<O, A>, advice: AspectAdvice): ComposeClass<O, A>;
+	aspect<O, A>(base: ComposeFactory<O, A>, advice: AspectAdvice): ComposeFactory<O, A>;
 }
 
 function from<T extends Function>(base: GenericClass<any>, method: string): T;
-function from<T extends Function>(base: ComposeClass<any, any>, method: string): T;
+function from<T extends Function>(base: ComposeFactory<any, any>, method: string): T;
 function from<T extends Function>(base: any, method: string): T {
 	return base.prototype[method];
 }
 
-function doFrom<O, T>(base: GenericClass<any>, method: string): ComposeClass<O, T>;
-function doFrom<O, T>(base: ComposeClass<any, any>, method: string): ComposeClass<O, T>;
-function doFrom(base: any, method: string): ComposeClass<any, any> {
-	const clone = cloneCreator(this);
+function doFrom<O, T>(base: GenericClass<any>, method: string): ComposeFactory<O, T>;
+function doFrom<O, T>(base: ComposeFactory<any, any>, method: string): ComposeFactory<O, T>;
+function doFrom(base: any, method: string): ComposeFactory<any, any> {
+	const clone = cloneFactory(this);
 	(<any> clone.prototype)[method] = base.prototype[method];
 	return clone;
 }
 
 function before<T>(base: GenericClass<any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
-function before<T>(base: ComposeClass<any, any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
+function before<T>(base: ComposeFactory<any, any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
 function before<T>(method: GenericFunction<T>, advice: BeforeAdvice): GenericFunction<T>;
 function before(...args: any[]): GenericFunction<any> {
 	let base: GenericFunction<any>;
@@ -209,14 +214,14 @@ function before(...args: any[]): GenericFunction<any> {
 	return aspectBefore(<GenericFunction<any>> method, advice);
 }
 
-function doBefore<O, T>(method: string, advice: BeforeAdvice): ComposeClass<O, T> {
-	const clone = cloneCreator(this);
+function doBefore<O, T>(method: string, advice: BeforeAdvice): ComposeFactory<O, T> {
+	const clone = cloneFactory(this);
 	(<any> clone.prototype)[method] = aspectBefore((<any> clone.prototype)[method], advice);
-	return <ComposeClass<O, T>> clone;
+	return <ComposeFactory<O, T>> clone;
 }
 
 function after<T>(base: GenericClass<any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
-function after<T>(base: ComposeClass<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+function after<T>(base: ComposeFactory<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
 function after<T>(method: GenericFunction<T>, advice: AfterAdvice<T>): GenericFunction<T>;
 function after(...args: any[]): GenericFunction<any> {
 	let base: GenericFunction<any>;
@@ -232,14 +237,14 @@ function after(...args: any[]): GenericFunction<any> {
 	return aspectAfter(<GenericFunction<any>> method, advice);
 }
 
-function doAfter<O, P, T>(method: string, advice: AfterAdvice<P>): ComposeClass<O, T> {
-	const clone = cloneCreator(this);
+function doAfter<O, P, T>(method: string, advice: AfterAdvice<P>): ComposeFactory<O, T> {
+	const clone = cloneFactory(this);
 	(<any> clone.prototype)[method] = aspectAfter((<any> clone.prototype)[method], advice);
-	return <ComposeClass <O, T>> clone;
+	return <ComposeFactory <O, T>> clone;
 }
 
 function around<T>(base: GenericClass<any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
-function around<T>(base: ComposeClass<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
+function around<T>(base: ComposeFactory<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
 function around<T>(method: GenericFunction<T>, advice: AroundAdvice<T>): GenericFunction<T>;
 function around(...args: any[]): GenericFunction<any> {
 	let base: GenericFunction<any>;
@@ -255,14 +260,14 @@ function around(...args: any[]): GenericFunction<any> {
 	return aspectAround(<GenericFunction<any>> method, advice);
 }
 
-function doAround<O, P, T>(method: string, advice: AroundAdvice<P>): ComposeClass<O, T> {
-	const clone = cloneCreator(this);
+function doAround<O, P, T>(method: string, advice: AroundAdvice<P>): ComposeFactory<O, T> {
+	const clone = cloneFactory(this);
 	(<any> clone.prototype)[method] = aspectAround((<any> clone.prototype)[method], advice);
-	return <ComposeClass <O, T>> clone;
+	return <ComposeFactory <O, T>> clone;
 }
 
-function aspect<O, A>(base: ComposeClass<O, A>, advice: AspectAdvice): ComposeClass<O, A> {
-	const clone = cloneCreator(base);
+function aspect<O, A>(base: ComposeFactory<O, A>, advice: AspectAdvice): ComposeFactory<O, A> {
+	const clone = cloneFactory(base);
 
 	function mapAdvice(adviceHash: { [method: string ]: Function }, advisor: Function): void {
 		for (let key in adviceHash) {
@@ -288,34 +293,34 @@ function aspect<O, A>(base: ComposeClass<O, A>, advice: AspectAdvice): ComposeCl
 }
 
 /* Creation API */
-export interface ComposeClass<O, T> {
-	new (options?: O): T;
+export interface ComposeFactory<O, T> {
+	(options?: O): T;
 	prototype: T;
 }
 
 export interface Compose {
-	<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeClass<O, A>;
-	<O, A, P>(base: ComposeClass<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeClass<O & P, A>;
-	<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeClass<O, A>;
-	create<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeClass<O, A>;
-	create<O, A, P>(base: ComposeClass<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeClass<O & P, A>;
-	create<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeClass<O, A>;
+	<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
+	<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeFactory<O & P, A>;
+	<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
+	create<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
+	create<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeFactory<O & P, A>;
+	create<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
 }
 
-function create<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeClass<O, A>;
-function create<O, A, P>(base: ComposeClass<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeClass<O & P, A>;
-function create<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeClass<O, A>;
+function create<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
+function create<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeFactory<O & P, A>;
+function create<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
 function create<O>(base: any, initFunction?: ComposeInitializationFunction<O>): any {
-	const Creator = cloneCreator();
+	const factory = cloneFactory();
 	if (initFunction) {
-		initFnMap.get(Creator).push(initFunction);
+		initFnMap.get(factory).push(initFunction);
 	}
 
 	/* mixin the base into the prototype */
-	assign(Creator.prototype, typeof base === 'function' ? base.prototype : base);
+	assign(factory.prototype, typeof base === 'function' ? base.prototype : base);
 
    /* return the new constructor */
-   return Creator;
+   return factory;
 }
 
 /* Generate compose */
