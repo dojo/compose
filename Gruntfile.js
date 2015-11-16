@@ -102,7 +102,7 @@ module.exports = function (grunt) {
 		},
 
 		exec: {
-			codecov: 'cat lcov.info | ./node_modules/.bin/codecov'
+			codecov: 'cat coverage-final.json | ./node_modules/.bin/codecov'
 		},
 
 		intern: {
@@ -152,7 +152,8 @@ module.exports = function (grunt) {
 				reports: {
 					'text': undefined,
 					'html': 'html-report',
-					'lcovonly': 'lcov.info'
+					'lcovonly': 'lcov.info',
+					'json': 'coverage-final.json'
 				}
 			},
 			client: {
