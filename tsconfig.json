@@ -18,6 +18,7 @@
 	],
 	"files": [
 		"./typings/tsd.d.ts",
+		"./src/aspect.ts",
 		"./src/compose.ts",
 		"./tests/functional/all.ts",
 		"./tests/intern-local.ts",
@@ -29,7 +30,8 @@
 		"./tests/typings/leadfoot/leadfoot.d.ts",
 		"./tests/typings/tsd.d.ts",
 		"./tests/unit/all.ts",
-		"./tests/unit/lib/compose.ts",
+		"./tests/unit/aspect.ts",
+		"./tests/unit/compose.ts",
 		"./_modules/dojo-core/_typings/dojo-core/dojo-core-2.0.0-pre.d.ts"
 	],
 	"exclude": []
