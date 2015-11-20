@@ -214,7 +214,7 @@ registerSuite({
 		'only setter': function() {
 			const createFoo = compose({
 				_foo: '',
-				set foo(foo) {
+				set foo(foo: string) {
 					this._foo = foo;
 				}
 			});
@@ -227,6 +227,7 @@ registerSuite({
 		},
 
 		'non-configurable property': function() {
+			'use strict';
 			const composeObj = {};
 			Object.defineProperty(composeObj, 'nonConfigurable', { configurable: false });
 			Object.defineProperty(composeObj, 'configurable', { configurable: true });
@@ -234,34 +235,40 @@ registerSuite({
 
 			const foo = createFoo();
 
-			Object.defineProperty(foo, 'configurable', { configurable: true });
+			Object.defineProperty(Object.getPrototypeOf(foo), 'configurable', { configurable: true });
+
+			// Prototype has non configurable property
 			assert.throws(function () {
-				Object.defineProperty(foo, 'nonConfigurable', { configurable: true });
+				Object.defineProperty(Object.getPrototypeOf(foo), 'nonConfigurable', { configurable: true });
 			}, TypeError);
+
+			// But instance can still be configured
+			Object.defineProperty(foo, 'nonConfigurable', { configurable: true });
 		},
 
 		'non-writable property': function() {
-			const composeObj = {};
+			const composeObj: { [ index: string ]: string } = {};
 			Object.defineProperty(composeObj, 'nonWritable', { value: 'constant', writable: false });
 			const createFoo = compose(composeObj);
 
 			const foo = createFoo();
 
-			assert.strictEqual(foo.nonWritable, 'constant', 'Didn\'t copy property value');
-			foo.nonWritable = 'variable';
-			assert.strictEqual(foo.nonWritable, 'constant', 'Changed immutable value');
+			assert.strictEqual(foo['nonWritable'], 'constant', 'Didn\'t copy property value');
+			foo['nonWritable'] = 'variable';
+			assert.strictEqual(foo['nonWritable'], 'constant', 'Changed immutable value');
 		},
 
 		'non-enumerable property': function() {
-			const composeObj = {};
+			const composeObj: { [ index: string ]: string } = {};
 			Object.defineProperty(composeObj, 'nonEnumerable', { value: 'value', enumerable: false });
 			const createFoo = compose(composeObj);
 
 			const foo = createFoo();
+			const fooPrototype = Object.getPrototypeOf(foo);
 
-			assert.strictEqual(foo.nonEnumerable, 'value', 'Didn\'t copy non-enumerable property');
-			assert.notInclude(Object.keys(foo), 'nonEnumerable', 'Keys included non-enumerable property');
-			assert.include(Object.getOwnPropertyNames(foo), 'nonEnumerable',
+			assert.strictEqual(foo['nonEnumerable'], 'value', 'Didn\'t copy non-enumerable property');
+			assert.notInclude(Object.keys(fooPrototype), 'nonEnumerable', 'Keys included non-enumerable property');
+			assert.include(Object.getOwnPropertyNames(fooPrototype), 'nonEnumerable',
 				'Own property names did not include non-enumerable property');
 		}
 	},
