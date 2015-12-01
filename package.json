@@ -20,11 +20,11 @@
 		"grunt-contrib-watch": "0.6.1",
 		"grunt-exec": "0.4.6",
 		"grunt-text-replace": "0.4.0",
-		"grunt-ts": "5.1.0",
+		"grunt-ts": "5.2.0",
 		"grunt-tslint": "2.5.0",
 		"tslint": "2.5.1",
 		"intern": "~3.0.0",
 		"remap-istanbul": "~0.3.0",
-		"typescript": "~1.6.0"
+		"typescript": "~1.7.3"
 	}
 }
