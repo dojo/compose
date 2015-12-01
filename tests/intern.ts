@@ -19,21 +19,19 @@ export var capabilities = {
 // OnDemand. Options that will be permutated are browserName, version, platform, and platformVersion; any other
 // capabilities options specified for an environment will be copied as-is
 export var environments = [
-	{ browserName: 'internet explorer', version: [ '9', '10', '11' ], platform: 'WINDOWS' },
-	{ browserName: 'edge', version: '12', platform: 'WINDOWS' },
-	{ browserName: 'firefox', platform: [ 'WINDOWS', 'MAC' ] },
-	{ browserName: 'chrome', platform: [ 'WINDOWS', 'MAC' ] }/*,
-	{ browserName: 'safari', version: '8', platform: 'MAC' },
-	{ browserName: 'iPad', platform: 'MAC' },
-	{ browserName: 'iPhone', platform: 'MAC' },
-	{ broswerName: 'Android', platform: 'ANDROID' }*/
+	{ browserName: 'internet explorer', version: [ '9.0', '10.0', '11.0' ], platform: 'Windows 7' },
+	{ browserName: 'microsoftedge', platform: 'Windows 10' },
+	{ browserName: 'firefox', platform: [ 'Windows 10', 'Windows 7', 'OS X 10.11' ] },
+	{ browserName: 'chrome', platform: [ 'Windows 10', 'Windows 7', 'OS X 10.11' ] },
+	{ browserName: 'safari', version: '9', platform: 'OS X 10.11' },
+	{ browserName: 'android', platform: 'Linux', version: '4.4', deviceName: 'Google Nexus 7 HD Emulator' }
 ];
 
 // Maximum number of simultaneous integration tests that should be executed on the remote WebDriver service
-export var maxConcurrency = 2;
+export var maxConcurrency = 4;
 
 // Name of the tunnel class to use for WebDriver tests
-export var tunnel = 'BrowserStackTunnel';
+export var tunnel = 'SauceLabsTunnel';
 
 // Configuration options for the module loader; any AMD configuration options supported by the specified AMD loader
 // can be used here
