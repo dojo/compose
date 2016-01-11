@@ -347,12 +347,12 @@ registerSuite({
 				foo: 'foo'
 			}, function() {
 				this.foo = 'bar';
+				assert.strictEqual(this.bar, 3, 'instance constains foo');
 			}).mixin(createBar);
 
 			const foobar = createFooBar();
 
 			assert.strictEqual(foobar.foo, 'bar', 'instance contains foo');
-			assert.strictEqual(foobar.bar, 3, 'instance constains foo');
 		},
 		'duplicate init functions'() {
 			let called = 0;

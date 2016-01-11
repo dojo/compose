@@ -103,7 +103,7 @@ function concatInitFn<O, T, P, S>(target: ComposeFactory<O, T>, source: ComposeF
 	/* making sure only unique functions get added */
 	initFnMap.get(source).forEach((item) => {
 		if (initFn.indexOf(item) < 0) {
-			initFn.push(item);
+			initFn.unshift(item);
 		}
 	});
 }
