@@ -93,6 +93,30 @@ function cloneFactory(base?: any): any {
 	return factory;
 }
 
+/**
+ * Takes any init functions from source and concats them to base
+ * @param target The compose factory to copy the init functions onto
+ * @param source The ComposeFactory to copy the init functions from
+ */
+function concatInitFn<O, T, P, S>(target: ComposeFactory<O, T>, source: ComposeFactory<P, S>): void {
+	const initFn = initFnMap.get(target);
+	/* making sure only unique functions get added */
+	initFnMap.get(source).forEach((item) => {
+		if (initFn.indexOf(item) < 0) {
+			initFn.push(item);
+		}
+	});
+}
+
+/**
+ * A custom type guard that determines if the value is a ComposeFactory
+ * @param   value The target to check
+ * @returns       Return true if it is a ComposeFactory, otherwise false
+ */
+export function isComposeFactory(value: any): value is ComposeFactory< any, any > {
+	return Boolean(initFnMap.get(value));
+}
+
 /* General Interfaces */
 
 export interface GenericClass<T> {
@@ -135,6 +159,9 @@ function mixin<O, A, B>(base: ComposeFactory<O, A>, mixin: GenericClass<B>): Com
 function mixin<O, P, A, B>(base: ComposeFactory<O, A>, mixin: ComposeFactory<P, B>): ComposeFactory<O & P, A & B>;
 function mixin<O>(base: ComposeFactory<O, any>, mixin: any): ComposeFactory<O, any> {
 	base = cloneFactory(base);
+	if (isComposeFactory(mixin)) {
+		concatInitFn(base, mixin);
+	}
 	copyProperties(base.prototype, mixin.prototype);
 	return base;
 }

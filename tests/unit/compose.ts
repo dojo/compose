@@ -336,6 +336,54 @@ registerSuite({
 			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
 			assert.strictEqual(foobar.bar, 2, 'instance contains foo');
 		},
+		'concat init functions'() {
+			const createBar = compose({
+				bar: 2
+			}, function() {
+				this.bar = 3;
+			});
+
+			const createFooBar = compose({
+				foo: 'foo'
+			}, function() {
+				this.foo = 'bar';
+			}).mixin(createBar);
+
+			const foobar = createFooBar();
+
+			assert.strictEqual(foobar.foo, 'bar', 'instance contains foo');
+			assert.strictEqual(foobar.bar, 3, 'instance constains foo');
+		},
+		'duplicate init functions'() {
+			let called = 0;
+			const createBar = compose({
+				bar: 2
+			}, function() {
+				called++;
+			});
+
+			const createBarBaz = compose({
+				baz: false
+			}, function() {
+				this.baz = true;
+			}).mixin(createBar);
+
+			const createBarQat = compose({
+				qat: 'qat'
+			}, function() {
+				this.qat = 'foo';
+			}).mixin(createBar);
+
+			const createFooBarBazQat = compose({
+				foo: 'foo'
+			}, function() {
+				this.foo = 'bar';
+			}).mixin(createBarQat).mixin(createBarBaz);
+
+			const foobarbazqat = createFooBarBazQat();
+
+			assert.strictEqual(called, 1, 'Init function only called once');
+		},
 		'es6 class': function () {
 			class Bar {
 				bar(): number {
