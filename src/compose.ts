@@ -9,7 +9,7 @@ import {
 } from './aspect';
 
 /* A weakmap that will store initialization functions for compose constructors */
-const initFnMap = new WeakMap<Function, ComposeInitializationFunction<any>[]>();
+const initFnMap = new WeakMap<Function, ComposeInitializationFunction<any, any>[]>();
 
 /**
  * A helper funtion to return a function that is rebased
@@ -75,7 +75,7 @@ function cloneFactory(base?: any): any {
 			throw new SyntaxError('Factories cannot be called with "new".');
 		}
 		const instance = Object.create(factory.prototype);
-		initFnMap.get(factory).forEach(fn => fn.apply(instance, args));
+		initFnMap.get(factory).forEach(fn => fn(instance, args));
 		return instance;
 	}
 
@@ -124,8 +124,8 @@ export interface GenericClass<T> {
 	prototype: T;
 }
 
-export interface ComposeInitializationFunction<O> {
-	(options?: O): void;
+export interface ComposeInitializationFunction<O, T> {
+	(instance: T, options?: O): void;
 }
 
 /* Extension API */
@@ -343,18 +343,18 @@ export interface ComposeFactory<O, T> {
 }
 
 export interface Compose {
-	<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
-	<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeFactory<O & P, A>;
-	<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
-	create<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
-	create<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeFactory<O & P, A>;
-	create<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
+	<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O, A>): ComposeFactory<O, A>;
+	<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P, A>): ComposeFactory<O & P, A>;
+	<O, A>(base: A, initFunction?: ComposeInitializationFunction<O, A>): ComposeFactory<O, A>;
+	create<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O, A>): ComposeFactory<O, A>;
+	create<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P, A>): ComposeFactory<O & P, A>;
+	create<O, A>(base: A, initFunction?: ComposeInitializationFunction<O, A>): ComposeFactory<O, A>;
 }
 
-function create<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
-function create<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P>): ComposeFactory<O & P, A>;
-function create<O, A>(base: A, initFunction?: ComposeInitializationFunction<O>): ComposeFactory<O, A>;
-function create<O>(base: any, initFunction?: ComposeInitializationFunction<O>): any {
+function create<O, A>(base: GenericClass<A>, initFunction?: ComposeInitializationFunction<O, A>): ComposeFactory<O, A>;
+function create<O, A, P>(base: ComposeFactory<O, A>, initFunction?: ComposeInitializationFunction<P, A>): ComposeFactory<O & P, A>;
+function create<O, A>(base: A, initFunction?: ComposeInitializationFunction<O, A>): ComposeFactory<O, A>;
+function create<O>(base: any, initFunction?: ComposeInitializationFunction<O, any>): any {
 	const factory = cloneFactory();
 	if (initFunction) {
 		initFnMap.get(factory).push(initFunction);
