@@ -208,7 +208,7 @@ function mixin<A>(base: ComposeFactory<A, any>, mixin: any): ComposeFactory<A, a
 		base = create(base, mixin.initializer);
 	}
 	if (mixin.aspectAdvice) {
-		aspect(base, mixin.aspectAdvice)
+		base = aspect(base, mixin.aspectAdvice)
 	}
 	return base;
 }
