@@ -103,7 +103,7 @@ function concatInitFn<O, T, P, S>(target: ComposeFactory<O, T>, source: ComposeF
 	/* making sure only unique functions get added */
 	initFnMap.get(source).forEach((item) => {
 		if (initFn.indexOf(item) < 0) {
-			initFn.unshift(item);
+			initFn.push(item);
 		}
 	});
 }
@@ -144,28 +144,6 @@ function extend<O>(base: ComposeFactory<O, any>, extension: any): ComposeFactory
 	return base;
 }
 
-/* Mixin API */
-export interface ComposeFactory<O, T> {
-	mixin<P, U>(mixin: GenericClass<U>): ComposeFactory<O, T & U>;
-	mixin<P, U>(mixin: ComposeFactory<P, U>): ComposeFactory<O & P, T & U>;
-}
-
-export interface Compose {
-	mixin<O, A, B>(base: ComposeFactory<O, A>, mixin: GenericClass<B>): ComposeFactory<O, A & B>;
-	mixin<O, P, A, B>(base: ComposeFactory<O, A>, mixin: ComposeFactory<P, B>): ComposeFactory<O & P, A & B>;
-}
-
-function mixin<O, A, B>(base: ComposeFactory<O, A>, mixin: GenericClass<B>): ComposeFactory<O, A & B>;
-function mixin<O, P, A, B>(base: ComposeFactory<O, A>, mixin: ComposeFactory<P, B>): ComposeFactory<O & P, A & B>;
-function mixin<O>(base: ComposeFactory<O, any>, mixin: any): ComposeFactory<O, any> {
-	base = cloneFactory(base);
-	if (isComposeFactory(mixin)) {
-		concatInitFn(base, mixin);
-	}
-	copyProperties(base.prototype, mixin.prototype);
-	return base;
-}
-
 /* Overlay API */
 export interface OverlayFunction<T> {
 	(proto: T): void;
@@ -191,6 +169,48 @@ export interface AspectAdvice {
 	before?: { [method: string]: BeforeAdvice };
 	after?: { [method: string]: AfterAdvice<any> };
 	around?: { [method: string]: AroundAdvice<any> };
+}
+
+/* Mixin API */
+export interface ComposeClassMixin<O, P> {
+	base?: GenericClass<O>;
+	initializer?: ComposeInitializationFunction<P>;
+	aspectAdvice?: AspectAdvice
+}
+
+export interface ComposeFactoryMixin<O, P, T> {
+	base?: ComposeFactory<O, T>;
+	initializer?: ComposeInitializationFunction<P>;
+	aspectAdvice?: AspectAdvice
+}
+
+export interface ComposeFactory<O, T> {
+	mixin<P, U, V>(mixin: ComposeClassMixin<U, V>): ComposeFactory<O, T & U>;
+	mixin<P, U, V>(mixin: ComposeFactoryMixin<P, V, U>): ComposeFactory<O & P, T & U>;
+}
+
+export interface Compose {
+	mixin<O, A, B, C>(base: ComposeFactory<O, A>, mixin: ComposeClassMixin<B, C>): ComposeFactory<O, A & B>;
+	mixin<O, P, A, B, C>(base: ComposeFactory<O, A>, mixin: ComposeFactoryMixin<P, C, B>): ComposeFactory<O & P, A & B>;
+}
+
+function mixin<A, B, O, P>(base: ComposeFactory<A, O>, mixin: ComposeClassMixin<B, P>): ComposeFactory<A, O & P>;
+function mixin<A, B, O, P, T>(base: ComposeFactory<A, O>, mixin: ComposeFactoryMixin<B, P, T>): ComposeFactory<A & B, O & P>;
+function mixin<A>(base: ComposeFactory<A, any>, mixin: any): ComposeFactory<A, any> {
+	base = cloneFactory(base);
+	if (mixin.base) {
+		let mixinComposite = mixin.initializer ? create(mixin.base, mixin.initializer) : mixin.base;
+		if (isComposeFactory(mixinComposite)) {
+			concatInitFn(base, mixinComposite);
+		}
+		copyProperties(base.prototype, mixinComposite.prototype);
+	} else if (mixin.initializer){
+		base = create(base, mixin.initializer);
+	}
+	if (mixin.aspectAdvice) {
+		aspect(base, mixin.aspectAdvice)
+	}
+	return base;
 }
 
 export interface GenericFunction<T> {

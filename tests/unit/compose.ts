@@ -313,7 +313,7 @@ registerSuite({
 				bar: 2
 			});
 
-			const createFooBar = compose.mixin(createFoo, createBar);
+			const createFooBar = compose.mixin(createFoo, { base: createBar });
 			const foobar = createFooBar();
 			const foo = createFoo();
 
@@ -329,7 +329,7 @@ registerSuite({
 
 			const createFooBar = compose({
 				foo: 'foo'
-			}).mixin(createBar);
+			}).mixin( { base: createBar });
 
 			const foobar = createFooBar();
 
@@ -340,15 +340,15 @@ registerSuite({
 			const createBar = compose({
 				bar: 2
 			}, function() {
-				this.bar = 3;
+				this.foo = 'bar';
+				assert.strictEqual(this.bar, 3, 'instance contains bar');
 			});
 
 			const createFooBar = compose({
 				foo: 'foo'
 			}, function() {
-				this.foo = 'bar';
-				assert.strictEqual(this.bar, 3, 'instance constains foo');
-			}).mixin(createBar);
+				this.bar = 3;
+			}).mixin({ base: createBar });
 
 			const foobar = createFooBar();
 
@@ -366,19 +366,19 @@ registerSuite({
 				baz: false
 			}, function() {
 				this.baz = true;
-			}).mixin(createBar);
+			}).mixin({ base: createBar });
 
 			const createBarQat = compose({
 				qat: 'qat'
 			}, function() {
 				this.qat = 'foo';
-			}).mixin(createBar);
+			}).mixin({ base: createBar });
 
 			const createFooBarBazQat = compose({
 				foo: 'foo'
 			}, function() {
 				this.foo = 'bar';
-			}).mixin(createBarQat).mixin(createBarBaz);
+			}).mixin({ base: createBarQat }).mixin({ base: createBarBaz });
 
 			const foobarbazqat = createFooBarBazQat();
 
@@ -395,11 +395,34 @@ registerSuite({
 				foo: 'foo'
 			});
 
-			const createFooBar = compose.mixin(createFoo, Bar);
+			const createFooBar = compose.mixin(createFoo, { base: Bar });
 
 			const foobar = createFooBar();
 
 			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
+			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
+		},
+
+		'es6 class and initializer': function() {
+			class Bar {
+				bar(): number {
+					return 2;
+				}
+			}
+
+			function initFoo() {
+				this.foo = 'boo';
+			}
+
+			const createFoo = compose({
+				foo: 'foo'
+			});
+
+			const createFooBar = compose.mixin(createFoo, { base: Bar, initializer: initFoo });
+
+			const foobar = createFooBar();
+
+			assert.strictEqual(foobar.foo, 'boo', 'instance contains foo');
 			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
 		}
 	},
