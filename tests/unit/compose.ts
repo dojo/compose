@@ -415,7 +415,7 @@ registerSuite({
 				bar: 2
 			});
 
-			const createFooBar = compose.mixin(createFoo, createBar);
+			const createFooBar = compose.mixin(createFoo, { base: createBar });
 			const foobar = createFooBar();
 			const foo = createFoo();
 
@@ -431,7 +431,7 @@ registerSuite({
 
 			const createFooBar = compose({
 				foo: 'foo'
-			}).mixin(createBar);
+			}).mixin( { base: createBar });
 
 			const foobar = createFooBar();
 
@@ -447,14 +447,14 @@ registerSuite({
 
 			const createFooBar = compose({
 				foo: 'foo'
-			}, function(instance: {foo: string, bar: number}) {
+			}, function(instance) {
 				instance.foo = 'bar';
-				assert.strictEqual(instance.bar, 3, 'instance contains bar');
-			}).mixin(createBar);
+			}).mixin({ base: createBar });
 
 			const foobar = createFooBar();
 
 			assert.strictEqual(foobar.foo, 'bar', 'instance contains foo');
+			assert.strictEqual(foobar.bar, 3, 'instance containce bar');
 		},
 		'duplicate init functions'() {
 			let called = 0;
@@ -512,8 +512,8 @@ registerSuite({
 				}
 			}
 
-			function initFoo() {
-				this.foo = 'boo';
+			function initFoo(instance: { foo: string }) {
+				instance.foo = 'boo';
 			}
 
 			const createFoo = compose({
@@ -531,21 +531,21 @@ registerSuite({
 		'compose factory and initalizer': function() {
 			const createBar = compose({
 				bar: 2
-			}, function() {
-				this.foo = 'bar';
-				assert.strictEqual(this.bar, 3, 'instance contains bar');
+			}, function(instance: any) {
+				instance.foo = 'bar';
+				assert.strictEqual(instance.bar, 3, 'instance contains bar');
 			});
 
 			const createFooBar = compose({
 				foo: 'foo',
 				baz: ''
-			}, function() {
-				this.bar = 3;
+			}, function(instance: any) {
+				instance.bar = 3;
 			}).mixin({
 				base: createBar,
-				initializer: function() {
-					assert.strictEqual(this.foo, 'bar', 'instance contains foo');
-					this.baz = 'baz';
+				initializer: function(instance: any) {
+					assert.strictEqual(instance.foo, 'bar', 'instance contains foo');
+					instance.baz = 'baz';
 				}
 			});
 
@@ -558,8 +558,8 @@ registerSuite({
 			const createFoo = compose({
 				foo: 'foo'
 			}).mixin({
-				initializer: function() {
-					this.foo = 'bar';
+				initializer: function(instance: any) {
+					instance.foo = 'bar';
 				}
 			});
 
@@ -600,8 +600,8 @@ registerSuite({
 						this.foo = 'bar';
 					}
 				}),
-				initializer: function() {
-					this.bar = 'bar';
+				initializer: function(instance: any) {
+					instance.bar = 'bar';
 				},
 				aspectAdvice: {
 					after: {
