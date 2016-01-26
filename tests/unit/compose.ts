@@ -79,8 +79,8 @@ registerSuite({
 				}
 			}
 
-			function initFoo() {
-				this.foo();
+			function initFoo(instance: Foo) {
+				instance.foo();
 			}
 
 			const createFoo = compose(Foo, initFoo);
@@ -91,9 +91,9 @@ registerSuite({
 		'initialise function with prototype': function () {
 			let counter = 0;
 
-			function initFoo() {
-				this.foo();
-				this.bar = 'foo';
+			function initFoo(instance: {foo: () => any, bar: string}) {
+				instance.foo();
+				instance.bar = 'foo';
 			}
 
 			const createFoo = compose({
@@ -122,10 +122,10 @@ registerSuite({
 				bar: <string> undefined
 			};
 
-			function initFoo(options?: any) {
+			function initFoo(instance: {foo: () => any, bar: string}, options?: any) {
 				constructOptions = options;
-				this.foo();
-				this.bar = 'foo';
+				instance.foo();
+				instance.bar = 'foo';
 			}
 
 			const createFoo = compose(<GenericClass< { foo(): void; bar: string; } >> <any> Foo, initFoo);
@@ -334,20 +334,20 @@ registerSuite({
 			const foobar = createFooBar();
 
 			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
-			assert.strictEqual(foobar.bar, 2, 'instance contains foo');
+			assert.strictEqual(foobar.bar, 2, 'instance contains bar');
 		},
 		'concat init functions'() {
 			const createBar = compose({
 				bar: 2
-			}, function() {
-				this.bar = 3;
+			}, function(instance) {
+				instance.bar = 3;
 			});
 
 			const createFooBar = compose({
 				foo: 'foo'
-			}, function() {
-				this.foo = 'bar';
-				assert.strictEqual(this.bar, 3, 'instance constains foo');
+			}, function(instance: {foo: string, bar: number}) {
+				instance.foo = 'bar';
+				assert.strictEqual(instance.bar, 3, 'instance contains bar');
 			}).mixin(createBar);
 
 			const foobar = createFooBar();
