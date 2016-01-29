@@ -510,22 +510,24 @@ registerSuite({
 				bar(): number {
 					return 2;
 				}
+				baz: string
 			}
 
-			function initFoo(instance: { foo: string }) {
-				instance.foo = 'boo';
+			function initBar(instance: Bar) {
+				instance.baz = 'boo';
 			}
 
 			const createFoo = compose({
 				foo: 'foo'
 			});
 
-			const createFooBar = compose.mixin(createFoo, { base: Bar, initializer: initFoo });
+			const createFooBar = compose.mixin(createFoo, { base: Bar, initializer: initBar });
 
 			const foobar = createFooBar();
 
-			assert.strictEqual(foobar.foo, 'boo', 'instance contains foo');
+			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
 			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
+			assert.strictEqual(foobar.baz, 'boo', 'instance contains boo');
 		},
 
 		'compose factory and initalizer': function() {
