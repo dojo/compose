@@ -534,6 +534,7 @@ registerSuite({
 			const createBar = compose({
 				bar: 2
 			}, function(instance: any) {
+				// This runs second, as it's the existing initializer on the base of the mixin
 				instance.foo = 'bar';
 				assert.strictEqual(instance.bar, 3, 'instance contains bar');
 			});
@@ -542,10 +543,12 @@ registerSuite({
 				foo: 'foo',
 				baz: ''
 			}, function(instance: any) {
+				// This runs first, as it's the initializer on the base class
 				instance.bar = 3;
 			}).mixin({
 				base: createBar,
 				initializer: function(instance: any) {
+					// This runs third, as it's the new, optional initializer provided with the mixin
 					assert.strictEqual(instance.foo, 'bar', 'instance contains foo');
 					instance.baz = 'baz';
 				}
