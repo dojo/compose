@@ -621,6 +621,22 @@ registerSuite({
 			foo.doFoo();
 			assert.strictEqual(foo.foo, 'bar', 'ran function');
 			assert.isTrue(foo.doneFoo, 'ran aspect');
+		},
+
+		'mixin with plain object': function() {
+			const createFoo = compose({
+				baz: 'baz'
+			}).mixin({
+				base: {
+					foo: 'foo',
+					bar: 3
+				}
+			});
+
+			const foo = createFoo();
+			assert.strictEqual(foo.baz, 'baz', 'contains baz property');
+			assert.strictEqual(foo.foo, 'foo', 'contains foo property');
+			assert.strictEqual(foo.bar, 3, 'contains bar property');
 		}
 	},
 	overlay: {

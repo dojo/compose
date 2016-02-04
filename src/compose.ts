@@ -181,6 +181,12 @@ export interface ComposeClassMixin<O, P> {
 	aspectAdvice?: AspectAdvice;
 }
 
+export interface ComposeObjectMixin<O, P> {
+	base?: P;
+	initializer?: ComposeInitializationFunction<O, P>;
+	aspectAdvice?: AspectAdvice;
+}
+
 export interface ComposeFactoryMixin<O, P, T> {
 	base?: ComposeFactory<T, P>;
 	initializer?: ComposeInitializationFunction<O, P>;
@@ -190,15 +196,18 @@ export interface ComposeFactoryMixin<O, P, T> {
 export interface ComposeFactory<O, T> {
 	mixin<U, V>(mixin: ComposeClassMixin<V, U>): ComposeFactory<O, T & U>;
 	mixin<P, U, V>(mixin: ComposeFactoryMixin<V, U, P>): ComposeFactory<O & P, T & U>;
+	mixin<U, V>(mixin: ComposeObjectMixin<V, U>): ComposeFactory<O, T & U>;
 }
 
 export interface Compose {
 	mixin<O, A, P, B>(base: ComposeFactory<O, A>, mixin: ComposeClassMixin<P, B>): ComposeFactory<O, A & B>;
 	mixin<O, P, A, B, T>(base: ComposeFactory<O, A>, mixin: ComposeFactoryMixin<T, B, P>): ComposeFactory<O & P, A & B>;
+	mixin<O, A, P, B>(base: ComposeFactory<O, A>, mixin: ComposeObjectMixin<P, B>): ComposeFactory<O, A & B>;
 }
 
 function mixin<O, A, P, B>(base: ComposeFactory<O, A>, mixin: ComposeClassMixin<P, B>): ComposeFactory<O, A & B>;
 function mixin<A, B, O, P, T>(base: ComposeFactory<A, O>, mixin: ComposeFactoryMixin<T, P, B>): ComposeFactory<A & B, O & P>;
+function mixin<O, A, P, B>(base: ComposeFactory<O, A>, mixin: ComposeObjectMixin<P, B>): ComposeFactory<O, A & B>;
 function mixin<A>(base: ComposeFactory<A, any>, mixin: any): ComposeFactory<A, any> {
 	base = cloneFactory(base);
 	if (mixin.base) {
