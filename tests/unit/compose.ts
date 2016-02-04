@@ -157,6 +157,19 @@ registerSuite({
 			assert.strictEqual(counter, 1, 'counter only called once');
 			assert.strictEqual(foo.bar, 'foo', 'properly initialised property .bar');
 		},
+		'initialize with options object': function() {
+			const createFoo = compose(
+				{ foo: '' },
+				function(instance: {foo: string}, options?: any) {
+					instance.foo = options.foo;
+				}
+			);
+
+
+			const foo = createFoo({ foo: 'bar' });
+
+			assert.strictEqual(foo.foo, 'bar', 'properly initialized from options bag');
+		},
 		'initialise with constructor function': function () {
 			let counter = 0;
 			let constructOptions: any;
