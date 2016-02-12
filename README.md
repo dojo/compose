@@ -193,7 +193,7 @@ const barFactory = compose.create({
     }
 });
 
-const fooBarFactory = compose.mixin(fooFactory, barFactory);
+const fooBarFactory = compose.mixin(fooFactory, { base: barFactory });
 
 const fooBar = fooBarFactory();
 
@@ -213,14 +213,85 @@ class Bar {
     bar() { console.log('bar'); }
 }
 
-const fooBarFactory = compose.mixin(fooFactory, Bar);
+const fooBarFactory = compose.mixin(fooFactory, { base: Bar });
 
 const fooBar = fooBarFactory();
 
 fooBar.bar(); // logs "bar"
 ```
-Note that when mixing in an ES6 class only methods will be mixed into the resulting class, not state.
 
+It can also mixin in a plain object, but extend would be more appropriate in this case:
+```typescript
+import * as compose from 'dojo/compose';
+
+const fooFactory = compose.create({
+    foo: 'bar'
+});
+
+const bar = {
+    bar() { console.log('bar'); }
+}
+
+const fooBarFactory = compose.mixin(fooFactory, { base: bar });
+
+const fooBar = fooBarFactory();
+
+fooBar.bar(); // logs "bar"
+```
+
+
+The real benefit of mixin is for more complicated cases where a base, such as a class or an object, needs to be mixed in, but that class needs an initialization function or aspect to go along with it.
+Mixin can also be passed multiple arguments(up to seven) and will mix them in in the order provided:
+```typescript
+import * as compose from 'dojo/compose';
+
+const fooFactory = compose.create({
+	foo: 'bar',
+	doSomething: function() {
+		console.log('something');
+	}
+});
+
+const bar = {
+	bar: 'uninitialized'
+};
+
+const initBar = function(instance: { bar: string }) {
+	instance.bar = 'initialized';
+};
+
+const bazFactory = compost.create({
+	baz: 'baz'
+}, function(instance: { baz: string }) {
+	instance.baz = 'also initialized';
+});
+
+const bazAspect: AspectAdvice = {
+	after: {
+		doSomething: function() {
+			console.log('something else');
+		}
+	}
+};
+
+const fooBarBazFactory = fooFactory.mixin(
+    {
+        base: bar,
+        initializer: initBar
+    },
+    {
+        base: bazFactory,
+        aspectAdvice: bazAspect
+    }
+);
+
+const fooBarBaz = fooBarBazFactory();
+console.log(fooBarBaz.bar); // logs 'initialized'
+console.log(fooBarBaz.baz); // logs 'also initialized'
+fooBarBaz.doSomething(); // logs 'something' and then 'something else'
+```
+
+Note that when mixing in an ES6 class only methods will be mixed into the resulting class, not state.
 ### Using Generics
 
 `compose` utilizes TypeScript generics and type inference to type the resulting classes.  Most of the time, this will work without any need to declare your types.  There are situations though where you may want to be more explicit about your interfaces and `compose` can accommodate that by passing in generics when using the API. Here is an example of creating a class that requires generics using `compose`:

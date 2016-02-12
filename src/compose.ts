@@ -132,8 +132,8 @@ export interface ComposeInitializationFunction<O, T> {
 }
 
 /* Extension API */
-export interface ComposeFactory<O, T> {
-	extend<U>(extension: U): ComposeFactory<O, T & U>;
+export interface ComposeFactory<K, A> {
+	extend<U>(extension: U): ComposeFactory<K, A & U>;
 }
 
 export interface Compose {
@@ -152,8 +152,8 @@ export interface OverlayFunction<T> {
 	(proto: T): void;
 }
 
-export interface ComposeFactory<O, T> {
-	 overlay(overlayFunction: OverlayFunction<T>): ComposeFactory<O, T>;
+export interface ComposeFactory<K, A> {
+	 overlay(overlayFunction: OverlayFunction<A>): ComposeFactory<K, A>;
 }
 
 export interface Compose {
@@ -175,70 +175,215 @@ export interface AspectAdvice {
 }
 
 /* Mixin API */
-export interface ComposeClassMixin<O, P> {
-	base?: GenericClass<P>;
+export interface ComposeMixin<O, P, T> {
+	base?: GenericClass<P> | P | ComposeFactory<T, P>;
 	initializer?: ComposeInitializationFunction<O, P>;
 	aspectAdvice?: AspectAdvice;
 }
 
-export interface ComposeObjectMixin<O, P> {
-	base?: P;
-	initializer?: ComposeInitializationFunction<O, P>;
-	aspectAdvice?: AspectAdvice;
-}
+export interface ComposeFactory<K, A> {
+	mixin<L, B, T>(mixin: ComposeMixin<T, B, L>): ComposeFactory<K & L, A & B>;
 
-export interface ComposeFactoryMixin<O, P, T> {
-	base?: ComposeFactory<T, P>;
-	initializer?: ComposeInitializationFunction<O, P>;
-	aspectAdvice?: AspectAdvice;
-}
+	// Overloads for multiple mixins
+	mixin<L, M, B, C, T, U>(
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>
+	): ComposeFactory<K & L & M, A & B & C>;
 
-export interface ComposeFactory<O, T> {
-	mixin<U, V>(mixin: ComposeClassMixin<V, U>): ComposeFactory<O, T & U>;
-	mixin<P, U, V>(mixin: ComposeFactoryMixin<V, U, P>): ComposeFactory<O & P, T & U>;
-	mixin<U, V>(mixin: ComposeObjectMixin<V, U>): ComposeFactory<O, T & U>;
+	mixin<L, M, N, B, C, D, T, U, V>(
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>
+	): ComposeFactory<K & L & M & N, A & B & C & D>;
+
+	mixin<L, M, N, O, B, C, D, E, T, U, V, W>(
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>,
+		fourthMixin: ComposeMixin<W, E, O>
+	): ComposeFactory<K & L & M & N & O, A & B & C & D & E>;
+
+	mixin<L, M, N, O, P, B, C, D, E, F, T, U, V, W, X>(
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>,
+		fourthMixin: ComposeMixin<W, E, O>,
+		fifthMixin: ComposeMixin<X, F, P>
+	): ComposeFactory<K & L & M & N & O & P, A & B & C & D & E & F>;
+
+	mixin<L, M, N, O, P, Q, B, C, D, E, F, G, T, U, V, W, X, Y>(
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>,
+		fourthMixin: ComposeMixin<W, E, O>,
+		fifthMixin: ComposeMixin<X, F, P>,
+		sixthMixin: ComposeMixin<Y, G, Q>
+	): ComposeFactory<K & L & M & N & O & P & Q, A & B & C & D & E & F & G>;
+
+	mixin<L, M, N, O, P, Q, R, B, C, D, E, F, G, H, T, U, V, W, X, Y, Z>(
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>,
+		fourthMixin: ComposeMixin<W, E, O>,
+		fifthMixin: ComposeMixin<X, F, P>,
+		sixthMixin: ComposeMixin<Y, G, Q>,
+		seventhMixin: ComposeMixin<Z, H, R>
+	): ComposeFactory<K & L & M & N & O & P & Q & R, A & B & C & D & E & F & G & H>;
 }
 
 export interface Compose {
-	mixin<O, A, P, B>(base: ComposeFactory<O, A>, mixin: ComposeClassMixin<P, B>): ComposeFactory<O, A & B>;
-	mixin<O, P, A, B, T>(base: ComposeFactory<O, A>, mixin: ComposeFactoryMixin<T, B, P>): ComposeFactory<O & P, A & B>;
-	mixin<O, A, P, B>(base: ComposeFactory<O, A>, mixin: ComposeObjectMixin<P, B>): ComposeFactory<O, A & B>;
+	mixin<K, L, A, B, T>(
+		base: ComposeFactory<K, A>,
+		mixin: ComposeMixin<T, B, L>
+	): ComposeFactory<K & L, A & B>;
+
+	// Overloads for multiple mixins
+	mixin<K, L, M, A, B, C, T, U>(
+		base: ComposeFactory<K, A>,
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>
+	): ComposeFactory<K & L & M, A & B & C>;
+
+	mixin<K, L, M, N, A, B, C, D, T, U, V>(
+		base: ComposeFactory<K, A>,
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>
+	): ComposeFactory<K & L & M & N, A & B & C & D>;
+
+	mixin<K, L, M, N, O, A, B, C, D, E, T, U, V, W>(
+		base: ComposeFactory<K, A>,
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>,
+		fourthMixin: ComposeMixin<W, E, O>
+	): ComposeFactory<K & L & M & N & O, A & B & C & D & E>;
+
+	mixin<K, L, M, N, O, P, A, B, C, D, E, F, T, U, V, W, X>(
+		base: ComposeFactory<K, A>,
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>,
+		fourthMixin: ComposeMixin<W, E, O>,
+		fifthMixin: ComposeMixin<X, F, P>
+	): ComposeFactory<K & L & M & N & O & P, A & B & C & D & E & F>;
+
+	mixin<K, L, M, N, O, P, Q, A, B, C, D, E, F, G, T, U, V, W, X, Y>(
+		base: ComposeFactory<K, A>,
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>,
+		fourthMixin: ComposeMixin<W, E, O>,
+		fifthMixin: ComposeMixin<X, F, P>,
+		sixthMixin: ComposeMixin<Y, G, Q>
+	): ComposeFactory<K & L & M & N & O & P & Q, A & B & C & D & E & F & G>;
+
+	mixin<K, L, M, N, O, P, Q, R, A, B, C, D, E, F, G, H, T, U, V, W, X, Y, Z>(
+		base: ComposeFactory<K, A>,
+		mixin: ComposeMixin<T, B, L>,
+		secondMixin: ComposeMixin<U, C, M>,
+		thirdMixin: ComposeMixin<V, D, N>,
+		fourthMixin: ComposeMixin<W, E, O>,
+		fifthMixin: ComposeMixin<X, F, P>,
+		sixthMixin: ComposeMixin<Y, G, Q>,
+		seventhMixin: ComposeMixin<Z, H, R>
+	): ComposeFactory<K & L & M & N & O & P & Q & R, A & B & C & D & E & F & G & H>;
 }
 
-function mixin<O, A, P, B>(base: ComposeFactory<O, A>, mixin: ComposeClassMixin<P, B>): ComposeFactory<O, A & B>;
-function mixin<A, B, O, P, T>(base: ComposeFactory<A, O>, mixin: ComposeFactoryMixin<T, P, B>): ComposeFactory<A & B, O & P>;
-function mixin<O, A, P, B>(base: ComposeFactory<O, A>, mixin: ComposeObjectMixin<P, B>): ComposeFactory<O, A & B>;
-function mixin<A>(base: ComposeFactory<A, any>, mixin: any): ComposeFactory<A, any> {
+function mixin<K, L, A, B, T>(
+	base: ComposeFactory<K, A>,
+	mixin: ComposeMixin<T, B, L>
+): ComposeFactory<K & L, A & B>;
+
+// Overloads for multiple mixins
+function mixin<K, L, M, A, B, C, T, U>(
+	base: ComposeFactory<K, A>,
+	mixin: ComposeMixin<T, B, L>,
+	secondMixin: ComposeMixin<U, C, M>
+): ComposeFactory<K & L & M, A & B & C>;
+
+function mixin<K, L, M, N, A, B, C, D, T, U, V>(
+	base: ComposeFactory<K, A>,
+	mixin: ComposeMixin<T, B, L>,
+	secondMixin: ComposeMixin<U, C, M>,
+	thirdMixin: ComposeMixin<V, D, N>
+): ComposeFactory<K & L & M & N, A & B & C & D>;
+
+function mixin<K, L, M, N, O, A, B, C, D, E, T, U, V, W>(
+	base: ComposeFactory<K, A>,
+	mixin: ComposeMixin<T, B, L>,
+	secondMixin: ComposeMixin<U, C, M>,
+	thirdMixin: ComposeMixin<V, D, N>,
+	fourthMixin: ComposeMixin<W, E, O>
+): ComposeFactory<K & L & M & N & O, A & B & C & D & E>;
+
+function mixin<K, L, M, N, O, P, A, B, C, D, E, F, T, U, V, W, X>(
+	base: ComposeFactory<K, A>,
+	mixin: ComposeMixin<T, B, L>,
+	secondMixin: ComposeMixin<U, C, M>,
+	thirdMixin: ComposeMixin<V, D, N>,
+	fourthMixin: ComposeMixin<W, E, O>,
+	fifthMixin: ComposeMixin<X, F, P>
+): ComposeFactory<K & L & M & N & O & P, A & B & C & D & E & F>;
+
+function mixin<K, L, M, N, O, P, Q, A, B, C, D, E, F, G, T, U, V, W, X, Y>(
+	base: ComposeFactory<K, A>,
+	mixin: ComposeMixin<T, B, L>,
+	secondMixin: ComposeMixin<U, C, M>,
+	thirdMixin: ComposeMixin<V, D, N>,
+	fourthMixin: ComposeMixin<W, E, O>,
+	fifthMixin: ComposeMixin<X, F, P>,
+	sixthMixin: ComposeMixin<Y, G, Q>
+): ComposeFactory<K & L & M & N & O & P & Q, A & B & C & D & E & F & G>;
+
+function mixin<K, L, M, N, O, P, Q, R, A, B, C, D, E, F, G, H, T, U, V, W, X, Y, Z>(
+	base: ComposeFactory<K, A>,
+	mixin: ComposeMixin<T, B, L>,
+	secondMixin: ComposeMixin<U, C, M>,
+	thirdMixin: ComposeMixin<V, D, N>,
+	fourthMixin: ComposeMixin<W, E, O>,
+	fifthMixin: ComposeMixin<X, F, P>,
+	sixthMixin: ComposeMixin<Y, G, Q>,
+	seventhMixin: ComposeMixin<Z, H, R>
+): ComposeFactory<K & L & M & N & O & P & Q & R, A & B & C & D & E & F & G & H>;
+
+function mixin<A>(base: ComposeFactory<A, any>, firstMixin: any, secondMixin?: any, thirdMixin?: any, fourthMixin?: any, fifthMixin?: any, sixthMixin?: any, seventhMixin?: any): ComposeFactory<A, any> {
 	base = cloneFactory(base);
-	if (mixin.base) {
-		let mixinFactory = isComposeFactory(mixin.base) ? mixin.base : create(mixin.base);
-		if (mixin.initializer) {
-			initFnMap.get(mixinFactory).push(mixin.initializer);
+	if (firstMixin.base) {
+		let mixinFactory = isComposeFactory(firstMixin.base) ? firstMixin.base : create(firstMixin.base);
+		if (firstMixin.initializer) {
+			initFnMap.get(mixinFactory).push(firstMixin.initializer);
 		}
 		concatInitFn(base, mixinFactory);
 		copyProperties(base.prototype, mixinFactory.prototype);
-	} else if (mixin.initializer) {
-		base = create(base, mixin.initializer);
+	} else if (firstMixin.initializer) {
+		base = create(base, firstMixin.initializer);
 	}
-	if (mixin.aspectAdvice) {
-		base = aspect(base, mixin.aspectAdvice);
+	if (firstMixin.aspectAdvice) {
+		base = aspect(base, firstMixin.aspectAdvice);
 	}
-	return base;
+	if (secondMixin) {
+		const args = Array.prototype.slice.call(arguments, 2);
+		args.unshift(base);
+		return mixin.apply(null, args);
+	} else {
+		return base;
+	}
 }
 
 export interface GenericFunction<T> {
 	(...args: any[]): T;
 }
 
-export interface ComposeFactory<O, T> {
-	from(base: GenericClass<any>, method: string): ComposeFactory<O, T>;
-	from(base: ComposeFactory<any, any>, method: string): ComposeFactory<O, T>;
+export interface ComposeFactory<K, A> {
+	from(base: GenericClass<any>, method: string): ComposeFactory<K, A>;
+	from(base: ComposeFactory<any, any>, method: string): ComposeFactory<K, A>;
 
-	before(method: string, advice: BeforeAdvice): ComposeFactory<O, T>;
-	after<P>(method: string, advice: AfterAdvice<P>): ComposeFactory<O, T>;
-	around<P>(method: string, advice: AroundAdvice<P>): ComposeFactory<O, T>;
+	before(method: string, advice: BeforeAdvice): ComposeFactory<K, A>;
+	after<P>(method: string, advice: AfterAdvice<P>): ComposeFactory<K, A>;
+	around<P>(method: string, advice: AroundAdvice<P>): ComposeFactory<K, A>;
 
-	aspect(advice: AspectAdvice): ComposeFactory<O, T>;
+	aspect(advice: AspectAdvice): ComposeFactory<K, A>;
 }
 
 export interface Compose {
@@ -370,9 +515,9 @@ function aspect<O, A>(base: ComposeFactory<O, A>, advice: AspectAdvice): Compose
 }
 
 /* Creation API */
-export interface ComposeFactory<O, T> {
-	(options?: O): T;
-	prototype: T;
+export interface ComposeFactory<K, A> {
+	(options?: K): A;
+	prototype: A;
 }
 
 export interface Compose {

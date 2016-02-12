@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import compose, { GenericClass } from '../../src/compose';
+import compose, { AspectAdvice, GenericClass } from '../../src/compose';
 
 let _hasStrictModeCache: boolean;
 
@@ -164,7 +164,6 @@ registerSuite({
 					instance.foo = options.foo;
 				}
 			);
-
 
 			const foo = createFoo({ foo: 'bar' });
 
@@ -481,19 +480,19 @@ registerSuite({
 				baz: false
 			}, function(instance) {
 				instance.baz = true;
-			}).mixin(createBar);
+			}).mixin({ base: createBar });
 
 			const createBarQat = compose({
 				qat: 'qat'
 			}, function(instance) {
 				instance.qat = 'foo';
-			}).mixin(createBar);
+			}).mixin({ base: createBar });
 
 			const createFooBarBazQat = compose({
 				foo: 'foo'
 			}, function(instance) {
 				instance.foo = 'bar';
-			}).mixin(createBarQat).mixin(createBarBaz);
+			}).mixin({ base: createBarQat }, { base: createBarBaz });
 
 			const foobarbazqat = createFooBarBazQat();
 
@@ -522,8 +521,8 @@ registerSuite({
 			class Bar {
 				bar(): number {
 					return 2;
-				}
-				baz: string
+				};
+				baz: string;
 			}
 
 			function initBar(instance: Bar) {
@@ -653,6 +652,102 @@ registerSuite({
 			assert.strictEqual(foo.baz, 'baz', 'contains baz property');
 			assert.strictEqual(foo.foo, 'foo', 'contains foo property');
 			assert.strictEqual(foo.bar, 3, 'contains bar property');
+		},
+
+		'multiple mixins': function () {
+			const createFoo = compose({
+				'a': 0
+			}, function(instance) {
+				instance.a = 1;
+			}).mixin(
+				{
+					base: {
+						'b': 0
+					},
+					initializer: function(instance) {
+						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
+						assert.notOk((<any> instance).c || (<any> instance).d || (<any> instance).e || (<any> instance).g || (<any> instance).f,
+							'Should not have run other initializing functions yet');
+						instance.b = 1;
+					}
+				},
+				{
+					base: {
+						'c': 0
+					},
+					initializer: function(instance) {
+						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
+						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
+						assert.notOk((<any> instance).d || (<any> instance).e || (<any> instance).g || (<any> instance).f,
+							'Should not have run other initializing functions yet');
+						instance.c = 1;
+					}
+				},
+				{
+					base: {
+						'd': 0
+					},
+					initializer: function(instance){
+						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
+						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
+						assert.strictEqual((<any> instance).c, 1, 'Should have initialized c');
+						assert.notOk((<any> instance).e || (<any> instance).g || (<any> instance).f,
+							'Should not have run other initializing functions yet');
+						instance.d = 1;					}
+				},
+				{
+					base: {
+						'e': 0
+					},
+					initializer: function(instance) {
+						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
+						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
+						assert.strictEqual((<any> instance).c, 1, 'Should have initialized c');
+						assert.strictEqual((<any> instance).d, 1, 'Should have initialized d');
+						assert.notOk((<any> instance).g || (<any> instance).f,
+							'Should not have run other initializing functions yet');
+						instance.e = 1;
+					}
+				},
+				{
+					base: {
+						'f': 0
+					},
+					initializer: function(instance) {
+						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
+						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
+						assert.strictEqual((<any> instance).c, 1, 'Should have initialized c');
+						assert.strictEqual((<any> instance).d, 1, 'Should have initialized d');
+						assert.strictEqual((<any> instance).e, 1, 'Should have initialized e');
+						assert.notOk((<any> instance).g,
+							'Should not have run other initializing functions yet');
+						instance.f = 1;										}
+				},
+				{
+					base: {
+						'g': 0
+					},
+					initializer: function(instance) {
+						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
+						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
+						assert.strictEqual((<any> instance).c, 1, 'Should have initialized c');
+						assert.strictEqual((<any> instance).d, 1, 'Should have initialized d');
+						assert.strictEqual((<any> instance).e, 1, 'Should have initialized e');
+						assert.strictEqual((<any> instance).f, 1, 'Should have initialized f');
+						instance.g = 1;															}
+				}
+			);
+
+			const foo = createFoo();
+			assert.strictEqual(foo.a, 1, 'Should have initialized a');
+			assert.strictEqual(foo.b, 1, 'Should have initialized b');
+			assert.strictEqual(foo.c, 1, 'Should have initialized c');
+			assert.strictEqual(foo.d, 1, 'Should have initialized d');
+			assert.strictEqual(foo.e, 1, 'Should have initialized e');
+			assert.strictEqual(foo.f, 1, 'Should have initialized f');
+			assert.strictEqual(foo.g, 1, 'Should have initialized g');
+			// Shouldn\'t compile
+			// assert.ok(foo.h);
 		}
 	},
 	overlay: {
@@ -760,6 +855,25 @@ registerSuite({
 				const instance = createFoo();
 				const result = instance.foo('foo');
 				assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
+			},
+			'transfer generic type': function() {
+				class Foo<T> {
+					foo: T;
+				}
+
+				class Bar<T> {
+					bar(opt: T): void {
+						console.log(opt);
+					}
+				}
+
+				interface FooBarClass {
+					<T, U>(): Foo<T>&Bar<U>;
+				}
+
+				let fooBarFactory: FooBarClass = compose(Foo).mixin({ base: <any>  Bar });
+
+				let fooBar = fooBarFactory<number, any>();
 			},
 			'chaining': function () {
 				class Foo {
