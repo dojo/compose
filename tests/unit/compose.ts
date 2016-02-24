@@ -151,7 +151,7 @@ registerSuite({
 		},
 		'call with new': function () {
 			const createFoo = compose({
-				foo() {
+				foo(): string {
 					return 'bar';
 				}
 			});
@@ -168,7 +168,7 @@ registerSuite({
 			}
 
 			const createFoo = compose({
-				foo() {
+				foo(): string {
 					return 'bar';
 				}
 			});
@@ -254,8 +254,11 @@ registerSuite({
 			const foo = createFoo();
 
 			assert.strictEqual(foo['nonWritable'], 'constant', 'Didn\'t copy property value');
-			foo['nonWritable'] = 'variable';
-			assert.strictEqual(foo['nonWritable'], 'constant', 'Changed immutable value');
+			/* modules are now emitted in strict mode, which causes a throw
+			 * when trying to assign to a read-only property */
+			assert.throws(() => {
+				foo['nonWritable'] = 'variable';
+			}, TypeError, 'Cannot assign to read only property');
 		},
 
 		'non-enumerable property': function() {
@@ -364,20 +367,20 @@ registerSuite({
 
 			const createBarBaz = compose({
 				baz: false
-			}, function() {
-				this.baz = true;
+			}, function(instance) {
+				instance.baz = true;
 			}).mixin(createBar);
 
 			const createBarQat = compose({
 				qat: 'qat'
-			}, function() {
-				this.qat = 'foo';
+			}, function(instance) {
+				instance.qat = 'foo';
 			}).mixin(createBar);
 
 			const createFooBarBazQat = compose({
 				foo: 'foo'
-			}, function() {
-				this.foo = 'bar';
+			}, function(instance) {
+				instance.foo = 'bar';
 			}).mixin(createBarQat).mixin(createBarBaz);
 
 			const foobarbazqat = createFooBarBazQat();

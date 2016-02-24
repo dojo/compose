@@ -33,6 +33,13 @@ export var maxConcurrency = 4;
 // Name of the tunnel class to use for WebDriver tests
 export var tunnel = 'SauceLabsTunnel';
 
+// The desired AMD loader to use when running unit tests (client.html/client.js). Omit to use the default Dojo
+// loader
+export const loaders = {
+	'host-browser': 'node_modules/dojo-loader/loader.js',
+	'host-node': 'dojo-loader'
+};
+
 // Configuration options for the module loader; any AMD configuration options supported by the specified AMD loader
 // can be used here
 export var loaderOptions = {
@@ -40,7 +47,7 @@ export var loaderOptions = {
 	packages: [
 		{ name: 'src', location: '_build/src' },
 		{ name: 'tests', location: '_build/tests' },
-		{ name: 'dojo-core', location: '_modules/dojo-core' }
+		{ name: 'dojo-core', location: 'node_modules/dojo-core' }
 	]
 };
 
