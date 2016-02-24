@@ -2,6 +2,39 @@ import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import compose, { GenericClass } from '../../src/compose';
 
+let _hasStrictModeCache: boolean;
+
+/**
+ * Detects if the current runtime environment fully supports
+ * strict mode (IE9 does not).
+ */
+function hasStrictMode(): boolean {
+	if (_hasStrictModeCache !== undefined) {
+		return _hasStrictModeCache;
+	}
+	try {
+		const f = new Function(`return function f() {
+			'use strict';
+			var a = 021;
+			var b = function (eval) {}
+			var c = function (arguments) {}
+			function d(foo, foo) {}
+			function e(eval, arguments) {}
+			function eval() {}
+			function arguments() {}
+			function interface(){}
+			with (x) { }
+			try { eval++; } catch (arguments) {}
+			return { x: 1, y: 2, x: 1 }
+		}`);
+		f();
+	}
+	catch (err) {
+		return _hasStrictModeCache = true;
+	}
+	return _hasStrictModeCache = false;
+}
+
 registerSuite({
 	name: 'lib/compose',
 	create: {
@@ -254,11 +287,19 @@ registerSuite({
 			const foo = createFoo();
 
 			assert.strictEqual(foo['nonWritable'], 'constant', 'Didn\'t copy property value');
-			/* modules are now emitted in strict mode, which causes a throw
-			 * when trying to assign to a read-only property */
-			assert.throws(() => {
+
+			if (hasStrictMode()) {
+				/* modules are now emitted in strict mode, which causes a throw
+				* when trying to assign to a read-only property */
+				assert.throws(() => {
+					foo['nonWritable'] = 'variable';
+				}, TypeError);
+			}
+			else {
+				/* unless of course it is IE9 :-( */
 				foo['nonWritable'] = 'variable';
-			}, TypeError, 'Cannot assign to read only property');
+				assert.strictEqual(foo['nonWritable'], 'constant');
+			}
 		},
 
 		'non-enumerable property': function() {
