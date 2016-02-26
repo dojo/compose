@@ -176,7 +176,7 @@ export interface AspectAdvice {
 
 /* Mixin API */
 export interface ComposeMixin<O, P, T> {
-	base?: GenericClass<P> | P | ComposeFactory<T, P>;
+	mixin?: GenericClass<P> | P | ComposeFactory<T, P>;
 	initializer?: ComposeInitializationFunction<O, P>;
 	aspectAdvice?: AspectAdvice;
 }
@@ -349,8 +349,8 @@ function mixin<K, L, M, N, O, P, Q, R, A, B, C, D, E, F, G, H, T, U, V, W, X, Y,
 
 function mixin<A>(base: ComposeFactory<A, any>, firstMixin: any, secondMixin?: any, thirdMixin?: any, fourthMixin?: any, fifthMixin?: any, sixthMixin?: any, seventhMixin?: any): ComposeFactory<A, any> {
 	base = cloneFactory(base);
-	if (firstMixin.base) {
-		let mixinFactory = isComposeFactory(firstMixin.base) ? firstMixin.base : create(firstMixin.base);
+	if (firstMixin.mixin) {
+		let mixinFactory = isComposeFactory(firstMixin.mixin) ? firstMixin.mixin : create(firstMixin.mixin);
 		if (firstMixin.initializer) {
 			initFnMap.get(mixinFactory).push(firstMixin.initializer);
 		}

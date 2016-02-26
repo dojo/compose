@@ -427,7 +427,7 @@ registerSuite({
 				bar: 2
 			});
 
-			const createFooBar = compose.mixin(createFoo, { base: createBar });
+			const createFooBar = compose.mixin(createFoo, { mixin: createBar });
 			const foobar = createFooBar();
 			const foo = createFoo();
 
@@ -443,7 +443,7 @@ registerSuite({
 
 			const createFooBar = compose({
 				foo: 'foo'
-			}).mixin( { base: createBar });
+			}).mixin( { mixin: createBar });
 
 			const foobar = createFooBar();
 
@@ -461,7 +461,7 @@ registerSuite({
 				foo: 'foo'
 			}, function(instance) {
 				instance.foo = 'bar';
-			}).mixin({ base: createBar });
+			}).mixin({ mixin: createBar });
 
 			const foobar = createFooBar();
 
@@ -480,19 +480,19 @@ registerSuite({
 				baz: false
 			}, function(instance) {
 				instance.baz = true;
-			}).mixin({ base: createBar });
+			}).mixin({ mixin: createBar });
 
 			const createBarQat = compose({
 				qat: 'qat'
 			}, function(instance) {
 				instance.qat = 'foo';
-			}).mixin({ base: createBar });
+			}).mixin({ mixin: createBar });
 
 			const createFooBarBazQat = compose({
 				foo: 'foo'
 			}, function(instance) {
 				instance.foo = 'bar';
-			}).mixin({ base: createBarQat }, { base: createBarBaz });
+			}).mixin({ mixin: createBarQat }, { mixin: createBarBaz });
 
 			const foobarbazqat = createFooBarBazQat();
 
@@ -509,7 +509,7 @@ registerSuite({
 				foo: 'foo'
 			});
 
-			const createFooBar = compose.mixin(createFoo, { base: Bar });
+			const createFooBar = compose.mixin(createFoo, { mixin: Bar });
 
 			const foobar = createFooBar();
 
@@ -533,7 +533,7 @@ registerSuite({
 				foo: 'foo'
 			});
 
-			const createFooBar = compose.mixin(createFoo, { base: Bar, initializer: initBar });
+			const createFooBar = compose.mixin(createFoo, { mixin: Bar, initializer: initBar });
 
 			const foobar = createFooBar();
 
@@ -558,7 +558,7 @@ registerSuite({
 				// This runs first, as it's the initializer on the base class
 				instance.bar = 3;
 			}).mixin({
-				base: createBar,
+				mixin: createBar,
 				initializer: function(instance: any) {
 					// This runs third, as it's the new, optional initializer provided with the mixin
 					assert.strictEqual(instance.foo, 'bar', 'instance contains foo');
@@ -609,7 +609,7 @@ registerSuite({
 
 		'base, initializer, and aspect': function() {
 			const createFoo = compose({}).mixin({
-				base: compose({
+				mixin: compose({
 					foo: 'foo',
 					bar: '',
 					doneFoo: false,
@@ -642,7 +642,7 @@ registerSuite({
 			const createFoo = compose({
 				baz: 'baz'
 			}).mixin({
-				base: {
+				mixin: {
 					foo: 'foo',
 					bar: 3
 				}
@@ -661,7 +661,7 @@ registerSuite({
 				instance.a = 1;
 			}).mixin(
 				{
-					base: {
+					mixin: {
 						'b': 0
 					},
 					initializer: function(instance) {
@@ -672,7 +672,7 @@ registerSuite({
 					}
 				},
 				{
-					base: {
+					mixin: {
 						'c': 0
 					},
 					initializer: function(instance) {
@@ -684,7 +684,7 @@ registerSuite({
 					}
 				},
 				{
-					base: {
+					mixin: {
 						'd': 0
 					},
 					initializer: function(instance){
@@ -696,7 +696,7 @@ registerSuite({
 						instance.d = 1;					}
 				},
 				{
-					base: {
+					mixin: {
 						'e': 0
 					},
 					initializer: function(instance) {
@@ -710,7 +710,7 @@ registerSuite({
 					}
 				},
 				{
-					base: {
+					mixin: {
 						'f': 0
 					},
 					initializer: function(instance) {
@@ -724,7 +724,7 @@ registerSuite({
 						instance.f = 1;										}
 				},
 				{
-					base: {
+					mixin: {
 						'g': 0
 					},
 					initializer: function(instance) {
@@ -871,7 +871,7 @@ registerSuite({
 					<T, U>(): Foo<T>&Bar<U>;
 				}
 
-				let fooBarFactory: FooBarClass = compose(Foo).mixin({ base: <any>  Bar });
+				let fooBarFactory: FooBarClass = compose(Foo).mixin({ mixin: <any>  Bar });
 
 				let fooBar = fooBarFactory<number, any>();
 			},
