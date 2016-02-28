@@ -75,7 +75,8 @@ function cloneFactory(base?: any): any {
 			throw new SyntaxError('Factories cannot be called with "new".');
 		}
 		const instance = Object.create(factory.prototype);
-		initFnMap.get(factory).forEach(fn => fn(instance, args));
+		const initFnArgs = [ instance ].concat(args);
+		initFnMap.get(factory).forEach(fn => fn.apply(null, initFnArgs));
 		return instance;
 	}
 

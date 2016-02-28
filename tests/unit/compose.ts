@@ -67,6 +67,23 @@ registerSuite({
 			assert.strictEqual(counter, 1, 'counter only called once');
 			assert.instanceOf(foo, createFoo, 'foo is an instanceOf Foo');
 		},
+
+		'init function arguments'() {
+			const proto = { foo: 'bar' };
+			const opts = { bar: 3 };
+
+			const createFoo = compose(proto, (instance, options) => {
+				assert.deepEqual(instance, proto);
+				assert.notStrictEqual(instance, proto);
+				assert.isObject(options);
+				assert.deepEqual(options, opts);
+				instance.foo = 'baz';
+			});
+
+			const foo = createFoo(opts);
+			assert.strictEqual(foo.foo, 'baz');
+		},
+
 		'constructor function': function () {
 			let counter = 0;
 
