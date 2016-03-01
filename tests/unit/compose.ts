@@ -215,26 +215,31 @@ registerSuite({
 				}, () => {
 					callstack.push('foobar');
 				})
-				.mixin(createFoo);
+				.mixin({ mixin: createFoo });
 
 			const createFooBaz = compose({
 					baz: true
 				}, () => {
 					callstack.push('foobaz');
 				})
-				.mixin(createFoo);
+				.mixin({ mixin: createFoo });
 
 			const createFooBarBazQat = compose({
 					qat: /qat/
 				}, () => {
 					callstack.push('foobarbazqat');
 				})
-				.mixin(createFooBar)
-				.mixin(createFooBaz);
+				.mixin({ mixin: createFooBar })
+				.mixin({
+					mixin: createFooBaz,
+					initializer: function(instance: { qat: RegExp; baz: boolean; }) {
+						callstack.push('foobazMixinInit');
+					}
+				});
 
 			const foobarbazqat = createFooBarBazQat();
 
-			assert.deepEqual(callstack, [ 'foo', 'foobaz', 'foobar', 'foobarbazqat' ],
+			assert.deepEqual(callstack, [ 'foo', 'foobaz', 'foobazMixinInit', 'foobar', 'foobarbazqat' ],
 				'Init functions should be called in proper order and duplicates eliminated');
 		},
 		'.create()': function () {
@@ -542,32 +547,32 @@ registerSuite({
 			assert.strictEqual(foobar.baz, 'boo', 'instance contains boo');
 		},
 
-		'compose factory and initalizer': function() {
+		'compose factory and initializer': function() {
 			const createBar = compose({
 				bar: 2
 			}, function(instance: any) {
-				// This runs second, as it's the existing initializer on the base of the mixin
+				// This runs first, as it's the existing initializer on the base of the mixin
 				instance.foo = 'bar';
-				assert.strictEqual(instance.bar, 3, 'instance contains bar');
 			});
 
 			const createFooBar = compose({
 				foo: 'foo',
 				baz: ''
 			}, function(instance: any) {
-				// This runs first, as it's the initializer on the base class
+				// This runs last, as it's the initializer on the base class
 				instance.bar = 3;
+				assert.strictEqual(instance.baz, 'baz', 'instance contains baz');
 			}).mixin({
 				mixin: createBar,
 				initializer: function(instance: any) {
-					// This runs third, as it's the new, optional initializer provided with the mixin
+					// This runs second, as it's the new, optional initializer provided with the mixin
 					assert.strictEqual(instance.foo, 'bar', 'instance contains foo');
 					instance.baz = 'baz';
 				}
 			});
 
 			const foobar = createFooBar();
-			assert.strictEqual(foobar.baz, 'baz', 'instance contains baz');
+			assert.strictEqual(foobar.bar, 3, 'instance contains bar');
 
 		},
 
@@ -654,100 +659,26 @@ registerSuite({
 			assert.strictEqual(foo.bar, 3, 'contains bar property');
 		},
 
-		'multiple mixins': function () {
+		'Shouldn\'t duplicate init functions passed directly to mixin': function() {
+			const init = function(instance: { count: number }) {
+				instance.count = instance.count + 1;
+			};
+			const otherInitializer = function(instance: any) {
+				instance.foo = 'bar';
+			};
 			const createFoo = compose({
-				'a': 0
-			}, function(instance) {
-				instance.a = 1;
+				count: 0
+			}, function(instance: { count: number }) {
+				instance.count = instance.count + 1;
 			}).mixin(
-				{
-					mixin: {
-						'b': 0
-					},
-					initializer: function(instance) {
-						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
-						assert.notOk((<any> instance).c || (<any> instance).d || (<any> instance).e || (<any> instance).g || (<any> instance).f,
-							'Should not have run other initializing functions yet');
-						instance.b = 1;
-					}
-				},
-				{
-					mixin: {
-						'c': 0
-					},
-					initializer: function(instance) {
-						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
-						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
-						assert.notOk((<any> instance).d || (<any> instance).e || (<any> instance).g || (<any> instance).f,
-							'Should not have run other initializing functions yet');
-						instance.c = 1;
-					}
-				},
-				{
-					mixin: {
-						'd': 0
-					},
-					initializer: function(instance){
-						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
-						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
-						assert.strictEqual((<any> instance).c, 1, 'Should have initialized c');
-						assert.notOk((<any> instance).e || (<any> instance).g || (<any> instance).f,
-							'Should not have run other initializing functions yet');
-						instance.d = 1;					}
-				},
-				{
-					mixin: {
-						'e': 0
-					},
-					initializer: function(instance) {
-						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
-						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
-						assert.strictEqual((<any> instance).c, 1, 'Should have initialized c');
-						assert.strictEqual((<any> instance).d, 1, 'Should have initialized d');
-						assert.notOk((<any> instance).g || (<any> instance).f,
-							'Should not have run other initializing functions yet');
-						instance.e = 1;
-					}
-				},
-				{
-					mixin: {
-						'f': 0
-					},
-					initializer: function(instance) {
-						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
-						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
-						assert.strictEqual((<any> instance).c, 1, 'Should have initialized c');
-						assert.strictEqual((<any> instance).d, 1, 'Should have initialized d');
-						assert.strictEqual((<any> instance).e, 1, 'Should have initialized e');
-						assert.notOk((<any> instance).g,
-							'Should not have run other initializing functions yet');
-						instance.f = 1;										}
-				},
-				{
-					mixin: {
-						'g': 0
-					},
-					initializer: function(instance) {
-						assert.strictEqual((<any> instance).a, 1, 'Should have initialized a');
-						assert.strictEqual((<any> instance).b, 1, 'Should have initialized b');
-						assert.strictEqual((<any> instance).c, 1, 'Should have initialized c');
-						assert.strictEqual((<any> instance).d, 1, 'Should have initialized d');
-						assert.strictEqual((<any> instance).e, 1, 'Should have initialized e');
-						assert.strictEqual((<any> instance).f, 1, 'Should have initialized f');
-						instance.g = 1;															}
-				}
+				{ initializer: init },
+				{ initializer: init },
+				{ mixin: { baz: 'baz' }, initializer: init },
+				{ initializer: otherInitializer }
 			);
-
 			const foo = createFoo();
-			assert.strictEqual(foo.a, 1, 'Should have initialized a');
-			assert.strictEqual(foo.b, 1, 'Should have initialized b');
-			assert.strictEqual(foo.c, 1, 'Should have initialized c');
-			assert.strictEqual(foo.d, 1, 'Should have initialized d');
-			assert.strictEqual(foo.e, 1, 'Should have initialized e');
-			assert.strictEqual(foo.f, 1, 'Should have initialized f');
-			assert.strictEqual(foo.g, 1, 'Should have initialized g');
-			// Shouldn\'t compile
-			// assert.ok(foo.h);
+			assert.strictEqual((<any> foo).foo, 'bar', 'Should have called other initializer as well');
+			assert.strictEqual(foo.count, 2, 'Should have called base initializer and passed in initializer once each');
 		}
 	},
 	overlay: {
