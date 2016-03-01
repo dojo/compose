@@ -116,7 +116,7 @@ const foo2 = fooFactory({
 
 ### Class Extension
 
-The `compose` module's default export also has a property, `extend`, which allows the enumerable, own properties of a literal object to be added to the prototype of a class. The type of the resulting class will be inferred and include all properties of the extending object. It can be used to extend an existing compose class like this:
+The `compose` module's default export also has a property, `extend`, which allows the enumerable, own properties of a literal object or the prototype of a class or ComposeFactory to be added to the prototype of a class. The type of the resulting class will be inferred and include all properties of the extending object. It can be used to extend an existing compose class like this:
 
 ```typescript
 import * as compose from 'dojo/compose';
@@ -199,8 +199,9 @@ const fooBar = fooBarFactory();
 
 fooBar.bar(); // logs "bar"
 ```
+NOTE: Using mixin on a ComposeFactory will result in the init function for the mixed in factory to be called first, and any init functions for the base will follow.
 
-Or to mix in an ES6 class:
+It can also be used to mix in an ES6 class:
 
 ```typescript
 import * as compose from 'dojo/compose';
@@ -238,10 +239,7 @@ const fooBar = fooBarFactory();
 
 fooBar.bar(); // logs "bar"
 ```
-
-
-The real benefit of mixin is for more complicated cases where a base, such as a class or an object, needs to be mixed in, but that class needs an initialization function or aspect to go along with it.
-Mixin can also be passed multiple arguments(up to seven) and will mix them in in the order provided:
+The real beneif of using `mixin` is in those cases where simply modifying the type is not enough, and there is additional behavior that needs to be included via an initialization function or aspects.
 ```typescript
 import * as compose from 'dojo/compose';
 
@@ -260,7 +258,7 @@ const initBar = function(instance: { bar: string }) {
 	instance.bar = 'initialized';
 };
 
-const bazFactory = compost.create({
+const bazFactory = compose.create({
 	baz: 'baz'
 }, function(instance: { baz: string }) {
 	instance.baz = 'also initialized';
@@ -274,16 +272,15 @@ const bazAspect: AspectAdvice = {
 	}
 };
 
-const fooBarBazFactory = fooFactory.mixin(
-    {
-        base: bar,
-        initializer: initBar
-    },
-    {
-        base: bazFactory,
-        aspectAdvice: bazAspect
-    }
-);
+const fooBarBazFactory = fooFactory
+	.mixin({
+		mixin: bar,
+		initializer: initBar
+	})
+	.mixin({
+		base: bazFactory,
+		aspectAdvice: bazAspect
+	});
 
 const fooBarBaz = fooBarBazFactory();
 console.log(fooBarBaz.bar); // logs 'initialized'
@@ -311,7 +308,7 @@ interface FooBarClass {
 	<T, U>(): Foo<T>&Bar<U>;
 }
 
-let fooBarFactory: FooBarClass = compose(Foo).mixin(<any>  Bar);
+let fooBarFactory: FooBarClass = compose(Foo).mixin({ mixin: <any>  Bar });
 
 let fooBar = fooBarFactory<number, any>();
 ```
