@@ -184,6 +184,47 @@ registerSuite({
 			assert.strictEqual(foo.bar, 'foo', 'bar is initialised to foo');
 			assert.instanceOf(foo, createFoo, 'foo is an instanceOf Foo');
 		},
+		'initialize function ordering'() {
+			/* The goal here is two fold, mixed in init functions should be called
+			 * first, in order for them to have the proper effect on the instance
+			 * as well as duplicate functions should be eliminated (diamond problem)
+			 */
+
+			const callstack: string[] = [];
+
+			const createFoo = compose({
+				foo: 'bar'
+			}, () => {
+				callstack.push('foo');
+			});
+
+			const createFooBar = compose({
+					bar: 1
+				}, () => {
+					callstack.push('foobar');
+				})
+				.mixin(createFoo);
+
+			const createFooBaz = compose({
+					baz: true
+				}, () => {
+					callstack.push('foobaz');
+				})
+				.mixin(createFoo);
+
+			const createFooBarBazQat = compose({
+					qat: /qat/
+				}, () => {
+					callstack.push('foobarbazqat');
+				})
+				.mixin(createFooBar)
+				.mixin(createFooBaz);
+
+			const foobarbazqat = createFooBarBazQat();
+
+			assert.deepEqual(callstack, [ 'foo', 'foobaz', 'foobar', 'foobarbazqat' ],
+				'Init functions should be called in proper order and duplicates eliminated');
+		},
 		'.create()': function () {
 			let counter = 0;
 

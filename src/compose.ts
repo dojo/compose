@@ -100,13 +100,15 @@ function cloneFactory(base?: any): any {
  * @param source The ComposeFactory to copy the init functions from
  */
 function concatInitFn<O, T, P, S>(target: ComposeFactory<O, T>, source: ComposeFactory<P, S>): void {
-	const initFn = initFnMap.get(target);
+	const sourceInitFns = initFnMap.get(source);
+
 	/* making sure only unique functions get added */
-	initFnMap.get(source).forEach((item) => {
-		if (initFn.indexOf(item) < 0) {
-			initFn.unshift(item);
-		}
+	const targetInitFns = initFnMap.get(target).filter((fn) => {
+		return sourceInitFns.indexOf(fn) < 0;
 	});
+
+	/* now prepend the source init functions to the unique init functions for the target */
+	initFnMap.set(target, sourceInitFns.concat(targetInitFns));
 }
 
 /**
