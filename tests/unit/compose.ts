@@ -232,7 +232,7 @@ registerSuite({
 				.mixin({ mixin: createFooBar })
 				.mixin({
 					mixin: createFooBaz,
-					initializer: function(instance: { qat: RegExp; baz: boolean; }) {
+					initializer: function(instance: { qat: RegExp; baz: boolean; foo: string; }) {
 						callstack.push('foobazMixinInit');
 					}
 				});
@@ -420,6 +420,20 @@ registerSuite({
 
 			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
 			assert.strictEqual(foobar.bar, 2, 'instance contains bar');
+		},
+		'extend with factory': function() {
+			const createFoo = compose.create({
+				foo: 'foo'
+			}, instance => instance.foo = 'bar');
+			const createBar = compose.create({
+				bar: 'bar'
+			}, instance => instance.bar = 'foo');
+			const createFooBar = createFoo.extend(createBar);
+
+			const fooBar = createFooBar();
+
+			assert.strictEqual(fooBar.foo, 'bar', 'Should have run original init function');
+			assert.strictEqual(fooBar.bar, 'bar', 'Should have included extension type and not init function');
 		}
 	},
 	mixin: {
@@ -448,7 +462,7 @@ registerSuite({
 
 			const createFooBar = compose({
 				foo: 'foo'
-			}).mixin( { mixin: createBar });
+			}).mixin({ mixin: createBar });
 
 			const foobar = createFooBar();
 
@@ -497,10 +511,11 @@ registerSuite({
 				foo: 'foo'
 			}, function(instance) {
 				instance.foo = 'bar';
-			}).mixin({ mixin: createBarQat }, { mixin: createBarBaz });
+			})
+				.mixin({ mixin: createBarQat })
+				.mixin({ mixin: createBarBaz });
 
 			const foobarbazqat = createFooBarBazQat();
-
 			assert.strictEqual(called, 1, 'Init function only called once');
 		},
 		'es6 class': function () {
@@ -660,7 +675,7 @@ registerSuite({
 		},
 
 		'Shouldn\'t duplicate init functions passed directly to mixin': function() {
-			const init = function(instance: { count: number }) {
+			const init = function(instance: { count: number; baz: string}) {
 				instance.count = instance.count + 1;
 			};
 			const otherInitializer = function(instance: any) {
@@ -670,15 +685,43 @@ registerSuite({
 				count: 0
 			}, function(instance: { count: number }) {
 				instance.count = instance.count + 1;
-			}).mixin(
-				{ initializer: init },
-				{ initializer: init },
-				{ mixin: { baz: 'baz' }, initializer: init },
-				{ initializer: otherInitializer }
-			);
+			})
+                .mixin({ initializer: init })
+                .mixin({ initializer: init })
+                .mixin({ mixin: { baz: 'baz' }, initializer: init })
+                .mixin({ initializer: otherInitializer });
+
 			const foo = createFoo();
 			assert.strictEqual((<any> foo).foo, 'bar', 'Should have called other initializer as well');
 			assert.strictEqual(foo.count, 2, 'Should have called base initializer and passed in initializer once each');
+		},
+
+		'Init function with combined types': function() {
+			const createBar = compose({
+				bar: ''
+			});
+			const createBaz = compose({
+				baz: 1
+			});
+			const createBarBaz = createBar.mixin({
+				initializer: function(instance: { bar: string; baz: number }) {
+
+				},
+				mixin: createBaz
+			});
+			const createBarBazSimple = createBar.mixin({
+				initializer: function(instance: { baz: number }) {
+
+				},
+				mixin: createBaz
+			});
+			// Shouldn\'t compile
+			// const createBarBazIllegal = createBar.mixin({
+			// initializer: function(instance: { baz: number; foo: number}) {
+            //
+			// },
+			// mixin: createBaz
+			// });
 		}
 	},
 	overlay: {
