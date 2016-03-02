@@ -748,6 +748,49 @@ registerSuite({
 			// },
 			// mixin: createBaz
 			// });
+		},
+
+		'multiple mixins': function() {
+			interface ABCDEF {
+				a: number;
+				b: number;
+				c: number;
+				d: number;
+				e: number;
+				f: number;
+			}
+
+			const createABCDEF = compose({
+				a: 1
+			}).mixin({
+				mixins: [
+					{
+						b: 2
+					},
+					{
+						c: 3
+					},
+					{
+						d: 4
+					},
+					{
+						e: 5
+					},
+					{
+						f: 6
+					}
+				],
+				initializer: function(instance) {
+				}
+			});
+
+			const abcdef = createABCDEF();
+			assert.strictEqual(abcdef.a, 1, 'Didn\'t have \'a\' property');
+			assert.strictEqual(abcdef.b, 2, 'Didn\'t have \'b\' property');
+			assert.strictEqual(abcdef.c, 3, 'Didn\'t have \'c\' property');
+			assert.strictEqual(abcdef.d, 4, 'Didn\'t have \'d\' property');
+			assert.strictEqual(abcdef.e, 5, 'Didn\'t have \'e\' property');
+			assert.strictEqual(abcdef.f, 6, 'Didn\'t have \'f\' property');
 		}
 	},
 	overlay: {

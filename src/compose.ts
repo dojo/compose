@@ -179,50 +179,61 @@ export interface AspectAdvice {
 /* Mixin API */
 export type ComposeMixinItem<T, O> = GenericClass<T> | T | ComposeFactory<T, O>;
 
-export interface ComposeMixin<T, O, U, P> {
+export interface ComposeMixin<T, O, U, P, V, Q, W, R, X, S, Y, Z> {
 	mixin?: ComposeMixinItem<U, P>;
-	initializer?: ComposeInitializationFunction<T & U, O & P>;
+	mixins?: [ ComposeMixinItem<U, P>, ComposeMixinItem<V, Q> ]
+		| [ ComposeMixinItem<U, P>, ComposeMixinItem<V, Q>, ComposeMixinItem<W, R> ]
+		| [ ComposeMixinItem<U, P>, ComposeMixinItem<V, Q>, ComposeMixinItem<W, R>, ComposeMixinItem<X, S> ]
+		| [ ComposeMixinItem<U, P>, ComposeMixinItem<V, Q>, ComposeMixinItem<W, R>, ComposeMixinItem<X, S>, ComposeMixinItem<Y, Z>];
+	initializer?: ComposeInitializationFunction<T & U & V & W & X & Y, O & P & Q & R & S & Z>;
 	aspectAdvice?: AspectAdvice;
 }
 
 export interface ComposeFactory<T, O> {
-	mixin<U, P>(mixin: ComposeMixin<T, O, U, P>): ComposeFactory<T & U, O & P>;
+	mixin<U, P, V, Q, W, R, X, S, Y, Z>(mixin: ComposeMixin<T, O, U, P, V, Q, W, R, X, S, Y, Z>):
+		ComposeFactory<T & U & V & W & X & Y, O & P & Q & R & S & Z>;
 }
 
 export interface Compose {
-	mixin<T, O, U, P>(
+	mixin<T, O, U, P, V, Q, W, R, X, S, Y, Z>(
 		base: ComposeFactory<T, O>,
-		mixin: ComposeMixin<T, O, U, P>
-	): ComposeFactory<T & U, O & P>;
+		mixin: ComposeMixin<T, O, U, P, V, Q, W, R, X, S, Y, Z>
+	): ComposeFactory<T & U & V & W & X & Y, O & P & Q & R & S & Z>;
 }
 
-function mixin<T, O, U, P>(
+function mixin<T, O, U, P, V, Q, W, R, X, S, Y, Z>(
 	base: ComposeFactory<T, O>,
-	mixin: ComposeMixin<T, O, U, P>
-): ComposeFactory<T & U, O & P>;
+	mixin: ComposeMixin<T, O, U, P, V, Q, W, R, X, S, Y, Z>
+): ComposeFactory<T & U & V & W & X & Y, O & P & Q & R & S & Z>;
 
-function mixin<O>(base: ComposeFactory<any, O>, mixin: any): ComposeFactory<any, O> {
+function mixin<O>(base: ComposeFactory<any, O>, toMixin: any): ComposeFactory<any, O> {
 	base = cloneFactory(base);
 	const baseInitFns = initFnMap.get(base);
-	if (mixin.mixin) {
-		let mixinFactory = isComposeFactory(mixin.mixin) ? mixin.mixin : create(mixin.mixin);
-		if (mixin.initializer) {
-			if (baseInitFns.indexOf(mixin.initializer) < 0) {
-				baseInitFns.unshift(mixin.initializer);
+	const mixinType = (toMixin.mixins && toMixin.mixins.length) ? toMixin.mixins[0] : toMixin.mixin;
+	if (mixinType) {
+		let mixinFactory = isComposeFactory(mixinType) ? mixinType : create(mixinType);
+		if (toMixin.initializer) {
+			if (baseInitFns.indexOf(toMixin.initializer) < 0) {
+				baseInitFns.unshift(toMixin.initializer);
 			}
 		}
 		concatInitFn(base, mixinFactory);
 		copyProperties(base.prototype, mixinFactory.prototype);
-	} else if (mixin.initializer) {
-		if (baseInitFns.indexOf(mixin.initializer) < 0) {
-			baseInitFns.unshift(mixin.initializer);
+	} else if (toMixin.initializer) {
+		if (baseInitFns.indexOf(toMixin.initializer) < 0) {
+			baseInitFns.unshift(toMixin.initializer);
 		}
 	}
-	if (mixin.aspectAdvice) {
-		base = aspect(base, mixin.aspectAdvice);
+	if (toMixin.aspectAdvice) {
+		base = aspect(base, toMixin.aspectAdvice);
 	}
-
-	return base;
+	if (toMixin.mixins && toMixin.mixins.length > 1) {
+		return mixin(base, {
+			mixins: toMixin.mixins.slice(1),
+		});
+	} else {
+		return base;
+	}
 }
 
 export interface GenericFunction<T> {
