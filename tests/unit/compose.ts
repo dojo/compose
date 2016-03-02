@@ -697,27 +697,53 @@ registerSuite({
 		},
 
 		'Init function with combined types': function() {
-			const createBar = compose({
+			interface Bar {
+				bar: string;
+			}
+			interface Baz {
+				baz: number;
+			}
+			const createBar = compose<Bar, Bar>({
 				bar: ''
+			}, function(instance: Bar, options: Bar) {
+				if (options.bar) {
+					instance.bar = options.bar;
+				}
 			});
-			const createBaz = compose({
+			const createBaz = compose<Baz, Baz>({
 				baz: 1
+			}, function(instance: Baz, options: Baz) {
+				if (options.baz) {
+					instance.baz = options.baz;
+				}
 			});
 			const createBarBaz = createBar.mixin({
-				initializer: function(instance: { bar: string; baz: number }) {
+				initializer: function(instance: { bar: string; baz: number }, options: { bar: string; baz: number }) {
 
 				},
 				mixin: createBaz
 			});
-			const createBarBazSimple = createBar.mixin({
-				initializer: function(instance: { baz: number }) {
+			const createBarBazWithBazTypes = createBar.mixin({
+				initializer: function(instance: { baz: number }, options: { baz: number }) {
+
+				},
+				mixin: createBaz
+			});
+			const createBarBazWithBarTypes = createBar.mixin({
+				initializer: function(instance: { bar: string }, options: { bar: string }) {
 
 				},
 				mixin: createBaz
 			});
 			// Shouldn\'t compile
-			// const createBarBazIllegal = createBar.mixin({
-			// initializer: function(instance: { baz: number; foo: number}) {
+			// const createBarBazIllegalInstanceType = createBar.mixin({
+			// initializer: function(instance: { baz: number; foo: number }) {
+            //
+			// },
+			// mixin: createBaz
+			// });
+			// const createBarBazIllegalOptionsType = createBar.mixin({
+			// initializer: function(instance: { baz: number; }, options: { baz: number; foo: string; }) {
             //
 			// },
 			// mixin: createBaz

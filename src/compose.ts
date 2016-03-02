@@ -177,8 +177,10 @@ export interface AspectAdvice {
 }
 
 /* Mixin API */
+export type ComposeMixinItem<T, O> = GenericClass<T> | T | ComposeFactory<T, O>;
+
 export interface ComposeMixin<T, O, U, P> {
-	mixin?: GenericClass<U> | U | ComposeFactory<U, P>;
+	mixin?: ComposeMixinItem<U, P>;
 	initializer?: ComposeInitializationFunction<T & U, O & P>;
 	aspectAdvice?: AspectAdvice;
 }
