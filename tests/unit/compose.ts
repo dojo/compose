@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import compose, { AspectAdvice, GenericClass } from '../../src/compose';
+import compose, { AspectAdvice, GenericClass, ComposeFactory } from '../../src/compose';
 
 let _hasStrictModeCache: boolean;
 
@@ -791,6 +791,59 @@ registerSuite({
 			assert.strictEqual(abcdef.d, 4, 'Didn\'t have \'d\' property');
 			assert.strictEqual(abcdef.e, 5, 'Didn\'t have \'e\' property');
 			assert.strictEqual(abcdef.f, 6, 'Didn\'t have \'f\' property');
+		},
+		'multiple factory mixins'() {
+			interface A {
+				a: number;
+			}
+
+			interface B {
+				b: number;
+			}
+
+			interface C {
+				c: number;
+			}
+
+			interface D {
+				d: number;
+			}
+
+			interface E {
+				e: number;
+			}
+
+			interface ABCDEF extends A, B, C, D, E {
+				f: number;
+			}
+
+			const createA = compose<A, any>({ a: 1 });
+			const createB = compose<B, any>({ b: 2 });
+			const createC: ComposeFactory<C, any> = compose({ c: 3 });
+			const createD = compose({ d: 4 });
+			const createE = compose({ e: 5 });
+
+			const createABCDEF: ComposeFactory<ABCDEF, any> = compose({
+					f: 6
+				})
+				.mixin({ mixins: [ createA, createB, createC, createD, createE ] });
+
+			const chainABCDEF: ComposeFactory<ABCDEF, any> = compose({
+					f: 6
+				})
+				.mixin({ mixin: createA })
+				.mixin({ mixin: createB })
+				.mixin({ mixin: createC })
+				.mixin({ mixin: createD })
+				.mixin({ mixin: createE });
+
+			const abcdef = createABCDEF();
+			assert.strictEqual(abcdef.a, 1, `Didn't have 'a' property`);
+			assert.strictEqual(abcdef.b, 2, `Didn't have 'b' property`);
+			assert.strictEqual(abcdef.c, 3, `Didn't have 'c' property`);
+			assert.strictEqual(abcdef.d, 4, `Didn't have 'd' property`);
+			assert.strictEqual(abcdef.e, 5, `Didn't have 'e' property`);
+			assert.strictEqual(abcdef.f, 6, `Didn't have 'f' property`);
 		}
 	},
 	overlay: {
