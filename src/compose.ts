@@ -122,22 +122,50 @@ export function isComposeFactory(value: any): value is ComposeFactory< any, any 
 
 /* General Interfaces */
 
+/**
+ * Used to adapt any consructor functions or classes to a compose factory
+ */
 export interface GenericClass<T> {
 	new (...args: any[]): T;
 	prototype: T;
 }
 
+/**
+ * A callback function use to initialize a new created instance
+ * @param instance The newly constructed instance
+ * @param options Any options that were passed to the factory
+ * @template T The type of the instance
+ * @template O The type of the options being passed
+ */
 export interface ComposeInitializationFunction<T, O> {
 	(instance: T, options?: O): void;
 }
 
 /* Extension API */
 export interface ComposeFactory<T, O> {
+	/**
+	 * Extend the factory prototype with the supplied object literal, class, or factory
+	 * @param extension The object literal, class or factory to extend
+	 * @template T The original type of the factory
+	 * @template U The type of the extension
+	 * @template O The type of the factory options
+	 * @template P The type of the extension factory options
+	 */
 	extend<U>(extension: U | GenericClass<U>): ComposeFactory<T & U, O>;
 	extend<U, P>(extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
 }
 
 export interface Compose {
+	/**
+	 * Extend a compose factory prototype with the supplied object literal, class, or
+	 * factory.
+	 * @param base The base compose factory to extend
+	 * @param extension The object literal, class or factory that is the extension
+	 * @template T The base type of the factory
+	 * @template U The type of the extension
+	 * @template O The type of the base factory options
+	 * @template P The type of the extension factory options
+	 */
 	extend<T, O, U>(base: ComposeFactory<T, O>, extension: U | GenericClass<U>): ComposeFactory<T & U, O>;
 	extend<T, O, U, P>(base: ComposeFactory<T, O>, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
 }
@@ -155,7 +183,7 @@ export interface OverlayFunction<T> {
 }
 
 export interface ComposeFactory<T, O> {
-	 overlay(overlayFunction: OverlayFunction<T>): ComposeFactory<T, O>;
+	overlay(overlayFunction: OverlayFunction<T>): ComposeFactory<T, O>;
 }
 
 export interface Compose {
@@ -177,24 +205,52 @@ export interface AspectAdvice {
 }
 
 /* Mixin API */
+
+/**
+ * Either a class, object literal, or a factory
+ */
 export type ComposeMixinItem<T, O> = GenericClass<T> | T | ComposeFactory<T, O>;
 
 export interface ComposeMixin<T, O, U, P, V, Q, W, R, X, S, Y, Z> {
+	/**
+	 * The class, object literal, or factory to be mixed in
+	 */
 	mixin?: ComposeMixinItem<U, P>;
+
+	/**
+	 * A tuple set of 2 to 4 classess, object literals, or factories to be mixed in
+	 */
 	mixins?: [ ComposeMixinItem<U, P>, ComposeMixinItem<V, Q> ]
 		| [ ComposeMixinItem<U, P>, ComposeMixinItem<V, Q>, ComposeMixinItem<W, R> ]
 		| [ ComposeMixinItem<U, P>, ComposeMixinItem<V, Q>, ComposeMixinItem<W, R>, ComposeMixinItem<X, S> ]
 		| [ ComposeMixinItem<U, P>, ComposeMixinItem<V, Q>, ComposeMixinItem<W, R>, ComposeMixinItem<X, S>, ComposeMixinItem<Y, Z>];
+
+	/**
+	 * An initializer funtion to be executed upon construction
+	 */
 	initializer?: ComposeInitializationFunction<T & U & V & W & X & Y, O & P & Q & R & S & Z>;
+
+	/**
+	 * Aspect Oriented Advice to be mixed into the factory
+	 */
 	aspectAdvice?: AspectAdvice;
 }
 
 export interface ComposeFactory<T, O> {
+	/**
+	 * Mixin additional mixins, initialization logic, and aspect advice into the factory
+	 * @param mixin An object literal that describes what to mixin
+	 */
 	mixin<U, P, V, Q, W, R, X, S, Y, Z>(mixin: ComposeMixin<T, O, U, P, V, Q, W, R, X, S, Y, Z>):
 		ComposeFactory<T & U & V & W & X & Y, O & P & Q & R & S & Z>;
 }
 
 export interface Compose {
+	/**
+	 * Mixin additional mixins, initialization logic, and aspect advice into a factory
+	 * @param base The base factory that is the target of the mixin
+	 * @param mixin An object literal that describes what to mixin
+	 */
 	mixin<T, O, U, P, V, Q, W, R, X, S, Y, Z>(
 		base: ComposeFactory<T, O>,
 		mixin: ComposeMixin<T, O, U, P, V, Q, W, R, X, S, Y, Z>
