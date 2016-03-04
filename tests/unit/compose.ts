@@ -215,21 +215,20 @@ registerSuite({
 				}, () => {
 					callstack.push('foobar');
 				})
-				.mixin({ mixin: createFoo });
+				.mixin(createFoo);
 
 			const createFooBaz = compose({
 					baz: true
 				}, () => {
 					callstack.push('foobaz');
 				})
-				.mixin({ mixin: createFoo });
-
+				.mixin(createFoo);
 			const createFooBarBazQat = compose({
 					qat: /qat/
 				}, () => {
 					callstack.push('foobarbazqat');
 				})
-				.mixin({ mixin: createFooBar })
+				.mixin( createFooBar )
 				.mixin({
 					mixin: createFooBaz,
 					initializer: function(instance: { qat: RegExp; baz: boolean; foo: string; }) {
@@ -446,7 +445,7 @@ registerSuite({
 				bar: 2
 			});
 
-			const createFooBar = compose.mixin(createFoo, { mixin: createBar });
+			const createFooBar = compose.mixin(createFoo, createBar);
 			const foobar = createFooBar();
 			const foo = createFoo();
 
@@ -462,7 +461,7 @@ registerSuite({
 
 			const createFooBar = compose({
 				foo: 'foo'
-			}).mixin({ mixin: createBar });
+			}).mixin(createBar);
 
 			const foobar = createFooBar();
 
@@ -480,7 +479,7 @@ registerSuite({
 				foo: 'foo'
 			}, function(instance) {
 				instance.foo = 'bar';
-			}).mixin({ mixin: createBar });
+			}).mixin(createBar);
 
 			const foobar = createFooBar();
 
@@ -499,21 +498,21 @@ registerSuite({
 				baz: false
 			}, function(instance) {
 				instance.baz = true;
-			}).mixin({ mixin: createBar });
+			}).mixin(createBar);
 
 			const createBarQat = compose({
 				qat: 'qat'
 			}, function(instance) {
 				instance.qat = 'foo';
-			}).mixin({ mixin: createBar });
+			}).mixin(createBar);
 
 			const createFooBarBazQat = compose({
 				foo: 'foo'
 			}, function(instance) {
 				instance.foo = 'bar';
 			})
-				.mixin({ mixin: createBarQat })
-				.mixin({ mixin: createBarBaz });
+				.mixin(createBarQat)
+				.mixin(createBarBaz);
 
 			const foobarbazqat = createFooBarBazQat();
 			assert.strictEqual(called, 1, 'Init function only called once');
@@ -750,101 +749,59 @@ registerSuite({
 			// });
 		},
 
-		'multiple mixins': function() {
-			interface ABCDEF {
-				a: number;
-				b: number;
-				c: number;
-				d: number;
-				e: number;
-				f: number;
-			}
-
-			const createABCDEF = compose({
-				a: 1
+		'Object with factoryDescriptor function': function() {
+			const createFooBar = compose({
+				foo: ''
+			}, function(foo: { foo: string }) {
+				foo.foo = 'foo';
 			}).mixin({
-				mixins: [
-					{
-						b: 2
-					},
-					{
-						c: 3
-					},
-					{
-						d: 4
-					},
-					{
-						e: 5
-					},
-					{
-						f: 6
-					}
-				],
-				initializer: function(instance) {
+				factoryDescriptor: function() {
+					return {
+						mixin: {
+							bar: 1
+						},
+						initializer: function(fooBar: { bar: number; foo: string; }) {
+							fooBar.bar = 3;
+							fooBar.foo = 'bar';
+						}
+					};
 				}
 			});
 
-			const abcdef = createABCDEF();
-			assert.strictEqual(abcdef.a, 1, 'Didn\'t have \'a\' property');
-			assert.strictEqual(abcdef.b, 2, 'Didn\'t have \'b\' property');
-			assert.strictEqual(abcdef.c, 3, 'Didn\'t have \'c\' property');
-			assert.strictEqual(abcdef.d, 4, 'Didn\'t have \'d\' property');
-			assert.strictEqual(abcdef.e, 5, 'Didn\'t have \'e\' property');
-			assert.strictEqual(abcdef.f, 6, 'Didn\'t have \'f\' property');
+			const fooBar = createFooBar();
+			assert.strictEqual(fooBar.foo, 'foo', 'Foo property not present');
+			assert.strictEqual(fooBar.bar, 3, 'Bar property not present');
 		},
-		'multiple factory mixins'() {
-			interface A {
-				a: number;
-			}
 
-			interface B {
-				b: number;
-			}
+		'factoryDescriptor with base, initializer, and aspect': function() {
+			const createFoo = compose({
+				foo: 1,
+				doSomething() {
+					this.doneSomething = false;
+				}
+			});
+			const createBarMixin = compose({
+				bar: 1,
+				_aspectAdvice: {
+					after: {
+						doSomething: function() {
+							this.doneSomething = true;
+						}
+					}
+				},
+				_initializer: function(instance: { foo: number; }) {
+					instance.foo = 2;
+					instance.bar = 2;
+				},
+			});
 
-			interface C {
-				c: number;
-			}
+			const createFooBar = createFoo.mixin(createBarMixin);
+			const fooBar = createFooBar();
+			fooBar.doSomething();
 
-			interface D {
-				d: number;
-			}
-
-			interface E {
-				e: number;
-			}
-
-			interface ABCDEF extends A, B, C, D, E {
-				f: number;
-			}
-
-			const createA = compose<A, any>({ a: 1 });
-			const createB = compose<B, any>({ b: 2 });
-			const createC: ComposeFactory<C, any> = compose({ c: 3 });
-			const createD = compose({ d: 4 });
-			const createE = compose({ e: 5 });
-
-			const createABCDEF: ComposeFactory<ABCDEF, any> = compose({
-					f: 6
-				})
-				.mixin({ mixins: [ createA, createB, createC, createD, createE ] });
-
-			const chainABCDEF: ComposeFactory<ABCDEF, any> = compose({
-					f: 6
-				})
-				.mixin({ mixin: createA })
-				.mixin({ mixin: createB })
-				.mixin({ mixin: createC })
-				.mixin({ mixin: createD })
-				.mixin({ mixin: createE });
-
-			const abcdef = createABCDEF();
-			assert.strictEqual(abcdef.a, 1, `Didn't have 'a' property`);
-			assert.strictEqual(abcdef.b, 2, `Didn't have 'b' property`);
-			assert.strictEqual(abcdef.c, 3, `Didn't have 'c' property`);
-			assert.strictEqual(abcdef.d, 4, `Didn't have 'd' property`);
-			assert.strictEqual(abcdef.e, 5, `Didn't have 'e' property`);
-			assert.strictEqual(abcdef.f, 6, `Didn't have 'f' property`);
-		}
+			assert.isTrue((<any> fooBar).doneSomething, 'Didn\'t properly apply aspect');
+			assert.strictEqual(fooBar.foo, 2, 'Initializer didn\'t run');
+		},
 	},
 	overlay: {
 		'.overlay()': function () {
