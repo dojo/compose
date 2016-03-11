@@ -231,7 +231,7 @@ registerSuite({
 				.mixin( createFooBar )
 				.mixin({
 					mixin: createFooBaz,
-					initializer: function(instance: { qat: RegExp; baz: boolean; foo: string; }) {
+					initialize: function(instance: { qat: RegExp; baz: boolean; foo: string; }) {
 						callstack.push('foobazMixinInit');
 					}
 				});
@@ -536,7 +536,7 @@ registerSuite({
 			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
 		},
 
-		'es6 class and initializer': function() {
+		'es6 class and initialize': function() {
 			class Bar {
 				bar(): number {
 					return 2;
@@ -552,7 +552,7 @@ registerSuite({
 				foo: 'foo'
 			});
 
-			const createFooBar = compose.mixin(createFoo, { mixin: Bar, initializer: initBar });
+			const createFooBar = compose.mixin(createFoo, { mixin: Bar, initialize: initBar });
 
 			const foobar = createFooBar();
 
@@ -561,11 +561,11 @@ registerSuite({
 			assert.strictEqual(foobar.baz, 'boo', 'instance contains boo');
 		},
 
-		'compose factory and initializer': function() {
+		'compose factory and initialize': function() {
 			const createBar = compose({
 				bar: 2
 			}, function(instance: any) {
-				// This runs first, as it's the existing initializer on the base of the mixin
+				// This runs first, as it's the existing initialize on the base of the mixin
 				instance.foo = 'bar';
 			});
 
@@ -573,13 +573,13 @@ registerSuite({
 				foo: 'foo',
 				baz: ''
 			}, function(instance: any) {
-				// This runs last, as it's the initializer on the base class
+				// This runs last, as it's the initialize on the base class
 				instance.bar = 3;
 				assert.strictEqual(instance.baz, 'baz', 'instance contains baz');
 			}).mixin({
 				mixin: createBar,
-				initializer: function(instance: any) {
-					// This runs second, as it's the new, optional initializer provided with the mixin
+				initialize: function(instance: any) {
+					// This runs second, as it's the new, optional initialize provided with the mixin
 					assert.strictEqual(instance.foo, 'bar', 'instance contains foo');
 					instance.baz = 'baz';
 				}
@@ -590,17 +590,17 @@ registerSuite({
 
 		},
 
-		'only initializer': function() {
+		'only initialize': function() {
 			const createFoo = compose({
 				foo: 'foo'
 			}).mixin({
-				initializer: function(instance: any) {
+				initialize: function(instance: any) {
 					instance.foo = 'bar';
 				}
 			});
 
 			const foo = createFoo();
-			assert.strictEqual(foo.foo, 'bar', 'initializer was called');
+			assert.strictEqual(foo.foo, 'bar', 'initialize was called');
 		},
 
 		'only aspect': function() {
@@ -626,7 +626,7 @@ registerSuite({
 			assert.strictEqual(foo.bar, 'baz', 'aspect ran');
 		},
 
-		'base, initializer, and aspect': function() {
+		'base, initialize, and aspect': function() {
 			const createFoo = compose({}).mixin({
 				mixin: compose({
 					foo: 'foo',
@@ -636,7 +636,7 @@ registerSuite({
 						this.foo = 'bar';
 					}
 				}),
-				initializer: function(instance: any) {
+				initialize: function(instance: any) {
 					instance.bar = 'bar';
 				},
 				aspectAdvice: {
@@ -650,7 +650,7 @@ registerSuite({
 
 			const foo = createFoo();
 			assert.strictEqual(foo.foo, 'foo', 'contains foo property');
-			assert.strictEqual(foo.bar, 'bar', 'initializer ran');
+			assert.strictEqual(foo.bar, 'bar', 'initialize ran');
 
 			foo.doFoo();
 			assert.strictEqual(foo.foo, 'bar', 'ran function');
@@ -685,14 +685,14 @@ registerSuite({
 			}, function(instance: { count: number }) {
 				instance.count = instance.count + 1;
 			})
-                .mixin({ initializer: init })
-                .mixin({ initializer: init })
-                .mixin({ mixin: { baz: 'baz' }, initializer: init })
-                .mixin({ initializer: otherInitializer });
+                .mixin({ initialize: init })
+                .mixin({ initialize: init })
+                .mixin({ mixin: { baz: 'baz' }, initialize: init })
+                .mixin({ initialize: otherInitializer });
 
 			const foo = createFoo();
-			assert.strictEqual((<any> foo).foo, 'bar', 'Should have called other initializer as well');
-			assert.strictEqual(foo.count, 2, 'Should have called base initializer and passed in initializer once each');
+			assert.strictEqual((<any> foo).foo, 'bar', 'Should have called other initialize as well');
+			assert.strictEqual(foo.count, 2, 'Should have called base initialize and passed in initialize once each');
 		},
 
 		'Init function with combined types': function() {
@@ -717,32 +717,32 @@ registerSuite({
 				}
 			});
 			const createBarBaz = createBar.mixin({
-				initializer: function(instance: { bar: string; baz: number }, options: { bar: string; baz: number }) {
+				initialize: function(instance: { bar: string; baz: number }, options: { bar: string; baz: number }) {
 
 				},
 				mixin: createBaz
 			});
 			const createBarBazWithBazTypes = createBar.mixin({
-				initializer: function(instance: { baz: number }, options: { baz: number }) {
+				initialize: function(instance: { baz: number }, options: { baz: number }) {
 
 				},
 				mixin: createBaz
 			});
 			const createBarBazWithBarTypes = createBar.mixin({
-				initializer: function(instance: { bar: string }, options: { bar: string }) {
+				initialize: function(instance: { bar: string }, options: { bar: string }) {
 
 				},
 				mixin: createBaz
 			});
 			// Shouldn\'t compile
 			// const createBarBazIllegalInstanceType = createBar.mixin({
-			// initializer: function(instance: { baz: number; foo: number }) {
+			// initialize: function(instance: { baz: number; foo: number }) {
             //
 			// },
 			// mixin: createBaz
 			// });
 			// const createBarBazIllegalOptionsType = createBar.mixin({
-			// initializer: function(instance: { baz: number; }, options: { baz: number; foo: string; }) {
+			// initialize: function(instance: { baz: number; }, options: { baz: number; foo: string; }) {
             //
 			// },
 			// mixin: createBaz
@@ -760,7 +760,7 @@ registerSuite({
 						mixin: {
 							bar: 1
 						},
-						initializer: function(fooBar: { bar: number; foo: string; }) {
+						initialize: function(fooBar: { bar: number; foo: string; }) {
 							fooBar.bar = 3;
 							fooBar.foo = 'bar';
 						}
@@ -773,7 +773,7 @@ registerSuite({
 			assert.strictEqual(fooBar.bar, 3, 'Bar property not present');
 		},
 
-		'factoryDescriptor with base, initializer, and aspect': function() {
+		'factoryDescriptor with base, initialize, and aspect': function() {
 			const createFoo = compose({
 				foo: 1,
 				doSomething() {
@@ -784,12 +784,12 @@ registerSuite({
 				bar: 1,
 				_aspectAdvice: {
 					after: {
-						doSomething: function() {
+						doSomething: function () {
 							this.doneSomething = true;
 						}
 					}
 				},
-				_initializer: function(instance: { foo: number; }) {
+				_initialize: function(instance: { foo: number; bar: number }) {
 					instance.foo = 2;
 					instance.bar = 2;
 				},

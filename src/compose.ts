@@ -47,11 +47,12 @@ const doExtend = rebase(extend);
 const doMixin = rebase(mixin);
 const doOverlay = rebase(overlay);
 const doAspect = rebase(aspect);
-function factoryDescriptor<T, O, U extends { _aspectAdvice?: AspectAdvice; _initializer?: (instance: any, options: any) => void }, P>(mixin: ComposeFactory<U, P>): ComposeMixinDescriptor<T, O, U, P> {
+export type FactoryPrototype = { [ index: string ]: any; _aspectAdvice?: AspectAdvice; _initialize?: (instance: any, options: any) => void };
+function factoryDescriptor<T, O, U extends FactoryPrototype, P>(mixin: ComposeFactory<U, P>): ComposeMixinDescriptor<T, O, U, P> {
 	return {
 		mixin: mixin,
 		aspectAdvice: mixin.prototype._aspectAdvice,
-		initializer: mixin.prototype._initializer
+		initialize: mixin.prototype._initialize
 	};
 };
 const doFactoryDescriptor = rebase(factoryDescriptor);
@@ -150,7 +151,7 @@ export interface ComposeInitializationFunction<T, O> {
 }
 
 /* Extension API */
-export interface ComposeFactory<T extends { _aspectAdvice?: AspectAdvice; _initializer?: (instance: any, options: any) => void; }, O> {
+export interface ComposeFactory<T, O> {
 	/**
 	 * Extend the factory prototype with the supplied object literal, class, or factory
 	 * @param extension The object literal, class or factory to extend
@@ -190,7 +191,7 @@ export interface OverlayFunction<T> {
 	(proto: T): void;
 }
 
-export interface ComposeFactory<T extends { _aspectAdvice?: AspectAdvice; _initializer?: (instance: any, options: any) => void; }, O> {
+export interface ComposeFactory<T, O> {
 	overlay(overlayFunction: OverlayFunction<T>): ComposeFactory<T, O>;
 }
 
@@ -207,6 +208,7 @@ function overlay<T, O>(base: ComposeFactory<T, O>, overlayFunction: OverlayFunct
 /* AOP/Inheritance API */
 
 export interface AspectAdvice {
+	[ index: string ]: any;
 	before?: { [method: string]: BeforeAdvice };
 	after?: { [method: string]: AfterAdvice<any> };
 	around?: { [method: string]: AroundAdvice<any> };
@@ -226,9 +228,9 @@ export interface ComposeMixinDescriptor<T, O, U, P> {
 	mixin?: ComposeMixinItem<U, P>;
 
 	/**
-	 * An initializer function to be executed upon construction
+	 * An initialize function to be executed upon construction
 	 */
-	initializer?: ComposeInitializationFunction<T & U, O & P>;
+	initialize?: ComposeInitializationFunction<T & U, O & P>;
 
 	/**
 	 * Aspect Oriented Advice to be mixed into the factory
@@ -246,7 +248,7 @@ export interface ComposeMixinable<U, P> {
 
 // export type descriptorFactory
 
-export interface ComposeFactory<T extends { _aspectAdvice?: AspectAdvice; _initializer?: (instance: any, options: any) => void; }, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
 	/**
 	 * Mixin additional mixins, initialization logic, and aspect advice into the factory
 	 * @param mixin An object literal that describes what to mixin
@@ -289,16 +291,16 @@ function mixin(base: any, toMixin: any): any {
 	const mixinType =  toMixin.mixin;
 	if (mixinType) {
 		let mixinFactory = isComposeFactory(mixinType) ? mixinType : create(mixinType);
-		if (toMixin.initializer) {
-			if (baseInitFns.indexOf(toMixin.initializer) < 0) {
-				baseInitFns.unshift(toMixin.initializer);
+		if (toMixin.initialize) {
+			if (baseInitFns.indexOf(toMixin.initialize) < 0) {
+				baseInitFns.unshift(toMixin.initialize);
 			}
 		}
 		concatInitFn(base, mixinFactory);
 		copyProperties(base.prototype, mixinFactory.prototype);
-	} else if (toMixin.initializer) {
-		if (baseInitFns.indexOf(toMixin.initializer) < 0) {
-			baseInitFns.unshift(toMixin.initializer);
+	} else if (toMixin.initialize) {
+		if (baseInitFns.indexOf(toMixin.initialize) < 0) {
+			baseInitFns.unshift(toMixin.initialize);
 		}
 	}
 	if (toMixin.aspectAdvice) {
@@ -311,7 +313,7 @@ export interface GenericFunction<T> {
 	(...args: any[]): T;
 }
 
-export interface ComposeFactory<T extends { _aspectAdvice?: AspectAdvice; _initializer?: (instance: any, options: any) => void; }, O> {
+export interface ComposeFactory<T, O> {
 	from(base: GenericClass<any>, method: string): ComposeFactory<T, O>;
 	from(base: ComposeFactory<any, any>, method: string): ComposeFactory<T, O>;
 
@@ -451,18 +453,18 @@ function aspect<T, O>(base: ComposeFactory<T, O>, advice: AspectAdvice): Compose
 }
 
 /* Creation API */
-export interface ComposeFactory<T extends { _aspectAdvice?: AspectAdvice; _initializer?: (instance: any, options: any) => void; }, O> {
+export interface ComposeFactory<T, O> {
 	(options?: O): T;
 	prototype: T;
 }
 
 export interface Compose {
-	<T, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, P>): ComposeFactory<T, O & P>;
-	<T, O>(base: T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	create<T, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	create<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, P>): ComposeFactory<T, O & P>;
-	create<T, O>(base: T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	<T extends FactoryPrototype, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	<T extends FactoryPrototype, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, P>): ComposeFactory<T, O & P>;
+	<T extends FactoryPrototype, O>(base: T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	create<T extends FactoryPrototype, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	create<T extends FactoryPrototype, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, P>): ComposeFactory<T, O & P>;
+	create<T extends FactoryPrototype, O>(base: T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
 }
 
 function create<T, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
