@@ -47,12 +47,9 @@ const doExtend = rebase(extend);
 const doMixin = rebase(mixin);
 const doOverlay = rebase(overlay);
 const doAspect = rebase(aspect);
-export type FactoryPrototype = { [ index: string ]: any; _aspectAdvice?: AspectAdvice; _initialize?: (instance: any, options: any) => void };
-function factoryDescriptor<T, O, U extends FactoryPrototype, P>(mixin: ComposeFactory<U, P>): ComposeMixinDescriptor<T, O, U, P> {
+function factoryDescriptor<T, O, U, P>(mixin: ComposeFactory<U, P>): ComposeMixinDescriptor<T, O, U, P> {
 	return {
-		mixin: mixin,
-		aspectAdvice: mixin.prototype._aspectAdvice,
-		initialize: mixin.prototype._initialize
+		mixin: mixin
 	};
 };
 const doFactoryDescriptor = rebase(factoryDescriptor);
@@ -208,7 +205,6 @@ function overlay<T, O>(base: ComposeFactory<T, O>, overlayFunction: OverlayFunct
 /* AOP/Inheritance API */
 
 export interface AspectAdvice {
-	[ index: string ]: any;
 	before?: { [method: string]: BeforeAdvice };
 	after?: { [method: string]: AfterAdvice<any> };
 	around?: { [method: string]: AroundAdvice<any> };
@@ -459,12 +455,12 @@ export interface ComposeFactory<T, O> {
 }
 
 export interface Compose {
-	<T extends FactoryPrototype, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	<T extends FactoryPrototype, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, P>): ComposeFactory<T, O & P>;
-	<T extends FactoryPrototype, O>(base: T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	create<T extends FactoryPrototype, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	create<T extends FactoryPrototype, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, P>): ComposeFactory<T, O & P>;
-	create<T extends FactoryPrototype, O>(base: T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	<T, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, P>): ComposeFactory<T, O & P>;
+	<T, O>(base: T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	create<T, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	create<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, P>): ComposeFactory<T, O & P>;
+	create<T, O>(base: T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
 }
 
 function create<T, O>(base: GenericClass<T>, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;

@@ -771,37 +771,7 @@ registerSuite({
 			const fooBar = createFooBar();
 			assert.strictEqual(fooBar.foo, 'foo', 'Foo property not present');
 			assert.strictEqual(fooBar.bar, 3, 'Bar property not present');
-		},
-
-		'factoryDescriptor with base, initialize, and aspect': function() {
-			const createFoo = compose({
-				foo: 1,
-				doSomething() {
-					this.doneSomething = false;
-				}
-			});
-			const createBarMixin = compose({
-				bar: 1,
-				_aspectAdvice: {
-					after: {
-						doSomething: function () {
-							this.doneSomething = true;
-						}
-					}
-				},
-				_initialize: function(instance: { foo: number; bar: number }) {
-					instance.foo = 2;
-					instance.bar = 2;
-				},
-			});
-
-			const createFooBar = createFoo.mixin(createBarMixin);
-			const fooBar = createFooBar();
-			fooBar.doSomething();
-
-			assert.isTrue((<any> fooBar).doneSomething, 'Didn\'t properly apply aspect');
-			assert.strictEqual(fooBar.foo, 2, 'Initializer didn\'t run');
-		},
+		}
 	},
 	overlay: {
 		'.overlay()': function () {
