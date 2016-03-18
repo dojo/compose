@@ -193,7 +193,7 @@ const barFactory = compose.create({
     }
 });
 
-const fooBarFactory = compose.mixin(fooFactory, { base: barFactory });
+const fooBarFactory = compose.mixin(fooFactory, barFactory);
 
 const fooBar = fooBarFactory();
 
@@ -201,8 +201,8 @@ fooBar.bar(); // logs "bar"
 ```
 NOTE: Using mixin on a ComposeFactory will result in the init function for the mixed in factory to be called first, and any init functions for the base will follow.
 
-It can also be used to mix in an ES6 class:
-
+It can also be used to mix in an ES6 class.
+Note that when mixing in an ES6 class only methods will be mixed into the resulting class, not state.
 ```typescript
 import * as compose from 'dojo/compose';
 
@@ -214,7 +214,7 @@ class Bar {
     bar() { console.log('bar'); }
 }
 
-const fooBarFactory = compose.mixin(fooFactory, { base: Bar });
+const fooBarFactory = compose.mixin(fooFactory, { mixin: Bar });
 
 const fooBar = fooBarFactory();
 
@@ -233,7 +233,7 @@ const bar = {
     bar() { console.log('bar'); }
 }
 
-const fooBarFactory = compose.mixin(fooFactory, { base: bar });
+const fooBarFactory = compose.mixin(fooFactory, { mixin: bar });
 
 const fooBar = fooBarFactory();
 
@@ -275,10 +275,10 @@ const bazAspect: AspectAdvice = {
 const fooBarBazFactory = fooFactory
 	.mixin({
 		mixin: bar,
-		initializer: initBar
+		initialize: initBar
 	})
 	.mixin({
-		base: bazFactory,
+		mixin: bazFactory,
 		aspectAdvice: bazAspect
 	});
 
@@ -288,7 +288,37 @@ console.log(fooBarBaz.baz); // logs 'also initialized'
 fooBarBaz.doSomething(); // logs 'something' and then 'something else'
 ```
 
-Note that when mixing in an ES6 class only methods will be mixed into the resulting class, not state.
+Additionally, anything with a `factoryDescriptor` function that returns a `ComposeMixinDescriptor` object can be passed directy to mixin.
+
+```typescript
+const createFoo = compose({
+    foo: ''
+})
+const mixin = {
+    factoryDescriptor: function() {
+        return {
+            mixin: {
+                bar: 1
+            },
+            initialize: function(fooBar: { bar: number; foo: string; }) {
+                fooBar.bar = 3;
+                fooBar.foo = 'bar';
+            }
+        };
+    }
+};
+
+const createFooBar = createFoo.mixin(mixin);
+
+const fooBar = createFooBar();
+console.log(fooBar.foo) // logs 'foo'
+console.log(fooBar.bar) // logs 3
+```
+
+The previous example, where a `ComposeFactory` was passed directly to `mixin` is possible because as a convenience all instances of `ComposeFactory`
+are initialized with a version of the `factoryDescriptor` function that simply returns the factory itself as the `mixin` property. If a more complicated
+factory descriptor is required, the `factoryDescriptor` method can be overridden using the `static` method, documentd below.
+
 ### Using Generics
 
 `compose` utilizes TypeScript generics and type inference to type the resulting classes.  Most of the time, this will work without any need to declare your types.  There are situations though where you may want to be more explicit about your interfaces and `compose` can accommodate that by passing in generics when using the API. Here is an example of creating a class that requires generics using `compose`:
@@ -332,6 +362,36 @@ const myFoo = myFooFactory();
 console.log(myFoo.foo); // logs "qat"
 ```
 Note that as with all the functionality provided by `compose`, the existing class is not modified.
+
+### Adding static properties to a factory
+
+If you want to add static methods or constants to a `ComposeFactory`, the `static` method allows you to do so. Any properties
+ set this way cannot be altered, as the returned factory is frozen. In order to modify or remove a static property
+on a factory, a new factory would need to be created.
+```typescript
+const createFoo = compose({
+	foo: 1
+}).static({
+	doFoo(): string {
+		return 'foo';
+	}
+});
+
+console.log(createFoo.doFoo()); // logs 'foo'
+
+// This will throw an error not work
+// createFoo.doFoo = function() {
+//	 return 'bar'
+// }
+
+const createNewFoo = createFoo.static({
+	doFoo(): string {
+		return 'bar';
+	}
+});
+
+console.log(createNewFoo.doFoo()); // logs 'bar'
+```
 
 ## How do I use this package?
 
