@@ -317,7 +317,7 @@ console.log(fooBar.bar) // logs 3
 
 The previous example, where a `ComposeFactory` was passed directly to `mixin` is possible because as a convenience all instances of `ComposeFactory`
 are initialized with a version of the `factoryDescriptor` function that simply returns the factory itself as the `mixin` property. If a more complicated
-factory descriptor is required, the `factoryDescriptor` method can be overridden using the `static` method, documentd below.
+factory descriptor is required, the `factoryDescriptor` method can be overridden using the `static` method, documented below.
 
 ### Using Generics
 
@@ -379,7 +379,7 @@ const createFoo = compose({
 
 console.log(createFoo.doFoo()); // logs 'foo'
 
-// This will throw an error not work
+// This will throw an error
 // createFoo.doFoo = function() {
 //	 return 'bar'
 // }
