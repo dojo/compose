@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import compose, { AspectAdvice, GenericClass, ComposeFactory } from '../../src/compose';
+import compose, { AspectAdvice, GenericClass, ComposeFactory, ComposeMixinDescriptor } from '../../src/compose';
 
 let _hasStrictModeCache: boolean;
 
@@ -1212,6 +1212,63 @@ registerSuite({
 						}
 					});
 				}, Error, 'Trying to advise non-existing method: "bar"');
+			}
+		},
+		'static': {
+			'create factory with static method': function() {
+				const createFoo = compose({
+					foo: 1
+				}).static({
+					doFoo(): string {
+						return 'foo';
+					}
+				});
+
+				assert.strictEqual(createFoo.doFoo(), 'foo', 'Should have done foo');
+				assert.strictEqual(createFoo().foo, 1, 'Should still have foo property on instance');
+				// Shouldn't compile
+				// assert.strictEqual(createFoo().doFoo(), 'Should not have do foo function on instance');
+			},
+
+			'extend existing factory with static method': function() {
+				const createFoo = compose({
+					foo: 1
+				});
+
+				const createAndDoFoo = compose.static(createFoo, {
+					doFoo(): string {
+						return 'foo';
+					}
+				});
+
+				assert.strictEqual(createAndDoFoo.doFoo(), 'foo', 'Should have done foo');
+				assert.strictEqual(createAndDoFoo().foo, 1, 'Should still have foo property on instance');
+				// Shouldn't compile
+				// assert.strictEqual(createAndDoFoo().doFoo(), 'Should not have do foo function on instance');
+			},
+
+			'override factory descriptor function with static method': function() {
+				const createFoo = compose({
+					foo: 1
+				}).static({
+					factoryDescriptor(): ComposeMixinDescriptor<any, any, { foo: number }, any> {
+						return {
+							mixin: this,
+							initialize: function(instance: { foo: number }) {
+								instance.foo = 3;
+							}
+						};
+					}
+				});
+
+				const createFooBar = compose({
+					bar: 1
+				}).mixin(createFoo);
+
+				const fooBar = createFooBar();
+
+				assert.strictEqual(fooBar.bar, 1, 'Should have bar property');
+				assert.strictEqual(fooBar.foo, 3, 'Should have foo property');
 			}
 		}
 	}

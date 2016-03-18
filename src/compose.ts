@@ -47,6 +47,7 @@ const doExtend = rebase(extend);
 const doMixin = rebase(mixin);
 const doOverlay = rebase(overlay);
 const doAspect = rebase(aspect);
+const doStatic = rebase(_static);
 function factoryDescriptor<T, O, U, P>(mixin: ComposeFactory<U, P>): ComposeMixinDescriptor<T, O, U, P> {
 	return {
 		mixin: mixin
@@ -67,6 +68,7 @@ function stamp(base: any): void {
    base.around = doAround;
    base.aspect = doAspect;
    base.factoryDescriptor = doFactoryDescriptor;
+   base.static = doStatic;
 }
 
 /**
@@ -74,8 +76,10 @@ function stamp(base: any): void {
  * @param  {ComposeFactory<T, O>} base The base to clone
  * @return {ComposeFactory<T, O>}      The cloned constructor function
  */
-function cloneFactory<T, O>(base?: ComposeFactory<T, O>): ComposeFactory<T, O>;
-function cloneFactory(base?: any): any {
+function cloneFactory<T, O, S>(base: ComposeFactory<T, O>, staticProperties: S): ComposeFactory<T, O> & S;
+function cloneFactory<T, O>(base: ComposeFactory<T, O>): ComposeFactory<T, O>;
+function cloneFactory<T, O>(): ComposeFactory<T, O>;
+function cloneFactory(base?: any, staticProperties?: any): any {
 	function factory(...args: any[]): any {
 		if (this && this.constructor === factory) {
 			throw new SyntaxError('Factories cannot be called with "new".');
@@ -88,6 +92,11 @@ function cloneFactory(base?: any): any {
 
 	if (base) {
 		copyProperties(factory.prototype, base.prototype);
+		// TODO or not TODO
+		// if (isComposeFactory(base)) {
+		// 	 copyProperties(factory, base);
+		// }
+		//
 		initFnMap.set(factory, [].concat(initFnMap.get(base)));
 	}
 	else {
@@ -95,6 +104,9 @@ function cloneFactory(base?: any): any {
 	}
 	factory.prototype.constructor = factory;
 	stamp(factory);
+	if (staticProperties) {
+		copyProperties(factory, staticProperties);
+	}
 	Object.freeze(factory);
 
 	return factory;
@@ -479,8 +491,22 @@ function create<O>(base: any, initFunction?: ComposeInitializationFunction<any, 
    return factory;
 }
 
+/* Extend factory with static properties */
+export interface ComposeFactory<T, O> {
+	static<S>(staticProperties: S): ComposeFactory<T, O> & S;
+}
+
+export interface Compose {
+    static<F extends ComposeFactory<T, O>, T, O, S>(factory: F, staticProperties: S): F & S;
+}
+
+function _static<F extends ComposeFactory<T, O>, T, O, S>(factory: F, staticProperties: S): F & S {
+	return <F & S> cloneFactory(factory, staticProperties);
+}
+
 /* Generate compose */
 (<Compose> create).create = create;
+(<Compose> create).static = _static;
 (<Compose> create).extend = extend;
 (<Compose> create).mixin = mixin;
 (<Compose> create).overlay = overlay;
