@@ -19,6 +19,7 @@
 		"./typings/tsd.d.ts",
 		"./src/aspect.ts",
 		"./src/compose.ts",
+		"./src/mixins/createDestroyable.ts",
 		"./tests/functional/all.ts",
 		"./tests/intern-local.ts",
 		"./tests/intern.ts",
@@ -31,6 +32,8 @@
 		"./tests/typings/tsd.d.ts",
 		"./tests/unit/all.ts",
 		"./tests/unit/aspect.ts",
-		"./tests/unit/compose.ts"
+		"./tests/unit/compose.ts",
+		"./tests/unit/mixins/all.ts",
+		"./tests/unit/mixins/createDestroyable.ts"
 	]
 }
