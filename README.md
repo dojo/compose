@@ -116,7 +116,7 @@ const foo2 = fooFactory({
 
 ### Class Extension
 
-The `compose` module's default export also has a property, `extend`, which allows the enumerable, own properties of a literal object to be added to the prototype of a class. The type of the resulting class will be inferred and include all properties of the extending object. It can be used to extend an existing compose class like this:
+The `compose` module's default export also has a property, `extend`, which allows the enumerable, own properties of a literal object or the prototype of a class or ComposeFactory to be added to the prototype of a class. The type of the resulting class will be inferred and include all properties of the extending object. It can be used to extend an existing compose class like this:
 
 ```typescript
 import * as compose from 'dojo/compose';
@@ -199,9 +199,10 @@ const fooBar = fooBarFactory();
 
 fooBar.bar(); // logs "bar"
 ```
+NOTE: Using mixin on a ComposeFactory will result in the init function for the mixed in factory to be called first, and any init functions for the base will follow.
 
-Or to mix in an ES6 class:
-
+It can also be used to mix in an ES6 class.
+Note that when mixing in an ES6 class only methods will be mixed into the resulting class, not state.
 ```typescript
 import * as compose from 'dojo/compose';
 
@@ -213,13 +214,110 @@ class Bar {
     bar() { console.log('bar'); }
 }
 
-const fooBarFactory = compose.mixin(fooFactory, Bar);
+const fooBarFactory = compose.mixin(fooFactory, { mixin: Bar });
 
 const fooBar = fooBarFactory();
 
 fooBar.bar(); // logs "bar"
 ```
-Note that when mixing in an ES6 class only methods will be mixed into the resulting class, not state.
+
+It can also mixin in a plain object, but extend would be more appropriate in this case:
+```typescript
+import * as compose from 'dojo/compose';
+
+const fooFactory = compose.create({
+    foo: 'bar'
+});
+
+const bar = {
+    bar() { console.log('bar'); }
+}
+
+const fooBarFactory = compose.mixin(fooFactory, { mixin: bar });
+
+const fooBar = fooBarFactory();
+
+fooBar.bar(); // logs "bar"
+```
+The real beneif of using `mixin` is in those cases where simply modifying the type is not enough, and there is additional behavior that needs to be included via an initialization function or aspects.
+```typescript
+import * as compose from 'dojo/compose';
+
+const fooFactory = compose.create({
+	foo: 'bar',
+	doSomething: function() {
+		console.log('something');
+	}
+});
+
+const bar = {
+	bar: 'uninitialized'
+};
+
+const initBar = function(instance: { bar: string }) {
+	instance.bar = 'initialized';
+};
+
+const bazFactory = compose.create({
+	baz: 'baz'
+}, function(instance: { baz: string }) {
+	instance.baz = 'also initialized';
+});
+
+const bazAspect: AspectAdvice = {
+	after: {
+		doSomething: function() {
+			console.log('something else');
+		}
+	}
+};
+
+const fooBarBazFactory = fooFactory
+	.mixin({
+		mixin: bar,
+		initialize: initBar
+	})
+	.mixin({
+		mixin: bazFactory,
+		aspectAdvice: bazAspect
+	});
+
+const fooBarBaz = fooBarBazFactory();
+console.log(fooBarBaz.bar); // logs 'initialized'
+console.log(fooBarBaz.baz); // logs 'also initialized'
+fooBarBaz.doSomething(); // logs 'something' and then 'something else'
+```
+
+Additionally, anything with a `factoryDescriptor` function that returns a `ComposeMixinDescriptor` object can be passed directy to mixin.
+
+```typescript
+const createFoo = compose({
+    foo: ''
+})
+const mixin = {
+    factoryDescriptor: function() {
+        return {
+            mixin: {
+                bar: 1
+            },
+            initialize: function(fooBar: { bar: number; foo: string; }) {
+                fooBar.bar = 3;
+                fooBar.foo = 'bar';
+            }
+        };
+    }
+};
+
+const createFooBar = createFoo.mixin(mixin);
+
+const fooBar = createFooBar();
+console.log(fooBar.foo) // logs 'foo'
+console.log(fooBar.bar) // logs 3
+```
+
+The previous example, where a `ComposeFactory` was passed directly to `mixin` is possible because as a convenience all instances of `ComposeFactory`
+are initialized with a version of the `factoryDescriptor` function that simply returns the factory itself as the `mixin` property. If a more complicated
+factory descriptor is required, the `factoryDescriptor` method can be overridden using the `static` method, documented below.
 
 ### Using Generics
 
@@ -240,7 +338,7 @@ interface FooBarClass {
 	<T, U>(): Foo<T>&Bar<U>;
 }
 
-let fooBarFactory: FooBarClass = compose(Foo).mixin(<any>  Bar);
+let fooBarFactory: FooBarClass = compose(Foo).mixin({ mixin: <any>  Bar });
 
 let fooBar = fooBarFactory<number, any>();
 ```
@@ -264,6 +362,64 @@ const myFoo = myFooFactory();
 console.log(myFoo.foo); // logs "qat"
 ```
 Note that as with all the functionality provided by `compose`, the existing class is not modified.
+
+### Adding static properties to a factory
+
+If you want to add static methods or constants to a `ComposeFactory`, the `static` method allows you to do so. Any properties
+ set this way cannot be altered, as the returned factory is frozen. In order to modify or remove a static property
+on a factory, a new factory would need to be created.
+```typescript
+const createFoo = compose({
+	foo: 1
+}).static({
+	doFoo(): string {
+		return 'foo';
+	}
+});
+
+console.log(createFoo.doFoo()); // logs 'foo'
+
+// This will throw an error
+// createFoo.doFoo = function() {
+//	 return 'bar'
+// }
+
+const createNewFoo = createFoo.static({
+	doFoo(): string {
+		return 'bar';
+	}
+});
+
+console.log(createNewFoo.doFoo()); // logs 'bar'
+```
+
+If a factory already has static properties, calling its static method again will not maintain those properties on the 
+returned factory. The original factory will still maintain its static properties.
+```typescript
+const createFoo = compose({
+	foo: 1
+}).static({
+	doFoo(): string {
+		return 'foo';
+	}
+})
+
+console.log(createFoo.doFoo()); //logs 'foo'
+
+const createFooBar = createFoo.static({
+	doBar(): string {
+		return 'bar';
+	}
+});
+
+console.log(createFooBar.doBar()); //logs 'bar'
+console.log(createFoo.doFoo()); //logs 'foo'
+//console.log(createFooBar.doFoo()); Doesn't compile
+//console.log(createFoo.doBar()); Doesn't compile
+```
+
+Static properties will also be lost when calling mixin or extend. Because of this, static properties should be applied
+to the 'final' factory in a chain.
 
 ## How do I use this package?
 

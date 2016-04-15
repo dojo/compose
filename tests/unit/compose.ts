@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import compose, { GenericClass } from '../../src/compose';
+import compose, { GenericClass, ComposeMixinDescriptor } from '../../src/compose';
 
 let _hasStrictModeCache: boolean;
 
@@ -135,7 +135,7 @@ registerSuite({
 
 			const createFoo = compose(Foo, initFoo);
 
-			const foo = createFoo();
+			createFoo();
 			assert.strictEqual(counter, 1, 'the initialisation function fired');
 		},
 		'initialise function with prototype': function () {
@@ -156,6 +156,18 @@ registerSuite({
 			const foo = createFoo();
 			assert.strictEqual(counter, 1, 'counter only called once');
 			assert.strictEqual(foo.bar, 'foo', 'properly initialised property .bar');
+		},
+		'initialize with options object': function() {
+			const createFoo = compose(
+				{ foo: '' },
+				function(instance: {foo: string}, options?: any) {
+					instance.foo = options.foo;
+				}
+			);
+
+			const foo = createFoo({ foo: 'bar' });
+
+			assert.strictEqual(foo.foo, 'bar', 'properly initialized from options bag');
 		},
 		'initialise with constructor function': function () {
 			let counter = 0;
@@ -211,18 +223,22 @@ registerSuite({
 					callstack.push('foobaz');
 				})
 				.mixin(createFoo);
-
 			const createFooBarBazQat = compose({
 					qat: /qat/
 				}, () => {
 					callstack.push('foobarbazqat');
 				})
-				.mixin(createFooBar)
-				.mixin(createFooBaz);
+				.mixin( createFooBar )
+				.mixin({
+					mixin: createFooBaz,
+					initialize: function(instance: { qat: RegExp; baz: boolean; foo: string; }) {
+						callstack.push('foobazMixinInit');
+					}
+				});
 
-			const foobarbazqat = createFooBarBazQat();
+			createFooBarBazQat();
 
-			assert.deepEqual(callstack, [ 'foo', 'foobaz', 'foobar', 'foobarbazqat' ],
+			assert.deepEqual(callstack, [ 'foo', 'foobaz', 'foobazMixinInit', 'foobar', 'foobarbazqat' ],
 				'Init functions should be called in proper order and duplicates eliminated');
 		},
 		'.create()': function () {
@@ -249,6 +265,7 @@ registerSuite({
 
 			assert.throws(function () {
 				const foo = new (<any> createFoo)();
+				foo;
 			}, SyntaxError, 'Factories cannot be called with "new"');
 		},
 		'immutability': function () {
@@ -403,6 +420,20 @@ registerSuite({
 
 			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
 			assert.strictEqual(foobar.bar, 2, 'instance contains bar');
+		},
+		'extend with factory': function() {
+			const createFoo = compose.create({
+				foo: 'foo'
+			}, instance => instance.foo = 'bar');
+			const createBar = compose.create({
+				bar: 'bar'
+			}, instance => instance.bar = 'foo');
+			const createFooBar = createFoo.extend(createBar);
+
+			const fooBar = createFooBar();
+
+			assert.strictEqual(fooBar.foo, 'bar', 'Should have run original init function');
+			assert.strictEqual(fooBar.bar, 'bar', 'Should have included extension type and not init function');
 		}
 	},
 	mixin: {
@@ -447,14 +478,14 @@ registerSuite({
 
 			const createFooBar = compose({
 				foo: 'foo'
-			}, function(instance: {foo: string, bar: number}) {
+			}, function(instance) {
 				instance.foo = 'bar';
-				assert.strictEqual(instance.bar, 3, 'instance contains bar');
 			}).mixin(createBar);
 
 			const foobar = createFooBar();
 
 			assert.strictEqual(foobar.foo, 'bar', 'instance contains foo');
+			assert.strictEqual(foobar.bar, 3, 'instance containce bar');
 		},
 		'duplicate init functions'() {
 			let called = 0;
@@ -480,10 +511,11 @@ registerSuite({
 				foo: 'foo'
 			}, function(instance) {
 				instance.foo = 'bar';
-			}).mixin(createBarQat).mixin(createBarBaz);
+			})
+				.mixin(createBarQat)
+				.mixin(createBarBaz);
 
-			const foobarbazqat = createFooBarBazQat();
-
+			createFooBarBazQat();
 			assert.strictEqual(called, 1, 'Init function only called once');
 		},
 		'es6 class': function () {
@@ -497,12 +529,249 @@ registerSuite({
 				foo: 'foo'
 			});
 
-			const createFooBar = compose.mixin(createFoo, Bar);
+			const createFooBar = compose.mixin(createFoo, { mixin: Bar });
 
 			const foobar = createFooBar();
 
 			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
 			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
+		},
+
+		'es6 class and initialize': function() {
+			class Bar {
+				bar(): number {
+					return 2;
+				};
+				baz: string;
+			}
+
+			function initBar(instance: Bar) {
+				instance.baz = 'boo';
+			}
+
+			const createFoo = compose({
+				foo: 'foo'
+			});
+
+			const createFooBar = compose.mixin(createFoo, { mixin: Bar, initialize: initBar });
+
+			const foobar = createFooBar();
+
+			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
+			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
+			assert.strictEqual(foobar.baz, 'boo', 'instance contains boo');
+		},
+
+		'compose factory and initialize': function() {
+			const createBar = compose({
+				bar: 2
+			}, function(instance: any) {
+				// This runs first, as it's the existing initialize on the base of the mixin
+				instance.foo = 'bar';
+			});
+
+			const createFooBar = compose({
+				foo: 'foo',
+				baz: ''
+			}, function(instance: any) {
+				// This runs last, as it's the initialize on the base class
+				instance.bar = 3;
+				assert.strictEqual(instance.baz, 'baz', 'instance contains baz');
+			}).mixin({
+				mixin: createBar,
+				initialize: function(instance: any) {
+					// This runs second, as it's the new, optional initialize provided with the mixin
+					assert.strictEqual(instance.foo, 'bar', 'instance contains foo');
+					instance.baz = 'baz';
+				}
+			});
+
+			const foobar = createFooBar();
+			assert.strictEqual(foobar.bar, 3, 'instance contains bar');
+
+		},
+
+		'only initialize': function() {
+			const createFoo = compose({
+				foo: 'foo'
+			}).mixin({
+				initialize: function(instance: any) {
+					instance.foo = 'bar';
+				}
+			});
+
+			const foo = createFoo();
+			assert.strictEqual(foo.foo, 'bar', 'initialize was called');
+		},
+
+		'only aspect': function() {
+			const createFoo = compose({
+				foo: function() {
+					this.baz = 'bar';
+				},
+				bar: '',
+				baz: ''
+			}).mixin({
+				aspectAdvice: {
+					after: {
+						foo: function() {
+							this.bar = 'baz';
+						}
+					}
+				}
+			});
+
+			const foo = createFoo();
+			foo.foo();
+			assert.strictEqual(foo.baz, 'bar', 'function ran');
+			assert.strictEqual(foo.bar, 'baz', 'aspect ran');
+		},
+
+		'base, initialize, and aspect': function() {
+			const createFoo = compose({}).mixin({
+				mixin: compose({
+					foo: 'foo',
+					bar: '',
+					doneFoo: false,
+					doFoo: function() {
+						this.foo = 'bar';
+					}
+				}),
+				initialize: function(instance: any) {
+					instance.bar = 'bar';
+				},
+				aspectAdvice: {
+					after: {
+						doFoo: function() {
+							this.doneFoo = true;
+						}
+					}
+				}
+			});
+
+			const foo = createFoo();
+			assert.strictEqual(foo.foo, 'foo', 'contains foo property');
+			assert.strictEqual(foo.bar, 'bar', 'initialize ran');
+
+			foo.doFoo();
+			assert.strictEqual(foo.foo, 'bar', 'ran function');
+			assert.isTrue(foo.doneFoo, 'ran aspect');
+		},
+
+		'mixin with plain object': function() {
+			const createFoo = compose({
+				baz: 'baz'
+			}).mixin({
+				mixin: {
+					foo: 'foo',
+					bar: 3
+				}
+			});
+
+			const foo = createFoo();
+			assert.strictEqual(foo.baz, 'baz', 'contains baz property');
+			assert.strictEqual(foo.foo, 'foo', 'contains foo property');
+			assert.strictEqual(foo.bar, 3, 'contains bar property');
+		},
+
+		'Shouldn\'t duplicate init functions passed directly to mixin': function() {
+			const init = function(instance: { count: number; baz: string}) {
+				instance.count = instance.count + 1;
+			};
+			const otherInitializer = function(instance: any) {
+				instance.foo = 'bar';
+			};
+			const createFoo = compose({
+				count: 0
+			}, function(instance: { count: number }) {
+				instance.count = instance.count + 1;
+			})
+				.mixin({ initialize: init })
+				.mixin({ initialize: init })
+				.mixin({ mixin: { baz: 'baz' }, initialize: init })
+				.mixin({ initialize: otherInitializer });
+
+			const foo = createFoo();
+			assert.strictEqual((<any> foo).foo, 'bar', 'Should have called other initialize as well');
+			assert.strictEqual(foo.count, 2, 'Should have called base initialize and passed in initialize once each');
+		},
+
+		'Init function with combined types': function() {
+			interface Bar {
+				bar: string;
+			}
+			interface Baz {
+				baz: number;
+			}
+			const createBar = compose<Bar, Bar>({
+				bar: ''
+			}, function(instance: Bar, options: Bar) {
+				if (options.bar) {
+					instance.bar = options.bar;
+				}
+			});
+			const createBaz = compose<Baz, Baz>({
+				baz: 1
+			}, function(instance: Baz, options: Baz) {
+				if (options.baz) {
+					instance.baz = options.baz;
+				}
+			});
+			createBar.mixin({
+				initialize: function(instance: { bar: string; baz: number }, options: { bar: string; baz: number }) {
+
+				},
+				mixin: createBaz
+			});
+			createBar.mixin({
+				initialize: function(instance: { baz: number }, options: { baz: number }) {
+
+				},
+				mixin: createBaz
+			});
+			createBar.mixin({
+				initialize: function(instance: { bar: string }, options: { bar: string }) {
+
+				},
+				mixin: createBaz
+			});
+			// Shouldn\'t compile
+			// const createBarBazIllegalInstanceType = createBar.mixin({
+			// initialize: function(instance: { baz: number; foo: number }) {
+            //
+			// },
+			// mixin: createBaz
+			// });
+			// const createBarBazIllegalOptionsType = createBar.mixin({
+			// initialize: function(instance: { baz: number; }, options: { baz: number; foo: string; }) {
+            //
+			// },
+			// mixin: createBaz
+			// });
+		},
+
+		'Object with factoryDescriptor function': function() {
+			const createFooBar = compose({
+				foo: ''
+			}, function(foo: { foo: string }) {
+				foo.foo = 'foo';
+			}).mixin({
+				factoryDescriptor: function() {
+					return {
+						mixin: {
+							bar: 1
+						},
+						initialize: function(fooBar: { bar: number; foo: string; }) {
+							fooBar.bar = 3;
+							fooBar.foo = 'bar';
+						}
+					};
+				}
+			});
+
+			const fooBar = createFooBar();
+			assert.strictEqual(fooBar.foo, 'foo', 'Foo property not present');
+			assert.strictEqual(fooBar.bar, 3, 'Bar property not present');
 		}
 	},
 	overlay: {
@@ -519,7 +788,7 @@ registerSuite({
 			});
 
 			const fooOverlayed = createFooOverlayed();
-			const fooOverlayed2 = createFooOverlayed();
+			createFooOverlayed();
 
 			assert.strictEqual(fooOverlayed.foo, 'bar', 'the overlayed function was called');
 			assert.strictEqual(count, 1, 'call count of 1');
@@ -610,6 +879,25 @@ registerSuite({
 				const instance = createFoo();
 				const result = instance.foo('foo');
 				assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
+			},
+			'transfer generic type': function() {
+				class Foo<T> {
+					foo: T;
+				}
+
+				class Bar<T> {
+					bar(opt: T): void {
+						console.log(opt);
+					}
+				}
+
+				interface FooBarClass {
+					<T, U>(): Foo<T>&Bar<U>;
+				}
+
+				let fooBarFactory: FooBarClass = compose(Foo).mixin({ mixin: <any>  Bar });
+
+				fooBarFactory<number, any>();
 			},
 			'chaining': function () {
 				class Foo {
@@ -924,7 +1212,81 @@ registerSuite({
 							}
 						}
 					});
+					BeforeFoo;
 				}, Error, 'Trying to advise non-existing method: "bar"');
+			}
+		},
+		'static': {
+			'create factory with static method': function() {
+				const createFoo = compose({
+					foo: 1
+				}).static({
+					doFoo(): string {
+						return 'foo';
+					}
+				});
+
+				assert.strictEqual(createFoo.doFoo(), 'foo', 'Should have done foo');
+				assert.strictEqual(createFoo().foo, 1, 'Should still have foo property on instance');
+				// Shouldn't compile
+				// assert.strictEqual(createFoo().doFoo(), 'Should not have do foo function on instance');
+			},
+
+			'extend existing factory with static method': function() {
+				const createFoo = compose({
+					foo: 1
+				});
+
+				const createAndDoFoo = compose.static(createFoo, {
+					doFoo(): string {
+						return 'foo';
+					}
+				});
+
+				assert.strictEqual(createAndDoFoo.doFoo(), 'foo', 'Should have done foo');
+				assert.strictEqual(createAndDoFoo().foo, 1, 'Should still have foo property on instance');
+				// Shouldn't compile
+				// assert.strictEqual(createAndDoFoo().doFoo(), 'Should not have do foo function on instance');
+			},
+
+			'override factory descriptor function with static method': function() {
+				const createFoo = compose({
+					foo: 1
+				}).static({
+					factoryDescriptor(): ComposeMixinDescriptor<any, any, { foo: number }, any> {
+						return {
+							mixin: this,
+							initialize: function(instance: { foo: number }) {
+								instance.foo = 3;
+							}
+						};
+					}
+				});
+
+				const createFooBar = compose({
+					bar: 1
+				}).mixin(createFoo);
+
+				const fooBar = createFooBar();
+
+				assert.strictEqual(fooBar.bar, 1, 'Should have bar property');
+				assert.strictEqual(fooBar.foo, 3, 'Should have foo property');
+			},
+
+			'Passing a factory to static': function() {
+				const createFoo = compose({}).static({
+					doFoo: (): string => 'foo'
+				});
+
+				const createBar = compose({}).static(createFoo);
+
+				assert.strictEqual(createBar.doFoo(), 'foo', 'Should have transferred static property');
+			},
+
+			'Passing a factory with no static methods to static': function() {
+				assert.doesNotThrow(function() {
+					compose({}).static(compose({}));
+				}, 'Should have handled factory with no static methods without throwing');
 			}
 		}
 	}

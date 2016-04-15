@@ -1,7 +1,14 @@
 import WeakMap from 'dojo-core/WeakMap';
 
 export interface AdvisingFunction extends Function {
+	/**
+	 * The next advice in an advice chain
+	 */
 	next: AdvisingFunction;
+
+	/**
+	 * The previous advice in an advice chain
+	 */
 	previous: AdvisingFunction;
 }
 
@@ -12,26 +19,55 @@ export interface DispatchAdvice<T> {
 }
 
 export interface BeforeAdvice {
-    (...args: any[]): any[] | void;
+	/**
+	 * Advice which is applied *before*, receiving the original arguments, if the advising function returns
+	 * a value, it is passed further along taking the place of the original arguments.
+	 * @param args The arguments the method was called with
+	 */
+	(...args: any[]): any[] | void;
 }
 
 export interface AfterAdvice<T> {
-    (result: T, ...args: any[]): T;
+	/**
+	 * Advice which is applied *after*, receiving the result and arguments from the join point.
+	 *
+	 * @param result The result from the function being advised
+	 * @param args The arguments that were supplied to the advised function
+	 * @returns The value returned from the advice is then the result of calling the method
+	 */
+	(result: T, ...args: any[]): T;
 }
 
 export interface AroundAdvice<T> {
-    (origFn: GenericFunction<T>): (...args: any[]) => T;
+	/**
+	 * Advice which is applied *around*.  The advising function receives the original function and needs to
+	 * return a new function which will then invoke the original function.
+	 *
+	 * @param origFn The original function
+	 * @returns A new function which will inoke the original function.
+	 */
+	(origFn: GenericFunction<T>): (...args: any[]) => T;
 }
 
+/**
+ * Types of advice
+ */
 export enum AdviceType { Before, After, Around };
 
+/**
+ * A weak map of dispatchers used to apply the advice
+ */
 const dispatchAdviceMap = new WeakMap<Function, DispatchAdvice<any>>();
 
 export interface GenericFunction<T> {
 	(...args: any[]): T;
 }
 
-function getDispatcher<T>(joinPoint: GenericFunction<T>): GenericFunction<T> {
+/**
+ * Returns the dispatcher function for a given joinPoint (method/function)
+ * @param joinPoint The function that is to be advised
+ */
+function getDispatcher<F extends GenericFunction<T>, T>(joinPoint: F): F {
 
 	function dispatcher(...args: any[]): T {
 		const adviceMap = dispatchAdviceMap.get(dispatcher);
@@ -54,11 +90,17 @@ function getDispatcher<T>(joinPoint: GenericFunction<T>): GenericFunction<T> {
 		joinPoint: joinPoint
 	});
 
-	return dispatcher;
+	return dispatcher as F;
 }
 
-function advise<T>(joinPoint: GenericFunction<T>, type: AdviceType, advice: BeforeAdvice|AfterAdvice<T>|AroundAdvice<T>): GenericFunction<T> {
-	let dispatcher: GenericFunction<any> = joinPoint;
+/**
+ * Advise a join point (function) with supplied advice
+ * @param joinPoint The function to be advised
+ * @param type The type of advice to be applied
+ * @param advice The advice to apply
+ */
+function advise<F extends GenericFunction<T>, T>(joinPoint: F, type: AdviceType, advice: BeforeAdvice | AfterAdvice<T> | AroundAdvice<T>): F {
+	let dispatcher = joinPoint;
 	if (type === AdviceType.Around) {
 		dispatcher = getDispatcher(advice.apply(this, [ joinPoint ]));
 	}
@@ -77,14 +119,29 @@ function advise<T>(joinPoint: GenericFunction<T>, type: AdviceType, advice: Befo
 	return dispatcher;
 }
 
-export function before<T>(joinPoint: GenericFunction<T>, advice: BeforeAdvice): GenericFunction<T> {
+/**
+ * Apply advice *before* the supplied joinPoint (function)
+ * @param joinPoint A function that should have advice applied to
+ * @param advice The before advice
+ */
+export function before<F extends GenericFunction<any>>(joinPoint: F, advice: BeforeAdvice): F {
 	return advise(joinPoint, AdviceType.Before, advice);
 }
 
-export function after<T>(joinPoint: GenericFunction<T>, advice: AfterAdvice<T>): GenericFunction<T> {
+/**
+ * Apply advice *after* the supplied joinPoint (function)
+ * @param joinPoint A function that should have advice applied to
+ * @param advice The after advice
+ */
+export function after<F extends GenericFunction<T>, T>(joinPoint: F, advice: AfterAdvice<T>): F {
 	return advise(joinPoint, AdviceType.After, advice);
 }
 
-export function around<T>(joinPoint: GenericFunction<T>, advice: AroundAdvice<T>): GenericFunction<T> {
-	return advise<T>(joinPoint, AdviceType.Around, advice);
+/**
+ * Apply advice *around* the supplied joinPoint (function)
+ * @param joinPoint A function that should have advice applied to
+ * @param advice The around advice
+ */
+export function around<F extends GenericFunction<T>, T>(joinPoint: F, advice: AroundAdvice<T>): F {
+	return advise<F, T>(joinPoint, AdviceType.Around, advice);
 }
