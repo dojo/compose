@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import compose, { AspectAdvice, GenericClass, ComposeFactory, ComposeMixinDescriptor } from '../../src/compose';
+import compose, { GenericClass, ComposeMixinDescriptor } from '../../src/compose';
 
 let _hasStrictModeCache: boolean;
 
@@ -135,7 +135,7 @@ registerSuite({
 
 			const createFoo = compose(Foo, initFoo);
 
-			const foo = createFoo();
+			createFoo();
 			assert.strictEqual(counter, 1, 'the initialisation function fired');
 		},
 		'initialise function with prototype': function () {
@@ -236,7 +236,7 @@ registerSuite({
 					}
 				});
 
-			const foobarbazqat = createFooBarBazQat();
+			createFooBarBazQat();
 
 			assert.deepEqual(callstack, [ 'foo', 'foobaz', 'foobazMixinInit', 'foobar', 'foobarbazqat' ],
 				'Init functions should be called in proper order and duplicates eliminated');
@@ -265,6 +265,7 @@ registerSuite({
 
 			assert.throws(function () {
 				const foo = new (<any> createFoo)();
+				foo;
 			}, SyntaxError, 'Factories cannot be called with "new"');
 		},
 		'immutability': function () {
@@ -514,7 +515,7 @@ registerSuite({
 				.mixin(createBarQat)
 				.mixin(createBarBaz);
 
-			const foobarbazqat = createFooBarBazQat();
+			createFooBarBazQat();
 			assert.strictEqual(called, 1, 'Init function only called once');
 		},
 		'es6 class': function () {
@@ -685,10 +686,10 @@ registerSuite({
 			}, function(instance: { count: number }) {
 				instance.count = instance.count + 1;
 			})
-                .mixin({ initialize: init })
-                .mixin({ initialize: init })
-                .mixin({ mixin: { baz: 'baz' }, initialize: init })
-                .mixin({ initialize: otherInitializer });
+				.mixin({ initialize: init })
+				.mixin({ initialize: init })
+				.mixin({ mixin: { baz: 'baz' }, initialize: init })
+				.mixin({ initialize: otherInitializer });
 
 			const foo = createFoo();
 			assert.strictEqual((<any> foo).foo, 'bar', 'Should have called other initialize as well');
@@ -716,19 +717,19 @@ registerSuite({
 					instance.baz = options.baz;
 				}
 			});
-			const createBarBaz = createBar.mixin({
+			createBar.mixin({
 				initialize: function(instance: { bar: string; baz: number }, options: { bar: string; baz: number }) {
 
 				},
 				mixin: createBaz
 			});
-			const createBarBazWithBazTypes = createBar.mixin({
+			createBar.mixin({
 				initialize: function(instance: { baz: number }, options: { baz: number }) {
 
 				},
 				mixin: createBaz
 			});
-			const createBarBazWithBarTypes = createBar.mixin({
+			createBar.mixin({
 				initialize: function(instance: { bar: string }, options: { bar: string }) {
 
 				},
@@ -787,7 +788,7 @@ registerSuite({
 			});
 
 			const fooOverlayed = createFooOverlayed();
-			const fooOverlayed2 = createFooOverlayed();
+			createFooOverlayed();
 
 			assert.strictEqual(fooOverlayed.foo, 'bar', 'the overlayed function was called');
 			assert.strictEqual(count, 1, 'call count of 1');
@@ -896,7 +897,7 @@ registerSuite({
 
 				let fooBarFactory: FooBarClass = compose(Foo).mixin({ mixin: <any>  Bar });
 
-				let fooBar = fooBarFactory<number, any>();
+				fooBarFactory<number, any>();
 			},
 			'chaining': function () {
 				class Foo {
@@ -1211,6 +1212,7 @@ registerSuite({
 							}
 						}
 					});
+					BeforeFoo;
 				}, Error, 'Trying to advise non-existing method: "bar"');
 			}
 		},
@@ -1269,6 +1271,22 @@ registerSuite({
 
 				assert.strictEqual(fooBar.bar, 1, 'Should have bar property');
 				assert.strictEqual(fooBar.foo, 3, 'Should have foo property');
+			},
+
+			'Passing a factory to static': function() {
+				const createFoo = compose({}).static({
+					doFoo: (): string => 'foo'
+				});
+
+				const createBar = compose({}).static(createFoo);
+
+				assert.strictEqual(createBar.doFoo(), 'foo', 'Should have transferred static property');
+			},
+
+			'Passing a factory with no static methods to static': function() {
+				assert.doesNotThrow(function() {
+					compose({}).static(compose({}));
+				}, 'Should have handled factory with no static methods without throwing');
 			}
 		}
 	}
