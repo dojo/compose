@@ -23,7 +23,7 @@ export var environments = [
 	{ browserName: 'microsoftedge', platform: 'Windows 10' },
 	{ browserName: 'firefox', platform: [ 'Windows 10', 'Windows 7', 'OS X 10.11' ] },
 	{ browserName: 'chrome', platform: [ 'Windows 10', 'Windows 7', 'OS X 10.11' ] },
-	{ browserName: 'safari', version: '9', platform: 'OS X 10.11' },
+	// { browserName: 'safari', version: '9', platform: 'OS X 10.11' },
 	{ browserName: 'android', platform: 'Linux', version: '4.4', deviceName: 'Google Nexus 7 HD Emulator' }
 ];
 
