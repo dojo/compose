@@ -12,6 +12,7 @@
 		"url": "https://github.com/dojo/compose.git"
 	},
 	"peerDependencies": {
+		"@reactivex/rxjs": ">5.0.0-beta",
 		"dojo-core": ">=2.0.0-alpha.3"
 	},
 	"devDependencies": {

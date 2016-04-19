@@ -21,6 +21,7 @@
 		"./src/compose.ts",
 		"./src/mixins/createDestroyable.ts",
 		"./src/mixins/createEvented.ts",
+		"./src/mixins/createStateful.ts",
 		"./tests/functional/all.ts",
 		"./tests/intern-local.ts",
 		"./tests/intern.ts",
@@ -36,6 +37,7 @@
 		"./tests/unit/compose.ts",
 		"./tests/unit/mixins/all.ts",
 		"./tests/unit/mixins/createDestroyable.ts",
-		"./tests/unit/mixins/createEvented.ts"
+		"./tests/unit/mixins/createEvented.ts",
+		"./tests/unit/mixins/createStateful.ts"
 	]
 }
