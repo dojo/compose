@@ -20,7 +20,7 @@ export const capabilities = {
 // capabilities options specified for an environment will be copied as-is
 export const environments = [
 	{ browserName: 'internet explorer', version: [ '9.0', '10.0', '11.0' ], platform: 'Windows 7' },
-	{ browserName: 'microsoftedge', platform: 'Windows 10' },
+	// { browserName: 'microsoftedge', platform: 'Windows 10' },
 	{ browserName: 'firefox', platform: [ 'Windows 10', 'Windows 7', 'OS X 10.11' ] },
 	{ browserName: 'chrome', platform: [ 'Windows 10', 'Windows 7', 'OS X 10.11' ] },
 	// { browserName: 'safari', version: '9', platform: 'OS X 10.11' },
