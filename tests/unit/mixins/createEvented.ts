@@ -99,7 +99,7 @@ registerSuite({
 		'listener'() {
 			const eventStack: string[] = [];
 			const action = {
-				do(options: { event: { type: string; } }): void {
+				do(options: { event: { type: string; target: any; } }): void {
 					eventStack.push(options.event.type);
 				}
 			};

@@ -1,9 +1,9 @@
-import { EventObject, Handle } from 'dojo-core/interfaces';
+import { Handle } from 'dojo-core/interfaces';
 import { deepAssign } from 'dojo-core/lang';
 import Promise from 'dojo-core/Promise';
 import WeakMap from 'dojo-core/WeakMap';
 import { Observable, Subscription } from 'rxjs/Rx';
-import createEvented, { Evented, EventedOptions, EventedListener } from './createEvented';
+import createEvented, { Evented, EventedOptions, EventedListener, TargettedEventObject } from './createEvented';
 import compose, { ComposeFactory } from '../compose';
 
 /**
@@ -47,7 +47,7 @@ export interface StatefulOptions<S extends State> extends EventedOptions {
 	stateFrom?: ObservableState<S>;
 }
 
-export interface StateChangeEvent<S extends State> extends EventObject {
+export interface StateChangeEvent<S extends State> extends TargettedEventObject {
 	/**
 	 * The event type
 	 */
@@ -94,7 +94,7 @@ export interface Stateful<S extends State> extends Evented {
 	 * @param listener The listener that will be called when the event occurs
 	 */
 	on(type: 'statechange', listener: EventedListener<StateChangeEvent<S>>): Handle;
-	on(type: string, listener: EventedListener<EventObject>): Handle;
+	on(type: string, listener: EventedListener<TargettedEventObject>): Handle;
 }
 
 export interface StatefulFactory extends ComposeFactory<Stateful<State>, StatefulOptions<State>> {

@@ -4,15 +4,22 @@ import WeakMap from 'dojo-core/WeakMap';
 import compose, { ComposeFactory } from '../compose';
 import createDestroyable, { Destroyable } from './createDestroyable';
 
-export interface ActionableOptions<E extends EventObject> {
+export interface TargettedEventObject extends EventObject {
+	/**
+	 * The target of the event
+	 */
+	target: any;
+}
+
+export interface ActionableOptions<E extends TargettedEventObject> {
 	[ option: string ]: any;
 	/**
 	 * An event object
 	 */
-	event: E;
+	event?: E;
 }
 
-export interface Actionable<E extends EventObject> {
+export interface Actionable<E extends TargettedEventObject> {
 	/**
 	 * The *do* method of an Action, which can take a `options` property of an `event`
 	 * @param options Options passed which includes an `event` object
@@ -31,13 +38,13 @@ export interface EventedCallback<E extends EventObject> {
 /**
  * Either an `EventedCallback` or something that is `Actionable`
  */
-export type EventedListener<E extends EventObject> = EventedCallback<E> | Actionable<E>;
+export type EventedListener<E extends TargettedEventObject> = EventedCallback<E> | Actionable<E>;
 
 /**
  * A map of listeners where the key is the event `type`
  */
 export interface EventedListenersMap {
-	[type: string]: EventedListener<EventObject>;
+	[type: string]: EventedListener<TargettedEventObject>;
 }
 
 /**
@@ -71,7 +78,7 @@ export interface Evented extends Destroyable {
 	 * @param listener Either a function which takes an emitted `event` object, or something that is `Actionable`
 	 * @returns A handle which can be used to remove the listener
 	 */
-	on(type: string, listener: EventedListener<EventObject>): Handle;
+	on(type: string, listener: EventedListener<TargettedEventObject>): Handle;
 }
 
 export interface EventedFactory extends ComposeFactory<Evented, EventedOptions> { }
@@ -86,7 +93,7 @@ const listenersMap = new WeakMap<Evented, EventedCallbackMap>();
  *
  * @param value The value to guard against
  */
-function isActionable<E extends EventObject>(value: any): value is Actionable<E> {
+function isActionable<T>(value: any): value is Actionable<T> {
 	return Boolean(value && 'do' in value && typeof value.do === 'function');
 }
 
@@ -94,7 +101,7 @@ function isActionable<E extends EventObject>(value: any): value is Actionable<E>
  * An internal function that always returns an EventedCallback
  * @param listener Either a `EventedCallback` or an `Actionable`
  */
-export function resolveListener<E extends EventObject>(listener: EventedListener<E>): EventedCallback<E> {
+export function resolveListener<E extends TargettedEventObject>(listener: EventedListener<E>): EventedCallback<E> {
 	return isActionable(listener) ? function (event: E) {
 			listener.do({ event });
 		} : listener;
