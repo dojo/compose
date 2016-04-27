@@ -94,7 +94,7 @@ function isActionable<E extends EventObject>(value: any): value is Actionable<E>
  * An internal function that always returns an EventedCallback
  * @param listener Either a `EventedCallback` or an `Actionable`
  */
-function resolveListener<E extends EventObject>(listener: EventedListener<E>): EventedCallback<E> {
+export function resolveListener<E extends EventObject>(listener: EventedListener<E>): EventedCallback<E> {
 	return isActionable(listener) ? function (event: E) {
 			listener.do({ event });
 		} : listener;
