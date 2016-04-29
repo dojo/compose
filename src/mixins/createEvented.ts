@@ -103,7 +103,8 @@ function isActionable<T>(value: any): value is Actionable<T> {
  */
 export function resolveListener<E extends TargettedEventObject>(listener: EventedListener<E>): EventedCallback<E> {
 	return isActionable(listener) ? function (event: E) {
-			listener.do({ event });
+			/* TODO: Resolve when Microsoft/TypeScript#8367 fixed */
+			(<Actionable<E>> listener).do({ event });
 		} : listener;
 }
 
@@ -111,13 +112,13 @@ export function resolveListener<E extends TargettedEventObject>(listener: Evente
  * Creates a new instance of an `Evented`
  */
 const createEvented: EventedFactory = compose({
-		emit<E extends EventObject>(event: E): void {
+		emit<E extends EventObject>(this: Evented, event: E): void {
 			const method = listenersMap.get(this)[event.type];
 			if (method) {
 				method.call(this, event);
 			}
 		},
-		on(type: string, listener: EventedListener<Event>): Handle {
+		on(this: Evented, type: string, listener: EventedListener<Event>): Handle {
 			return on(listenersMap.get(this), type, resolveListener(listener));
 		}
 	})

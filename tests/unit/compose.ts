@@ -289,10 +289,10 @@ registerSuite({
 		'getters and setters': function() {
 			const createFoo = compose({
 				_foo: '',
-				set foo(foo) {
+				set foo(foo: string) {
 					this._foo = foo;
 				},
-				get foo() {
+				get foo(): string {
 					return this._foo;
 				}
 			});
@@ -307,7 +307,7 @@ registerSuite({
 		'only getter': function() {
 			const createFoo = compose({
 				_foo: '',
-				get foo() {
+				get foo(): string {
 					return this._foo + 'bar';
 				}
 			});

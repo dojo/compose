@@ -68,7 +68,7 @@ export interface Stateful<S extends State> extends Evented {
 	/**
 	 * A read only view of the state
 	 */
-	state: S;
+	readonly state: S;
 
 	/**
 	 * Set the state on the instance.
@@ -156,23 +156,21 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
  */
 const createStateful: StatefulFactory = compose({
 		get state(): any {
-			return stateWeakMap.get(this);
+			return stateWeakMap.get(<Stateful<State>> this);
 		},
 
-		setState(value: State): void {
-			const stateful: Stateful<State> = this;
-			const observedState = observedStateMap.get(stateful);
+		setState(this: Stateful<State>, value: State): void {
+			const observedState = observedStateMap.get(this);
 			if (observedState) {
 				observedState.observable.patch(value, { id: observedState.id });
 			}
 			else {
-				setStatefulState(stateful, value);
+				setStatefulState(this, value);
 			}
 		},
 
-		observeState(id: string, observable: ObservableState<State>): Handle {
-			const stateful: Stateful<State> = this;
-			let observedState = observedStateMap.get(stateful);
+		observeState(this: Stateful<State>, id: string, observable: ObservableState<State>): Handle {
+			let observedState = observedStateMap.get(this);
 			if (observedState) {
 				if (observedState.id === id && observedState.observable === observable) {
 					return observedState.handle;
@@ -185,23 +183,23 @@ const createStateful: StatefulFactory = compose({
 				subscription: observable
 					.observe(id)
 					.subscribe(
-						(item) => setStatefulState(stateful, item), /* next handler */
+						(item) => setStatefulState(this, item), /* next handler */
 						(err) => {
 							/* TODO: Should we emit an error, instead of throwing? */
 							throw err;
 						}, /* error handler */
-						() => unobserve(stateful)), /* completed handler */
+						() => unobserve(this)), /* completed handler */
 				handle: {
-					destroy() {
-						const observedState = observedStateMap.get(stateful);
+					destroy(this: Stateful<State>) {
+						const observedState = observedStateMap.get(this);
 						if (observedState) {
 							observedState.subscription.unsubscribe();
-							observedStateMap.delete(stateful);
+							observedStateMap.delete(this);
 						}
 					}
 				}
 			};
-			observedStateMap.set(stateful, observedState);
+			observedStateMap.set(this, observedState);
 			return observedState.handle;
 		}
 	})

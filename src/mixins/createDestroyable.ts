@@ -64,13 +64,12 @@ const createDestroyable: ComposeFactory<Destroyable, any> = compose({
 	},
 	destroy() {
 		return new Promise((resolve) => {
-			const destroyable: Destroyable = this;
-			handlesWeakMap.get(destroyable).forEach((handle) => {
+			handlesWeakMap.get(this).forEach((handle) => {
 				handle && handle.destroy && handle.destroy();
 			});
-			handlesWeakMap.delete(destroyable);
-			destroyable.destroy = noop;
-			destroyable.own = destroyed;
+			handlesWeakMap.delete(this);
+			this.destroy = noop;
+			this.own = destroyed;
 			resolve(true);
 		});
 	}

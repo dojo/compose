@@ -487,85 +487,89 @@ function from<T extends Function>(base: GenericClass<any> | ComposeFactory<any, 
 	return base.prototype[method];
 }
 
-function doFrom<T, O>(base: GenericClass<any> | ComposeFactory<any, any>, method: string): ComposeFactory<T, O> {
+function doFrom<T extends { [method: string]: any; }, O>(this: ComposeFactory<T, O>, base: GenericClass<any> | ComposeFactory<any, any>, method: string): ComposeFactory<T, O> {
 	const clone = cloneFactory(this);
-	(<any> clone.prototype)[method] = base.prototype[method];
-	return clone as ComposeFactory<T, O>;
+	clone.prototype[method] = base.prototype[method];
+	return clone;
 }
 
 function before<T>(base: GenericClass<any> | ComposeFactory<any, any>, method: string, advice: BeforeAdvice): GenericFunction<T>;
 function before<T>(method: GenericFunction<T>, advice: BeforeAdvice): GenericFunction<T>;
 function before(...args: any[]): GenericFunction<any> {
+	/* TODO: before, after, around all share very similiar code */
 	let base: GenericFunction<any>;
-	let method: string | GenericFunction<any>;
+	let method: GenericFunction<any>;
+	let methodName: string;
 	let advice: BeforeAdvice;
 	if (args.length >= 3) {
-		[ base, method, advice ] = args;
-		method = base.prototype[<string> method];
+		[ base, methodName, advice ] = args;
+		method = base.prototype[methodName];
 	}
 	else {
 		[ method, advice ] = args;
 	}
-	return aspectBefore(<GenericFunction<any>> method, advice);
+	return aspectBefore(method, advice);
 }
 
-function doBefore<T, O>(method: string, advice: BeforeAdvice): ComposeFactory<T, O> {
+function doBefore<T extends { [method: string]: any; }, O>(this: ComposeFactory<T, O>, method: string, advice: BeforeAdvice): ComposeFactory<T, O> {
 	const clone = cloneFactory(this);
-	(<any> clone.prototype)[method] = aspectBefore((<any> clone.prototype)[method], advice);
-	return <ComposeFactory<T, O>> clone;
+	clone.prototype[method] = aspectBefore((<any> clone.prototype)[method], advice);
+	return clone;
 }
 
 function after<T>(base: GenericClass<any> | ComposeFactory<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
 function after<T>(method: GenericFunction<T>, advice: AfterAdvice<T>): GenericFunction<T>;
 function after(...args: any[]): GenericFunction<any> {
 	let base: GenericFunction<any>;
-	let method: string | GenericFunction<any>;
+	let method: GenericFunction<any>;
+	let methodName: string;
 	let advice: AfterAdvice<any>;
 	if (args.length >= 3) {
-		[ base, method, advice ] = args;
-		method = base.prototype[<string> method];
+		[ base, methodName, advice ] = args;
+		method = base.prototype[methodName];
 	}
 	else {
 		[ method, advice ] = args;
 	}
-	return aspectAfter(<GenericFunction<any>> method, advice);
+	return aspectAfter(method, advice);
 }
 
-function doAfter<T, P, O>(method: string, advice: AfterAdvice<P>): ComposeFactory<T, O> {
+function doAfter<T extends { [method: string]: any; }, P, O>(this: ComposeFactory<T, O>, method: string, advice: AfterAdvice<P>): ComposeFactory<T, O> {
 	const clone = cloneFactory(this);
-	(<any> clone.prototype)[method] = aspectAfter((<any> clone.prototype)[method], advice);
-	return <ComposeFactory <T, O>> clone;
+	clone.prototype[method] = aspectAfter(clone.prototype[method], advice);
+	return clone;
 }
 
 function around<T>(base: GenericClass<any> | ComposeFactory<any, any>, method: string, advice: AfterAdvice<T>): GenericFunction<T>;
 function around<T>(method: GenericFunction<T>, advice: AroundAdvice<T>): GenericFunction<T>;
 function around(...args: any[]): GenericFunction<any> {
 	let base: GenericFunction<any>;
-	let method: string | GenericFunction<any>;
+	let method: GenericFunction<any>;
+	let methodName: string;
 	let advice: AfterAdvice<any>;
 	if (args.length >= 3) {
-		[ base, method, advice ] = args;
-		method = base.prototype[<string> method];
+		[ base, methodName, advice ] = args;
+		method = base.prototype[methodName];
 	}
 	else {
 		[ method, advice ] = args;
 	}
-	return aspectAround(<GenericFunction<any>> method, advice);
+	return aspectAround(method, advice);
 }
 
-function doAround<T, P, O>(method: string, advice: AroundAdvice<P>): ComposeFactory<T, O> {
+function doAround<T extends { [method: string]: any; }, P, O>(this: ComposeFactory<T, O>, method: string, advice: AroundAdvice<P>): ComposeFactory<T, O> {
 	const clone = cloneFactory(this);
-	(<any> clone.prototype)[method] = aspectAround((<any> clone.prototype)[method], advice);
-	return <ComposeFactory <T, O>> clone;
+	clone.prototype[method] = aspectAround((<any> clone.prototype)[method], advice);
+	return clone;
 }
 
-function aspect<T, O>(base: ComposeFactory<T, O>, advice: AspectAdvice): ComposeFactory<T, O> {
+function aspect<T extends { [method: string]: any; }, O>(base: ComposeFactory<T, O>, advice: AspectAdvice): ComposeFactory<T, O> {
 	const clone = cloneFactory(base);
 
 	function mapAdvice(adviceHash: { [method: string ]: Function }, advisor: Function): void {
 		for (let key in adviceHash) {
 			if (key in clone.prototype) {
-				(<any> clone.prototype)[key] = advisor((<any> clone.prototype)[key], adviceHash[key]);
+				clone.prototype[key] = advisor((<any> clone.prototype)[key], adviceHash[key]);
 			}
 			else {
 				throw new Error('Trying to advise non-existing method: "' + key + '"');
@@ -632,7 +636,7 @@ function create<O>(base: any, initFunction?: ComposeInitializationFunction<any, 
 
 	/* return the new constructor */
 	return factory;
-	}
+}
 
 /* Extend factory with static properties */
 export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
