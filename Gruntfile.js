@@ -194,8 +194,10 @@ module.exports = function (grunt) {
 		ts: {
 			options: tsOptions,
 			dev: {
-				outDir: '<%= devDirectory %>',
-				src: [ '<%= all %>' ]
+				tsconfig: {
+					tsconfig: 'tsconfig.json',
+					passThrough: true
+				}
 			},
 			dist: {
 				options: {

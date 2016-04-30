@@ -8,7 +8,8 @@
 		"removeComments": false,
 		"sourceMap": true,
 		"target": "es5",
-		"moduleResolution": "classic"
+		"moduleResolution": "classic",
+		"strictNullChecks": true
 	},
 	"filesGlob": [
 		"./typings/tsd.d.ts",

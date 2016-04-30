@@ -154,7 +154,7 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
 /**
  * Create an instance of a stateful object
  */
-const createStateful: StatefulFactory = compose({
+const createStateful: StatefulFactory = compose<any, StatefulOptions<State>>({
 		get state(): any {
 			return stateWeakMap.get(<Stateful<State>> this);
 		},

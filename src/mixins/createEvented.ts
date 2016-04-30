@@ -128,7 +128,7 @@ const createEvented: EventedFactory = compose({
 			/* Initialise listener map */
 			listenersMap.set(instance, {});
 
-			if (options && 'listeners' in options) {
+			if (options && options.listeners) {
 				for (let eventType in options.listeners) {
 					instance.own(instance.on(eventType, options.listeners[eventType]));
 				}
