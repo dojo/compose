@@ -12,7 +12,8 @@ export const proxyUrl = 'http://localhost:9000/';
 export const capabilities = {
 	'browserstack.debug': false,
 	project: 'Dojo 2',
-	name: 'dojo-compose'
+	name: 'dojo-compose',
+	fixSessionCapabilities: false
 };
 
 // Browsers to run integration testing against. Note that version numbers must be strings if used with Sauce
@@ -48,20 +49,21 @@ export const loaders = {
 
 // Configuration options for the module loader; any AMD configuration options supported by the specified AMD loader
 // can be used here
-export var loaderOptions = {
+export const loaderOptions = {
 	// Packages that should be registered with the loader in each testing environment
 	packages: [
 		{ name: 'src', location: '_build/src' },
 		{ name: 'tests', location: '_build/tests' },
-		{ name: 'dojo-core', location: 'node_modules/dojo-core' }
+		{ name: 'dojo-core', location: 'node_modules/dojo-core' },
+		{ name: 'rxjs', location: 'node_modules/@reactivex/rxjs/dist/amd' }
 	]
 };
 
 // Non-functional test suite(s) to run in each browser
-export var suites = [ 'tests/unit/all' ];
+export const suites = [ 'tests/unit/all' ];
 
 // Functional test suite(s) to run in each browser once non-functional tests are completed
-export var functionalSuites = [ 'tests/functional/all' ];
+export const functionalSuites = [ 'tests/functional/all' ];
 
 // A regular expression matching URLs to files that should not be included in code coverage analysis
-export var excludeInstrumentation = /(?:node_modules|bower_components|tests|_modules)[\/\\]/;
+export const excludeInstrumentation = /(?:node_modules|bower_components|tests|_modules)[\/\\]/;
