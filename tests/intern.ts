@@ -10,6 +10,7 @@ export const proxyUrl = 'http://localhost:9000/';
 // Note that the `build` capability will be filled in with the current commit ID from the Travis CI environment
 // automatically
 export const capabilities = {
+	'browserstack.debug': false,
 	project: 'Dojo 2',
 	name: 'dojo-compose',
 	fixSessionCapabilities: false
@@ -19,19 +20,25 @@ export const capabilities = {
 // OnDemand. Options that will be permutated are browserName, version, platform, and platformVersion; any other
 // capabilities options specified for an environment will be copied as-is
 export const environments = [
-	{ browserName: 'internet explorer', version: [ '9.0', '10.0', '11.0' ], platform: 'Windows 7' },
-	// { browserName: 'microsoftedge', platform: 'Windows 10' },
-	{ browserName: 'firefox', platform: [ 'Windows 10', 'Windows 7', 'OS X 10.11' ] },
-	{ browserName: 'chrome', platform: [ 'Windows 10', 'Windows 7', 'OS X 10.11' ] },
-	// { browserName: 'safari', version: '9', platform: 'OS X 10.11' },
-	{ browserName: 'android', platform: 'Linux', version: '4.4', deviceName: 'Google Nexus 7 HD Emulator' }
+	{ browserName: 'internet explorer', version: [ '9', '10', '11' ], platform: 'WINDOWS' },
+	{ browserName: 'firefox', platform: 'WINDOWS' },
+	{ browserName: 'chrome', platform: 'WINDOWS' }/*,
+	{ browserName: 'Safari', version: '9', platform: 'OS X' }*/
 ];
 
 // Maximum number of simultaneous integration tests that should be executed on the remote WebDriver service
-export const maxConcurrency = 4;
+export const maxConcurrency = 2;
 
 // Name of the tunnel class to use for WebDriver tests
-export const tunnel = 'SauceLabsTunnel';
+export const tunnel = 'BrowserStackTunnel';
+
+// Support running unit tests from a web server that isn't the intern proxy
+export const initialBaseUrl: string = (function () {
+	if (typeof location !== 'undefined' && location.pathname.indexOf('__intern/') > -1) {
+		return '/';
+	}
+	return null;
+})();
 
 // The desired AMD loader to use when running unit tests (client.html/client.js). Omit to use the default Dojo
 // loader
