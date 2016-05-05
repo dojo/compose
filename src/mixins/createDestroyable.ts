@@ -19,6 +19,8 @@ export interface Destroyable {
 	destroy(): Promise<boolean>;
 }
 
+export interface DestroyableFactory extends ComposeFactory<Destroyable, any> { }
+
 /**
  * A reference to a function that always returns a promise which resolves to false
  */
@@ -51,7 +53,7 @@ export function isDestroyable(value: any): value is Destroyable {
  * A mixin which adds the concepts of being able to *destroy* handles which the instance
  * *owns*
  */
-const createDestroyable: ComposeFactory<Destroyable, any> = compose({
+const createDestroyable: DestroyableFactory = compose({
 	own(handle: Handle): Handle {
 		const handles = handlesWeakMap.get(this);
 		handles.push(handle);
