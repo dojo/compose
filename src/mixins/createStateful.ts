@@ -155,8 +155,8 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
  * Create an instance of a stateful object
  */
 const createStateful: StatefulFactory = compose<any, StatefulOptions<State>>({
-		get state(): any {
-			return stateWeakMap.get(<Stateful<State>> this);
+		get state(this: Stateful<State>): State {
+			return stateWeakMap.get(this);
 		},
 
 		setState(this: Stateful<State>, value: State): void {
@@ -177,28 +177,31 @@ const createStateful: StatefulFactory = compose<any, StatefulOptions<State>>({
 				}
 				throw new Error(`Already observing state with ID '${observedState.id}'`);
 			}
+
+			const stateful = this;
 			observedState = {
 				id,
 				observable,
 				subscription: observable
 					.observe(id)
 					.subscribe(
-						(item) => setStatefulState(this, item), /* next handler */
+						(item) => setStatefulState(stateful, item), /* next handler */
 						(err) => {
 							/* TODO: Should we emit an error, instead of throwing? */
 							throw err;
 						}, /* error handler */
-						() => unobserve(this)), /* completed handler */
+						() => unobserve(stateful)), /* completed handler */
 				handle: {
-					destroy(this: Stateful<State>) {
-						const observedState = observedStateMap.get(this);
+					destroy() {
+						const observedState = observedStateMap.get(stateful);
 						if (observedState) {
 							observedState.subscription.unsubscribe();
-							observedStateMap.delete(this);
+							observedStateMap.delete(stateful);
 						}
 					}
 				}
 			};
+
 			observedStateMap.set(this, observedState);
 			return observedState.handle;
 		}

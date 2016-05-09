@@ -83,13 +83,14 @@ registerSuite({
 			stateFrom: observer
 		});
 
-		stateful.destroy();
+		return stateful.destroy()
+			.then(() => {
+				assert.isUndefined(stateful.state);
 
-		assert.isUndefined(stateful.state);
-
-		assert.throws(() => {
-			stateful.setState({ foo: 'bar' });
-		}, TypeError);
+				assert.throws(() => {
+					stateful.setState({ foo: 'bar' });
+				}, TypeError);
+			});
 	},
 	'setState'() {
 		const stateful = createStateful();

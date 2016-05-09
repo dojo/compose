@@ -1,3 +1,4 @@
+import { assign } from 'dojo-core/lang';
 import WeakMap from 'dojo-core/WeakMap';
 import {
 	before as aspectBefore,
@@ -375,8 +376,8 @@ function mixin<T, O, U, P>(
 	base: ComposeFactory<T, O>,
 	toMixin: ComposeMixinable<U, P> | ComposeMixinDescriptor<T, O, U, P>
 ): ComposeFactory<T & U, O & P> {
-	base = cloneFactory(base);
-	const baseInitFns = initFnMap.get(base);
+	let clone = cloneFactory(base) as ComposeFactory<T & U, O & P>;
+	const baseInitFns = initFnMap.get(clone);
 	const mixin = isComposeMixinable(toMixin) ? toMixin.factoryDescriptor() : toMixin;
 	const mixinType =  mixin.mixin;
 	if (mixinType) {
@@ -386,8 +387,8 @@ function mixin<T, O, U, P>(
 				baseInitFns.unshift(mixin.initialize);
 			}
 		}
-		concatInitFn(base, mixinFactory);
-		copyProperties(base.prototype, mixinFactory.prototype);
+		concatInitFn(clone, mixinFactory);
+		copyProperties(clone.prototype, mixinFactory.prototype);
 	}
 	else if (mixin.initialize) {
 		if (baseInitFns.indexOf(mixin.initialize) < 0) {
@@ -395,9 +396,9 @@ function mixin<T, O, U, P>(
 		}
 	}
 	if (mixin.aspectAdvice) {
-		base = aspect(base, mixin.aspectAdvice);
+		clone = aspect(clone, mixin.aspectAdvice);
 	}
-	return base as ComposeFactory<T & U, O & P>;
+	return clone;
 }
 
 export interface GenericFunction<T> {
@@ -483,7 +484,7 @@ export interface Compose {
 	aspect<O, A>(base: ComposeFactory<O, A>, advice: AspectAdvice): ComposeFactory<O, A>;
 }
 
-function from<T extends Function>(base: GenericClass<any> | ComposeFactory<any, any>, method: string): T {
+function _from<T extends Function>(base: GenericClass<any> | ComposeFactory<any, any>, method: string): T {
 	return base.prototype[method];
 }
 
@@ -669,15 +670,17 @@ function _static<F extends ComposeFactory<T, O>, T, O, S>(factory: F, staticProp
 const compose = create as Compose;
 
 /* Add static methods to compose */
-compose.create = create;
-compose.static = _static;
-compose.extend = extend;
-compose.mixin = mixin;
-compose.overlay = overlay;
-compose.from = from;
-compose.before = before;
-compose.after = after;
-compose.around = around;
-compose.aspect = aspect;
+assign(compose, {
+	after,
+	around,
+	aspect,
+	before,
+	create,
+	extend,
+	from: _from,
+	mixin,
+	overlay,
+	static: _static
+});
 
 export default compose;
