@@ -61,7 +61,7 @@ export interface EventedOptions {
 	listeners?: EventedListenersMap;
 }
 
-export interface Evented extends Destroyable {
+export interface EventedMixin {
 	/**
 	 * Emit an event.
 	 *
@@ -80,6 +80,8 @@ export interface Evented extends Destroyable {
 	 */
 	on(type: string, listener: EventedListener<TargettedEventObject>): Handle;
 }
+
+export interface Evented extends EventedMixin, Destroyable { }
 
 export interface EventedFactory extends ComposeFactory<Evented, EventedOptions> { }
 
@@ -110,7 +112,7 @@ export function resolveListener<E extends TargettedEventObject>(listener: Evente
 /**
  * Creates a new instance of an `Evented`
  */
-const createEvented: EventedFactory = compose({
+const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 		emit<E extends EventObject>(event: E): void {
 			const method = listenersMap.get(this)[event.type];
 			if (method) {
@@ -123,11 +125,11 @@ const createEvented: EventedFactory = compose({
 	})
 	.mixin({
 		mixin: createDestroyable,
-		initialize(instance: Evented, options: EventedOptions) {
+		initialize(instance, options) {
 			/* Initialise listener map */
 			listenersMap.set(instance, {});
 
-			if (options && 'listeners' in options) {
+			if (options && options.listeners) {
 				for (let eventType in options.listeners) {
 					instance.own(instance.on(eventType, options.listeners[eventType]));
 				}

@@ -3,6 +3,8 @@ import Promise from 'dojo-core/Promise';
 import WeakMap from 'dojo-core/WeakMap';
 import compose, { ComposeFactory } from '../compose';
 
+export interface DestroyableOptions { }
+
 export interface Destroyable {
 	/**
 	 * Take a handle and *own* it, which ensures that the handle's
@@ -19,7 +21,7 @@ export interface Destroyable {
 	destroy(): Promise<boolean>;
 }
 
-export interface DestroyableFactory extends ComposeFactory<Destroyable, any> { }
+export interface DestroyableFactory extends ComposeFactory<Destroyable, DestroyableOptions> { }
 
 /**
  * A reference to a function that always returns a promise which resolves to false

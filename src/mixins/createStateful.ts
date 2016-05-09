@@ -64,7 +64,7 @@ export interface StateChangeEvent<S extends State> extends TargettedEventObject 
 	target: Stateful<S>;
 }
 
-export interface Stateful<S extends State> extends Evented {
+export interface StatefulMixin<S extends State>{
 	/**
 	 * A read only view of the state
 	 */
@@ -87,7 +87,9 @@ export interface Stateful<S extends State> extends Evented {
 	 *                   manage its state.
 	 */
 	observeState(id: string, observable: ObservableState<S>): Handle;
+}
 
+export interface Stateful<S extends State> extends StatefulMixin<S>, Evented {
 	/**
 	 * Add a listener for an event
 	 * @param type The event type to listen for
@@ -154,7 +156,7 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
 /**
  * Create an instance of a stateful object
  */
-const createStateful: StatefulFactory = compose({
+const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOptions<State>>({
 		get state(): any {
 			return stateWeakMap.get(this);
 		},
@@ -204,25 +206,29 @@ const createStateful: StatefulFactory = compose({
 			observedStateMap.set(stateful, observedState);
 			return observedState.handle;
 		}
+	}, (instance, options) => {
+		if (options) {
+			const { state } = options;
+			if (state) {
+				instance.setState(state);
+			}
+		}
 	})
 	.mixin({
 		mixin: createEvented,
-		initialize(instance: Stateful<State>, options: StatefulOptions<State>) {
-			const state = {};
-			stateWeakMap.set(instance, state);
+		initialize(instance, options) {
+			stateWeakMap.set(instance, {});
 			instance.own({
 				destroy() {
 					stateWeakMap.delete(instance);
 				}
 			});
 			if (options) {
-				if (options.state) {
-					instance.setState(options.state);
+				const { id, stateFrom } = options;
+				if (id && stateFrom) {
+					instance.own(instance.observeState(id, stateFrom));
 				}
-				if (options.id && options.stateFrom) {
-					instance.own(instance.observeState(options.id, options.stateFrom));
-				}
-				else if (options.id || options.stateFrom) {
+				else if (id || stateFrom) {
 					throw new TypeError('Factory requires options "id" and "stateFrom" to be supplied together.');
 				}
 			}
