@@ -81,7 +81,7 @@ export interface EventedMixin {
 	on(type: string, listener: EventedListener<TargettedEventObject>): Handle;
 }
 
-export interface Evented extends EventedMixin, Destroyable { }
+export type Evented = EventedMixin & Destroyable;
 
 export interface EventedFactory extends ComposeFactory<Evented, EventedOptions> { }
 
@@ -95,7 +95,7 @@ const listenersMap = new WeakMap<Evented, EventedCallbackMap>();
  *
  * @param value The value to guard against
  */
-function isActionable<T>(value: any): value is Actionable<T> {
+function isActionable(value: any): value is Actionable<any> {
 	return Boolean(value && 'do' in value && typeof value.do === 'function');
 }
 

@@ -89,7 +89,7 @@ export interface StatefulMixin<S extends State>{
 	observeState(id: string, observable: ObservableState<S>): Handle;
 }
 
-export interface Stateful<S extends State> extends StatefulMixin<S>, Evented {
+export type Stateful<S extends State> = StatefulMixin<S> & Evented & {
 	/**
 	 * Add a listener for an event
 	 * @param type The event type to listen for
