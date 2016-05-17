@@ -12,3 +12,4 @@ tests/typings/dist/
 /typings
 .baseDir.ts
 html-report
+coverage-unmapped.json

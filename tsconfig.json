@@ -44,6 +44,7 @@
 		"./tests/unit/all.ts",
 		"./tests/unit/aspect.ts",
 		"./tests/unit/compose.ts",
+		"./tests/unit/main.ts",
 		"./tests/unit/mixins/all.ts",
 		"./tests/unit/mixins/createDestroyable.ts",
 		"./tests/unit/mixins/createEvented.ts",
