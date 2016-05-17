@@ -30,7 +30,7 @@
 		"grunt-contrib-clean": "^1.0.0",
 		"grunt-contrib-copy": "^1.0.0",
 		"grunt-contrib-watch": "^1.0.0",
-		"grunt-dojo2": "2.0.0-alpha.10",
+		"grunt-dojo2": "2.0.0-alpha.11",
 		"grunt-release": "0.13.0",
 		"grunt-text-replace": "0.4.0",
 		"grunt-ts": "^5.5.1",
