@@ -1,7 +1,9 @@
 {
 	"name": "dojo-compose",
+	"peerDependencies": {
+		"@reactivex/RxJS": "npm:@reactivex/rxjs"
+	},
 	"devDependencies": {
-		"@reactivex/RxJS": "npm:@reactivex/rxjs",
 		"chai": "registry:npm/chai#3.5.0+20160415060238",
 		"glob": "registry:npm/glob#6.0.0+20160211003958"
 	},
