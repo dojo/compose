@@ -1,12 +1,14 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import * as lib from 'src/main';
+import * as main from 'src/main';
 
 registerSuite({
 	name: 'src/compose',
 	'validate api'() {
-		assert.isFunction(lib.default);
-		assert.isFunction(lib.default.after);
-		assert.isFunction(lib.isComposeFactory);
+		assert.isFunction(main.compose);
+		assert.isFunction(main.isComposeFactory);
+		assert.isFunction(main.createDestroyable);
+		assert.isFunction(main.createEvented);
+		assert.isFunction(main.createStateful);
 	}
 });

@@ -1,6 +1,7 @@
 .sublimets
 .tscache
 *.js
+!/index.js
 *.js.map
 !/*.js
 !/tasks/*.js
