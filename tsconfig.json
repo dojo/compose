@@ -11,19 +11,16 @@
 		"moduleResolution": "classic"
 	},
 	"filesGlob": [
-		"./node_modules/dojo-core/typings/dojo-core/dojo-core.d.ts",
-		"./node_modules/dojo-core/typings/symbol-shim/symbol-shim.d.ts",
+		"./typings/extras.d.ts",
 		"./typings/index.d.ts",
 		"./src/**/*.ts",
 		"./tests/**/*.ts"
 	],
 	"files": [
-		"./node_modules/dojo-core/typings/dojo-core/dojo-core.d.ts",
-		"./node_modules/dojo-core/typings/symbol-shim/symbol-shim.d.ts",
+		"./typings/extras.d.ts",
 		"./typings/index.d.ts",
 		"./src/aspect.ts",
 		"./src/compose.ts",
-		"./src/interfaces.d.ts",
 		"./src/main.ts",
 		"./src/mixins/createDestroyable.ts",
 		"./src/mixins/createEvented.ts",

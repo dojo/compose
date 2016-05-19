@@ -9,7 +9,8 @@ _build
 node_modules
 bower_components
 tests/typings/dist/
-/typings
+/typings/**
+!/typings/extras.d.ts
 .baseDir.ts
 html-report
 coverage-unmapped.json
