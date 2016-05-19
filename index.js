@@ -1,1 +1,2 @@
-modules.exports = require('./dist/umd/main');
+module.exports = require('./dist/umd/main');
+
