@@ -35,6 +35,34 @@ registerSuite({
 
 		assert.deepEqual(eventStack, [ 'foo', 'bar' ]);
 	},
+	'listener array at creation'() {
+		const eventStack: string[] = [];
+		const evented = createEvented({
+			listeners: {
+				foo: [
+					function (event) {
+						eventStack.push('foo1-' + event.type);
+					},
+					function (event) {
+						eventStack.push('foo2-' + event.type);
+					}
+				],
+				bar(event) {
+					eventStack.push(event.type);
+				}
+			}
+		});
+
+		evented.emit({ type: 'foo' });
+		evented.emit({ type: 'bar' });
+
+		evented.destroy();
+
+		evented.emit({ type: 'foo' });
+		evented.emit({ type: 'bar' });
+
+		assert.deepEqual(eventStack, [ 'foo1-foo', 'foo2-foo', 'bar' ]);
+	},
 	'on': {
 		'on()'() {
 			const eventStack: string[] = [];
@@ -93,6 +121,57 @@ registerSuite({
 			evented.emit({ type: 'foo' });
 
 			assert.deepEqual(eventStack, [ 'one', 'two', 'two' ]);
+		},
+		'on(map)'() {
+			const eventStack: string[] = [];
+			const evented = createEvented();
+
+			const handle = evented.on({
+				foo(event) {
+					eventStack.push(event.type);
+				},
+				bar(event) {
+					eventStack.push(event.type);
+				}
+			});
+
+			evented.emit({ type: 'foo' });
+			evented.emit({ type: 'bar' });
+			handle.destroy();
+			evented.emit({ type: 'foo' });
+			evented.emit({ type: 'bar' });
+
+			assert.deepEqual(eventStack, [ 'foo', 'bar' ]);
+		},
+		'on(type, listener[])'() {
+			const eventStack: string[] = [];
+			const evented = createEvented();
+
+			const handle = evented.on({
+				foo: [
+					function (event) {
+						eventStack.push('foo1');
+					},
+					function (event) {
+						eventStack.push('foo2');
+					}
+				]
+			});
+
+			evented.emit({ type: 'foo' });
+			handle.destroy();
+			evented.emit({ type: 'foo' });
+
+			assert.deepEqual(eventStack, [ 'foo1', 'foo2' ]);
+		},
+		'on throws'() {
+			const evented = createEvented();
+			assert.throws(() => {
+				(<any> evented).on();
+			}, TypeError);
+			assert.throws(() => {
+				(<any> evented).on('type', () => {}, () => {});
+			}, TypeError);
 		}
 	},
 	'actions': {
