@@ -156,8 +156,7 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 				}
 			}
 			else if (args.length === 1) { /* overload: on(listners) */
-				let listenerMapArg: EventedListenersMap;
-				[ listenerMapArg ] = args;
+				const listenerMapArg: EventedListenersMap = args[0];
 				const handles = Object.keys(listenerMapArg).map((type) => evented.on(type, listenerMapArg[type]));
 				return handlesArraytoHandle(handles);
 			}
