@@ -40,11 +40,13 @@ export interface EventedCallback<E extends EventObject> {
  */
 export type EventedListener<E extends TargettedEventObject> = EventedCallback<E> | Actionable<E>;
 
+export type EventeListenerOrArray<E extends TargettedEventObject> = EventedListener<E> | EventedListener<E>[];
+
 /**
  * A map of listeners where the key is the event `type`
  */
 export interface EventedListenersMap {
-	[type: string]: EventedListener<TargettedEventObject>;
+	[type: string]: EventeListenerOrArray<TargettedEventObject>;
 }
 
 /**
@@ -75,10 +77,18 @@ export interface EventedMixin {
 	 * Attach a `listener` to a particular event `type`.
 	 *
 	 * @param type The event to attach the listener to
-	 * @param listener Either a function which takes an emitted `event` object, or something that is `Actionable`
+	 * @param listener Either a function which takes an emitted `event` object, something that is `Actionable`,
+	 *                 or an array of of such listeners.
 	 * @returns A handle which can be used to remove the listener
 	 */
-	on(type: string, listener: EventedListener<TargettedEventObject>): Handle;
+	on(type: string, listener: EventeListenerOrArray<TargettedEventObject>): Handle;
+	/**
+	 * Attach a `listener` to a particular event `type`.
+	 *
+	 * @param type The event to attach the listener to
+	 * @param listeners An object which contains key value pairs of event types and listeners.
+	 */
+	on(listeners: EventedListenersMap): Handle;
 }
 
 export type Evented = EventedMixin & Destroyable;
@@ -119,7 +129,7 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 				method.call(this, event);
 			}
 		},
-		on(type: string, listener: EventedListener<Event>): Handle {
+		on(...args: any[]): Handle {
 			return on(listenersMap.get(this), type, resolveListener(listener));
 		}
 	})
