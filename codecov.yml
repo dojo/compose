@@ -1,0 +1,5 @@
+coverage:
+  notify:
+    slack:
+      url: https://hooks.slack.com/services/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
+      attachments: "sunburst, diff"
