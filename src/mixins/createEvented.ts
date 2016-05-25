@@ -40,11 +40,13 @@ export interface EventedCallback<E extends EventObject> {
  */
 export type EventedListener<E extends TargettedEventObject> = EventedCallback<E> | Actionable<E>;
 
+export type EventedListenerOrArray<E extends TargettedEventObject> = EventedListener<E> | EventedListener<E>[];
+
 /**
  * A map of listeners where the key is the event `type`
  */
 export interface EventedListenersMap {
-	[type: string]: EventedListener<TargettedEventObject>;
+	[type: string]: EventedListenerOrArray<TargettedEventObject>;
 }
 
 /**
@@ -75,10 +77,18 @@ export interface EventedMixin {
 	 * Attach a `listener` to a particular event `type`.
 	 *
 	 * @param type The event to attach the listener to
-	 * @param listener Either a function which takes an emitted `event` object, or something that is `Actionable`
+	 * @param listener Either a function which takes an emitted `event` object, something that is `Actionable`,
+	 *                 or an array of of such listeners.
 	 * @returns A handle which can be used to remove the listener
 	 */
-	on(type: string, listener: EventedListener<TargettedEventObject>): Handle;
+	on(type: string, listener: EventedListenerOrArray<TargettedEventObject>): Handle;
+	/**
+	 * Attach a `listener` to a particular event `type`.
+	 *
+	 * @param type The event to attach the listener to
+	 * @param listeners An object which contains key value pairs of event types and listeners.
+	 */
+	on(listeners: EventedListenersMap): Handle;
 }
 
 export type Evented = EventedMixin & Destroyable;
@@ -110,6 +120,17 @@ export function resolveListener<E extends TargettedEventObject>(listener: Evente
 }
 
 /**
+ * Internal function to convert an array of handles to a single handle
+ */
+function handlesArraytoHandle(handles: Handle[]): Handle {
+	return {
+		destroy() {
+			handles.forEach((handle) => handle.destroy());
+		}
+	};
+}
+
+/**
  * Creates a new instance of an `Evented`
  */
 const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
@@ -119,8 +140,29 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 				method.call(this, event);
 			}
 		},
-		on(type: string, listener: EventedListener<Event>): Handle {
-			return on(listenersMap.get(this), type, resolveListener(listener));
+		on(...args: any[]): Handle {
+			const evented: Evented = this;
+			const listenerMap = listenersMap.get(evented);
+			if (args.length === 2) { /* overload: on(type, listener) */
+				let type: string;
+				let listeners: EventedListenerOrArray<TargettedEventObject>;
+				[ type, listeners ] = args;
+				if (Array.isArray(listeners)) {
+					const handles = listeners.map((listener) => on(listenerMap, type, resolveListener(listener)));
+					return handlesArraytoHandle(handles);
+				}
+				else {
+					return on(listenerMap, type, resolveListener(listeners));
+				}
+			}
+			else if (args.length === 1) { /* overload: on(listeners) */
+				const listenerMapArg: EventedListenersMap = args[0];
+				const handles = Object.keys(listenerMapArg).map((type) => evented.on(type, listenerMapArg[type]));
+				return handlesArraytoHandle(handles);
+			}
+			else { /* unexpected signature */
+				throw new TypeError('Invalid arguments');
+			}
 		}
 	})
 	.mixin({
@@ -130,9 +172,7 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 			listenersMap.set(instance, {});
 
 			if (options && options.listeners) {
-				for (let eventType in options.listeners) {
-					instance.own(instance.on(eventType, options.listeners[eventType]));
-				}
+				instance.own(instance.on(options.listeners));
 			}
 		}
 	});

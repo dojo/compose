@@ -17,7 +17,6 @@
 		"./tests/**/*.ts"
 	],
 	"files": [
-		"./typings/extras.d.ts",
 		"./typings/index.d.ts",
 		"./src/aspect.ts",
 		"./src/compose.ts",
