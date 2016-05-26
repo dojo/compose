@@ -11,10 +11,9 @@
 		"moduleResolution": "classic"
 	},
 	"filesGlob": [
-		"./typings/extras.d.ts",
-		"./typings/index.d.ts",
 		"./src/**/*.ts",
-		"./tests/**/*.ts"
+		"./tests/**/*.ts",
+		"./typings/index.d.ts"
 	],
 	"files": [
 		"./typings/index.d.ts",
