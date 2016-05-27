@@ -16,7 +16,6 @@
 		"./typings/index.d.ts"
 	],
 	"files": [
-		"./typings/index.d.ts",
 		"./src/aspect.ts",
 		"./src/compose.ts",
 		"./src/main.ts",
@@ -35,6 +34,7 @@
 		"./tests/unit/mixins/all.ts",
 		"./tests/unit/mixins/createDestroyable.ts",
 		"./tests/unit/mixins/createEvented.ts",
-		"./tests/unit/mixins/createStateful.ts"
+		"./tests/unit/mixins/createStateful.ts",
+		"./typings/index.d.ts"
 	]
 }
