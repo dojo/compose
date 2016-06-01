@@ -1136,8 +1136,11 @@ class Mixin {
 	}
 
 	execute<U, P>(toMixin: ComposeFactory<any, any>): ComposeFactory<any, any> {
-		let base: { [key: string]: Function } = <any> this,
+		let base: { [key: string]: Function } = <any> toMixin,
 			calls = this._calls;
+		if (this._initFunction) {
+			base = <any> create(toMixin, this._initFunction);
+		}
 		for (let i = 0; i < calls.length; i++) {
 			let [fn, args] = calls[i];
 			base[fn].apply(base, args);
