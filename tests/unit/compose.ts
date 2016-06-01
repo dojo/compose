@@ -1882,5 +1882,21 @@ registerSuite({
 			const s = createStatic();
 			assert.strictEqual((<any> s).toString(), '[object Static]');
 		}
+	},
+	createMixin: {
+		'basic': function() {
+			const bar = compose.createMixin()
+				.extend({
+					bar: 'bar'
+				});
+			const createFooBar = compose({
+				foo: 'foo'
+			}).createdMixin(bar);
+
+			const fooBar = createFooBar();
+
+			assert.strictEqual(fooBar.foo, 'foo');
+			assert.strictEqual(fooBar.bar, 'bar');
+		}
 	}
 });
