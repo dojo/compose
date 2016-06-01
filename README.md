@@ -325,7 +325,7 @@ factory descriptor is required, the `factoryDescriptor` method can be overridden
 ### Merging of Arrays
 
 When mixing in or extending classes which contain array literals as a value of a property, `compose` will merge these values
-instead of over writting, which it does with other value types.
+instead of over writing, which it does with other value types.
 
 For example, if I have an array of strings in my original class, and provide a mixin which shares the same property that is
 also an array, those will get merged:

@@ -2,17 +2,9 @@ import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import { setWarn } from '@dojo/core/instrument';
 import { hasToStringTag, hasConfigurableName } from '../support/util';
-import compose, { GenericClass, ComposeMixinDescriptor, getInitFunctionNames } from '../../src/compose';
+import compose, { GenericClass, ComposeMixinDescriptor, getInitFunctionNames, ComposeCreatedMixin } from '../../src/compose';
 
 let warnStack: any[][] = [];
-
-function getLastWarning(): string | undefined {
-	if (!warnStack.length) {
-		return;
-	}
-	const args = warnStack[warnStack.length - 1];
-	return args && args[0];
-}
 
 registerSuite({
 	name: 'lib/compose',
@@ -164,7 +156,7 @@ registerSuite({
 			assert.strictEqual(counter, 1, 'counter only called once');
 			assert.strictEqual(foo.bar, 'foo', 'properly initialised property .bar');
 		},
-		'initialize with options object': function() {
+		'initialize with options object'() {
 			const createFoo = compose(
 				{ foo: '' },
 				function(instance: {foo: string}, options?: any) {
@@ -236,11 +228,9 @@ registerSuite({
 					callstack.push('foobarbazqat');
 				})
 				.mixin( createFooBar )
-				.mixin({
-					mixin: createFooBaz,
-					initialize: function(instance: { qat: RegExp; baz: boolean; foo: string; }) {
-						callstack.push('foobazMixinInit');
-					}
+				.mixin( createFooBaz )
+				.init( function(instance: { qat: RegExp; baz: boolean; foo: string; }) {
+					callstack.push('foobazMixinInit');
 				});
 
 			createFooBarBazQat();
@@ -293,7 +283,7 @@ registerSuite({
 			}, TypeError);
 		},
 
-		'getters and setters': function() {
+		'getters and setters'() {
 			const createFoo = compose({
 				_foo: '',
 				set foo(this: any, foo) {
@@ -311,7 +301,7 @@ registerSuite({
 			assert.strictEqual(foo.foo, 'bar', 'Should use getter and return set value');
 		},
 
-		'only getter': function() {
+		'only getter'() {
 			const createFoo = compose({
 				_foo: '',
 				get foo(this: any) {
@@ -326,7 +316,7 @@ registerSuite({
 			assert.strictEqual(foo.foo, 'foobar', 'Getter didn\'t get updated value');
 		},
 
-		'only setter': function() {
+		'only setter'() {
 			const createFoo = compose({
 				_foo: '',
 				set foo(this: any, foo: string) {
@@ -341,7 +331,7 @@ registerSuite({
 			assert.notOk(foo.foo, 'No getter should be defined');
 		},
 
-		'non-configurable property': function() {
+		'non-configurable property'() {
 			'use strict';
 			const composeObj = {};
 			Object.defineProperty(composeObj, 'nonConfigurable', { configurable: false });
@@ -361,7 +351,7 @@ registerSuite({
 			Object.defineProperty(foo, 'nonConfigurable', { configurable: true });
 		},
 
-		'non-writable property': function() {
+		'non-writable property'() {
 			const composeObj: { [ index: string ]: string } = {};
 			Object.defineProperty(composeObj, 'nonWritable', { value: 'constant', writable: false });
 			const createFoo = compose(composeObj);
@@ -377,7 +367,7 @@ registerSuite({
 			}, TypeError);
 		},
 
-		'non-enumerable property': function() {
+		'non-enumerable property'() {
 			const composeObj: { [ index: string ]: string } = {};
 			Object.defineProperty(composeObj, 'nonEnumerable', { value: 'value', enumerable: false });
 			const createFoo = compose(composeObj);
@@ -402,7 +392,7 @@ registerSuite({
 			assert.notStrictEqual(createFoo.prototype.constructor, constructor);
 		},
 
-		'array prototype property': function() {
+		'array prototype property'() {
 			const arr = [ function () { return 'foo'; }, function () { return 'bar'; } ];
 			const createFoo = compose({ arr });
 			const foo = createFoo();
@@ -456,7 +446,7 @@ registerSuite({
 			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
 			assert.strictEqual(foobar.bar, 2, 'instance contains bar');
 		},
-		'extend with factory': function() {
+		'extend with factory'() {
 			const createFoo = compose.create({
 				foo: 'foo'
 			}, instance => instance.foo = 'bar');
@@ -535,18 +525,6 @@ registerSuite({
 				assert.deepEqual(createFoo.prototype.arr, [ 'foo', 'bar' ]);
 				assert.deepEqual(createBar.prototype.arr, [ 'foo', 'bar', 'baz' ]);
 			}
-		},
-
-		'deprecated'() {
-			warnStack = [];
-			compose({}).extend({});
-
-			assert.strictEqual(getLastWarning(), 'DEPRECATED: extend: This function will be removed, use "override" instead.');
-
-			warnStack = [];
-			compose.extend(compose({}), {});
-
-			assert.strictEqual(getLastWarning(), 'DEPRECATED: extend: This function will be removed, use "override" instead.');
 		}
 	},
 	mixin: {
@@ -631,261 +609,39 @@ registerSuite({
 			createFooBarBazQat();
 			assert.strictEqual(called, 1, 'Init function only called once');
 		},
-		'es6 class': function () {
-			class Bar {
-				bar(): number {
-					return 2;
-				}
-			}
 
-			const createFoo = compose({
-				foo: 'foo'
-			});
-
-			const createFooBar = compose.mixin(createFoo, { mixin: Bar });
-
-			const foobar = createFooBar();
-
-			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
-			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
-		},
-
-		'es6 class and initialize': function() {
-			class Bar {
-				bar(): number {
-					return 2;
-				};
-				baz: string;
-			}
-
-			function initBar(instance: Bar) {
-				instance.baz = 'boo';
-			}
-
-			const createFoo = compose({
-				foo: 'foo'
-			});
-
-			const createFooBar = compose.mixin(createFoo, { mixin: Bar, initialize: initBar });
-
-			const foobar = createFooBar();
-
-			assert.strictEqual(foobar.foo, 'foo', 'instance contains foo');
-			assert.strictEqual(foobar.bar(), 2, 'instance contains bar');
-			assert.strictEqual(foobar.baz, 'boo', 'instance contains boo');
-		},
-
-		'compose factory and initialize': function() {
-			const createBar = compose({
-				bar: 2
-			}, function(instance: any) {
-				// This runs first, as it's the existing initialize on the base of the mixin
-				instance.foo = 'bar';
-			});
-
-			const createFooBar = compose({
-				foo: 'foo',
-				baz: ''
-			}, function(instance: any) {
-				// This runs first, and shouldn't expect anything from subsequent mixins
-				instance.bar = 3;
-				assert.strictEqual(instance.baz, '', 'instance contains baz');
-			}).mixin({
-				mixin: createBar,
-				initialize: function(instance: any) {
-					// This runs second, as it's the new, optional initialize provided with the mixin
-					assert.strictEqual(instance.foo, 'bar', 'instance contains foo');
-					instance.baz = 'baz';
-				}
-			});
-
-			const foobar = createFooBar();
-			assert.strictEqual(foobar.bar, 3, 'instance contains bar');
-
-		},
-
-		'only initialize': function() {
-			const createFoo = compose({
-				foo: 'foo'
-			}).mixin({
-				initialize: function(instance: any) {
-					instance.foo = 'bar';
-				}
-			});
-
-			const foo = createFoo();
-			assert.strictEqual(foo.foo, 'bar', 'initialize was called');
-		},
-
-		'only aspect': function(this: any) {
-			const createFoo = compose({
-				foo: function(this: any) {
-					this.baz = 'bar';
-				},
-				bar: '',
-				baz: ''
-			}).mixin({
-				aspectAdvice: {
-					after: {
-						foo: function(this: any) {
-							this.bar = 'baz';
-						}
-					}
-				}
-			});
-
-			const foo = createFoo();
-			foo.foo();
-			assert.strictEqual(foo.baz, 'bar', 'function ran');
-			assert.strictEqual(foo.bar, 'baz', 'aspect ran');
-		},
-
-		'base, initialize, and aspect': function() {
-			const createFoo = compose({}).mixin({
-				mixin: compose({
-					foo: 'foo',
-					bar: '',
-					doneFoo: false,
-					doFoo: function(this: any) {
-						this.foo = 'bar';
-					}
-				}),
-				initialize: function(instance: any) {
-					instance.bar = 'bar';
-				},
-				aspectAdvice: {
-					after: {
-						doFoo: function(this: any) {
-							this.doneFoo = true;
-						}
-					}
-				}
-			});
-
-			const foo = createFoo();
-			assert.strictEqual(foo.foo, 'foo', 'contains foo property');
-			assert.strictEqual(foo.bar, 'bar', 'initialize ran');
-
-			foo.doFoo();
-			assert.strictEqual(foo.foo, 'bar', 'ran function');
-			assert.isTrue(foo.doneFoo, 'ran aspect');
-		},
-
-		'mixin with plain object': function() {
-			const createFoo = compose({
-				baz: 'baz'
-			}).mixin({
-				mixin: {
-					foo: 'foo',
-					bar: 3
-				}
-			});
-
-			const foo = createFoo();
-			assert.strictEqual(foo.baz, 'baz', 'contains baz property');
-			assert.strictEqual(foo.foo, 'foo', 'contains foo property');
-			assert.strictEqual(foo.bar, 3, 'contains bar property');
-		},
-
-		'Shouldn\'t duplicate init functions passed directly to mixin': function() {
-			const init = function(instance: { count: number; baz: string}) {
-				instance.count = instance.count + 1;
-			};
-			const otherInitializer = function(instance: any) {
-				instance.foo = 'bar';
-			};
-			const createFoo = compose({
-				count: 0
-			}, function(instance: { count: number }) {
-				instance.count = instance.count + 1;
-			})
-				.mixin({ initialize: init })
-				.mixin({ initialize: init })
-				.mixin({ mixin: { baz: 'baz' }, initialize: init })
-				.mixin({ initialize: otherInitializer });
-
-			const foo = createFoo();
-			assert.strictEqual((<any> foo).foo, 'bar', 'Should have called other initialize as well');
-			assert.strictEqual(foo.count, 2, 'Should have called base initialize and passed in initialize once each');
-		},
-
-		'Init function with combined types': function() {
-			interface Bar {
-				bar: string;
-			}
-			interface Baz {
-				baz: number;
-			}
-			const createBar = compose<Bar, Bar>({
-				bar: ''
-			}, function(instance: Bar, options: Bar) {
-				if (options.bar) {
-					instance.bar = options.bar;
-				}
-			});
-			const createBaz = compose<Baz, Baz>({
-				baz: 1
-			}, function(instance: Baz, options: Baz) {
-				if (options.baz) {
-					instance.baz = options.baz;
-				}
-			});
-			createBar.mixin({
-				initialize: function(instance: { bar: string; baz: number }, options: { bar: string; baz: number }) {
-
-				},
-				mixin: createBaz
-			});
-			/* Doesn't compile with new flow control typing, which maybe is a good thing? */
-			// createBar.mixin({
-			// 	initialize: function(instance: { baz: number }, options: { baz: number }) {
-
-			// 	},
-			// 	mixin: createBaz
-			// });
-			// createBar.mixin({
-			// 	initialize: function(instance: { bar: string }, options: { bar: string }) {
-
-			// 	},
-			// 	mixin: createBaz
-			// });
-			// Shouldn\'t compile
-			// const createBarBazIllegalInstanceType = createBar.mixin({
-			// initialize: function(instance: { baz: number; foo: number }) {
-            //
-			// },
-			// mixin: createBaz
-			// });
-			// const createBarBazIllegalOptionsType = createBar.mixin({
-			// initialize: function(instance: { baz: number; }, options: { baz: number; foo: string; }) {
-            //
-			// },
-			// mixin: createBaz
-			// });
-		},
-
-		'Object with factoryDescriptor function': function() {
+		'Object with factoryDescriptor function'() {
 			const createFooBar = compose({
 				foo: ''
 			}, function(foo: { foo: string }) {
 				foo.foo = 'foo';
-			}).mixin({
-				factoryDescriptor: function() {
-					return {
-						mixin: {
-							bar: 1
-						},
-						initialize: function(fooBar: { bar: number; foo: string; }) {
-							fooBar.bar = 3;
-							fooBar.foo = 'bar';
-						}
-					};
-				}
+			}).extend({
+				bar: 1
+			}).init(function(fooBar: { bar: number; foo: string; }) {
+				fooBar.bar = 3;
+				fooBar.foo = 'bar';
 			});
 
 			const fooBar = createFooBar();
 			assert.strictEqual(fooBar.foo, 'bar', 'Foo property not present');
 			assert.strictEqual(fooBar.bar, 3, 'Bar property not present');
+		},
+
+		'mixing in a class'() {
+			class Bar {
+				bar() {
+					return 'bar';
+				}
+			}
+			const createFooBar = compose({
+				foo: 'foo'
+			}).mixin({
+				mixin: Bar
+			});
+
+			const fooBar = createFooBar();
+			assert.strictEqual(fooBar.foo, 'foo', 'Foo property not present');
+			assert.strictEqual(fooBar.bar(), 'bar', 'Bar property not present');
 		},
 
 		'arrays': {
@@ -1203,7 +959,7 @@ registerSuite({
 				const result = instance.foo('foo');
 				assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
 			},
-			'transfer generic type': function() {
+			'transfer generic type'() {
 				class Foo<T> {
 					foo: T;
 				}
@@ -1218,7 +974,7 @@ registerSuite({
 					<T, U>(): Foo<T>&Bar<U>;
 				}
 
-				let fooBarFactory: FooBarClass = compose(Foo).mixin({ mixin: <any>  Bar });
+				let fooBarFactory: FooBarClass = compose(Foo).mixin(compose(Bar));
 
 				fooBarFactory<number, any>();
 			},
@@ -1669,7 +1425,7 @@ registerSuite({
 			}
 		},
 		'static': {
-			'create factory with static method': function() {
+			'create factory with static method'() {
 				const createFoo = compose({
 					foo: 1
 				}).static({
@@ -1684,7 +1440,7 @@ registerSuite({
 				// assert.strictEqual(createFoo().doFoo(), 'Should not have do foo function on instance');
 			},
 
-			'extend existing factory with static method': function() {
+			'extend existing factory with static method'() {
 				const createFoo = compose({
 					foo: 1
 				});
@@ -1701,18 +1457,17 @@ registerSuite({
 				// assert.strictEqual(createAndDoFoo().doFoo(), 'Should not have do foo function on instance');
 			},
 
-			'override factory descriptor function with static method': function() {
+			'override factory descriptor function with static method'() {
 				const createFoo = compose({
 					foo: 1
 				}).static({
-					factoryDescriptor(this: any): ComposeMixinDescriptor<any, any, { foo: number }, any> {
+					factoryDescriptor(this: any): ComposeMixinDescriptor<{ foo: number }, any, any, any> {
 						return {
-							mixin: this,
-							initialize: function(instance: { foo: number }) {
-								instance.foo = 3;
-							}
+							mixin: this
 						};
 					}
+				}).init(function(instance: { foo: number }) {
+					instance.foo = 3;
 				});
 
 				const createFooBar = compose({
@@ -1725,7 +1480,7 @@ registerSuite({
 				assert.strictEqual(fooBar.foo, 3, 'Should have foo property');
 			},
 
-			'Passing a factory to static': function() {
+			'Passing a factory to static'() {
 				const createFoo = compose({}).static({
 					doFoo: (): string => 'foo'
 				});
@@ -1735,7 +1490,7 @@ registerSuite({
 				assert.strictEqual(createBar.doFoo(), 'foo', 'Should have transferred static property');
 			},
 
-			'Passing a factory with no static methods to static': function() {
+			'Passing a factory with no static methods to static'() {
 				assert.doesNotThrow(function() {
 					compose({}).static(compose({}));
 				}, 'Should have handled factory with no static methods without throwing');
@@ -1757,28 +1512,18 @@ registerSuite({
 			}, function () {});
 			const createFooBar = createFoo.mixin(createBar);
 			assert.deepEqual(getInitFunctionNames(createFooBar), [ 'initFoo', 'initBar' ]);
-			const createFooBarMixin = createFoo.mixin({
-				className: 'FooBar',
-				mixin: createBar,
-				initialize(instance) {
+			const createFooBarMixin = createFoo
+				.mixin(createBar)
+				.init('FooBar', function(instance) {
 					instance.bar = 3;
-				}
-			});
-			assert.deepEqual(getInitFunctionNames(createFooBarMixin), [ 'initFoo', 'initBar', 'mixinFooBar' ]);
-			const createFooBarNoClassName = createBar.mixin({
-				mixin: createFoo,
-				initialize(instance) {
+				});
+			assert.deepEqual(getInitFunctionNames(createFooBarMixin), [ 'initFoo', 'initBar', 'initFooBar' ]);
+			const createFooBarNoClassName = createBar
+				.mixin(createFoo)
+				.init('FooToo', function(instance) {
 					instance.foo = 'bar';
-				}
-			});
-			assert.deepEqual(getInitFunctionNames(createFooBarNoClassName), [ 'initBar', 'initFoo', 'mixinFoo' ]);
-			const createFooNamed = createFoo.mixin({
-				className: 'FooNamed',
-				initialize(instance) {
-					instance.foo = 'bar';
-				}
-			});
-			assert.deepEqual(getInitFunctionNames(createFooNamed), [ 'initFoo', 'mixinFooNamed' ]);
+				});
+			assert.deepEqual(getInitFunctionNames(createFooBarNoClassName), [ 'initBar', 'initFoo', 'initFooToo' ]);
 		},
 
 		'getInitFunctionNames does no throw on environments with non-configurable names'(this: any) {
@@ -1794,28 +1539,29 @@ registerSuite({
 			}, function () {});
 			const createFooBar = createFoo.mixin(createBar);
 			assert.strictEqual((<any> getInitFunctionNames(createFooBar)).length, 2);
-			const createFooBarMixin = createFoo.mixin({
-				className: 'FooBar',
-				mixin: createBar,
-				initialize(instance) {
+			const createFooBarMixin = createFoo
+				.mixin({
+					className: 'FooBar',
+					mixin: createBar
+				})
+				.init(function(instance) {
 					instance.bar = 3;
-				}
-			});
+				});
 			assert.strictEqual((<any> getInitFunctionNames(createFooBarMixin)).length, 3);
-			const createFooBarNoClassName = createBar.mixin({
-				mixin: createFoo,
-				initialize(instance) {
+			const createFooBarNoClassName = createBar
+				.mixin(createFoo)
+				.init(function(instance) {
 					instance.foo = 'bar';
-				}
-			});
+				});
 			assert.strictEqual((<any> getInitFunctionNames(createFooBarNoClassName)).length, 3);
-			const createFooNamed = createFoo.mixin({
-				className: 'FooNamed',
-				initialize(instance) {
-					instance.foo = 'bar';
-				}
-			});
-			assert.strictEqual((<any> getInitFunctionNames(createFooNamed)).length, 2);
+		},
+
+		'getInitFunctionNames returns undefined for unexpected values'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
+
+			assert.isUndefined(getInitFunctionNames(<any> {}), 'Function names should be undefined');
 		},
 
 		'instance to string'(this: any) {
@@ -1861,6 +1607,12 @@ registerSuite({
 			assert.strictEqual((<any> extendedBar).toString(), '[object ExtendedBar]');
 		},
 
+		'createdMixin to string'(this: any) {
+			if (!hasToStringTag()) {
+				this.skip('Does not natively support Symbol.toStringTag');
+			}
+		},
+
 		'unlabelled factories use "Compose"'(this: any) {
 			if (!hasToStringTag()) {
 				this.skip('Does not natively support Symbol.toStringTag');
@@ -1884,19 +1636,402 @@ registerSuite({
 		}
 	},
 	createMixin: {
-		'basic': function() {
+		'basic'() {
 			const bar = compose.createMixin()
 				.extend({
 					bar: 'bar'
 				});
+				// .target({foo: ''});
 			const createFooBar = compose({
 				foo: 'foo'
-			}).createdMixin(bar);
+			}).mixin(bar);
 
 			const fooBar = createFooBar();
 
 			assert.strictEqual(fooBar.foo, 'foo');
 			assert.strictEqual(fooBar.bar, 'bar');
+		},
+
+		'test assertion'() {
+			type Bar = { bar: string };
+			type BarOptions = { bar: string };
+			const bar: ComposeCreatedMixin<{foo: string}, {bar: string} & {bar: string}, {bar: string} & {}, {}>  =
+				compose.createMixin<{ foo: string }, Bar, BarOptions, {}>()
+					.extend({
+						bar: 'bar'
+					}
+			);
+
+			const createFooBar = compose({
+				foo: 'foo'
+			}).mixin(bar);
+			// Shouldn't compile, wrong target type but does. If
+			// target is added, then neither of these compile.
+			// const createBazBar = compose<{baz: string}, any>({
+			// 	baz: 'baz'
+			// }).mixin(bar);
+			const createBazBar = compose<{baz: string, foo: string}, any>({
+				baz: 'baz',
+				foo: 'foo'
+			}).mixin(bar);
+			assert.strictEqual(createFooBar().bar, createBazBar().bar);
+			// assert.notOk(createBazBar().foo);
+		},
+
+		'chained extensions'() {
+			const fooBarBaz = compose({})
+				.mixin(compose.createMixin()
+					.extend({
+						foo: 'foo'
+					})
+					.extend({
+						bar: 'bar'
+					})
+					.extend({
+						baz: 'baz'
+					})
+				)();
+			assert.strictEqual(fooBarBaz.foo, 'foo');
+			assert.strictEqual(fooBarBaz.bar, 'bar');
+			assert.strictEqual(fooBarBaz.baz, 'baz');
+		},
+
+		'add init function'() {
+			interface Bar {
+				bar: string;
+			}
+			interface Foo {
+				foo: string;
+			}
+			const bar = compose.createMixin()
+				.extend({
+					bar: 'bar'
+				})
+				.init((instance: Foo & Bar, options?: Foo & Bar) => {
+					if (options) {
+						instance.bar = options.bar;
+						instance.foo = options.foo;
+					}
+				});
+
+			const createFooBar = compose({
+				foo: 'original value'
+			}, function(instance) {
+				instance.foo = 'initialized value';
+			}).mixin(bar);
+
+			const fooBar = createFooBar({
+				foo: 'final value',
+				bar: 'new value'
+			});
+
+			assert.strictEqual(fooBar.foo, 'final value');
+			assert.strictEqual(fooBar.bar, 'new value');
+		},
+
+		'compose factory and initialize'() {
+			const createBar = compose.createMixin()
+				.extend({
+					bar: 2
+				}).init(function(instance: any) {
+					// This runs second,
+					instance.foo = 'bar';
+					assert.strictEqual(instance.bar, 3, 'instance missing bar');
+				});
+
+			const createFooBar = compose({
+				foo: 'foo',
+				baz: ''
+			}, function(instance: any) {
+				// This runs first, and shouldn't expect anything from subsequent mixins
+				instance.bar = 3;
+				assert.strictEqual(instance.baz, '', 'instance contains baz');
+			})
+				.mixin(createBar)
+				.init(function(instance: any) {
+					// This runs third, as it's the new, optional initialize provided with the mixin
+					assert.strictEqual(instance.foo, 'bar', 'instance contains foo');
+					instance.baz = 'baz';
+				});
+
+			const foobar = createFooBar();
+			assert.strictEqual(foobar.baz, 'baz', 'instance contains baz');
+		},
+		'base, initialize, and aspect'() {
+			const createFooMixin = compose.createMixin()
+				.extend({
+					foo: 'foo',
+					bar: '',
+					doneFoo: false,
+					doFoo: function(this: any) {
+						this.foo = 'bar';
+					}
+				})
+				.init(function(instance: any) {
+					instance.bar = 'bar';
+				}).aspect({
+					after: {
+						doFoo: function(this: any) {
+							this.doneFoo = true;
+						}
+					}
+				});
+
+			const createFoo = compose({}).mixin(createFooMixin);
+			const foo = createFoo();
+			assert.strictEqual(foo.foo, 'foo', 'contains foo property');
+			assert.strictEqual(foo.bar, 'bar', 'initialize ran');
+
+			foo.doFoo();
+			assert.strictEqual(foo.foo, 'bar', 'ran function');
+			assert.isTrue(foo.doneFoo, 'ran aspect');
+		},
+
+		'Init function with combined types'() {
+			interface Bar {
+				bar: string;
+			}
+			interface Baz {
+				baz: number;
+			}
+			const createBar = compose<Bar, Bar>({
+				bar: ''
+			}, function(instance: Bar, options: Bar) {
+				if (options.bar) {
+					instance.bar = options.bar;
+				}
+			});
+			const createBaz = compose<Baz, Baz>({
+				baz: 1
+			}, function(instance: Baz, options: Baz) {
+				if (options.baz) {
+					instance.baz = options.baz;
+				}
+			});
+			createBar
+				.mixin(createBaz)
+				.init(function(instance: { bar: string; baz: number }, options: { bar: string; baz: number }) {
+
+				});
+			/* Doesn't compile with new flow control typing, which maybe is a good thing? */
+			// createBar.mixin({
+			// 	initialize: function(instance: { baz: number }, options: { baz: number }) {
+
+			// 	},
+			// 	mixin: createBaz
+			// });
+			// createBar.mixin({
+			// 	initialize: function(instance: { bar: string }, options: { bar: string }) {
+
+			// 	},
+			// 	mixin: createBaz
+			// });
+			// Shouldn\'t compile
+			// const createBarBazIllegalInstanceType = createBar.mixin({
+			// initialize: function(instance: { baz: number; foo: number }) {
+			//
+			// },
+			// mixin: createBaz
+			// });
+			// const createBarBazIllegalOptionsType = createBar.mixin({
+			// initialize: function(instance: { baz: number; }, options: { baz: number; foo: string; }) {
+			//
+			// },
+			// mixin: createBaz
+			// });
+		},
+
+		'inferring init types'() {
+			const fooBar = compose.createMixin()
+				.extend({
+					foo: 'foo'
+				})
+				.init((instance) => {
+					instance.foo = 'newfoo';
+				})
+				.extend({
+					bar: 'bar'
+				})
+				.init((instance) => {
+					instance.foo = instance.bar = 'newfooandbar';
+				});
+
+			const createBaz = compose({
+				baz: 'baz'
+			});
+			const createFooBarBaz = createBaz
+				.mixin(fooBar)
+				.init((instance) => {
+					instance.bar = instance.baz = instance.foo = 'newfoobarbaz';
+				});
+			assert.strictEqual(createBaz().baz, 'baz', 'Wrong value on simple factory');
+			assert.strictEqual(createFooBarBaz().foo, 'newfoobarbaz', 'Wrong value on combination');
+		},
+
+		'multiple advice'() {
+			const createFoo = compose({
+				foo(a: string): string {
+					return a;
+				}
+			});
+
+			const createAspectFoo = createFoo
+				.mixin(compose.createMixin()
+					.aspect({
+						after: {
+							foo(previousResult: string): string {
+								return previousResult + 'foo';
+							}
+						}
+					})
+				);
+
+			createAspectFoo
+				.mixin(compose.createMixin()
+					.aspect({
+						after: {
+							foo(previousResult: string): string {
+								return previousResult + 'bar';
+							}
+						}
+					})
+				);
+
+			const foo = createAspectFoo();
+			assert.strictEqual(foo.foo('baz'), 'bazfoo', 'should only apply advice in chain');
+		},
+
+		'static'() {
+			const staticMixin = compose.createMixin().static({ foo: 'foo' });
+			const createStaticFoo = compose({}).mixin(staticMixin);
+
+			assert.strictEqual(createStaticFoo.foo, 'foo', 'Didn\'t apply static property to factory correctly');
+		},
+
+		'mixin'() {
+			const createFoo = compose({
+				foo: 'foo'
+			}, (instance) => {
+				instance.foo = 'newFoo';
+			});
+			const barMixin = compose.createMixin()
+				.extend({
+					bar: 'bar'
+				})
+				.init((instance) => {
+					instance.bar = 'newBar';
+				});
+			const mixinsMixin = compose.createMixin()
+				.mixin(createFoo)
+				.mixin(barMixin);
+
+			const createFooBarBaz = compose({
+					baz: 'baz'
+				}, (instance) => {
+					instance.baz = 'newBaz';
+				})
+				.mixin(mixinsMixin);
+			const fooBarBaz = createFooBarBaz();
+
+			assert.strictEqual(fooBarBaz.foo, 'newFoo');
+			assert.strictEqual(fooBarBaz.bar, 'newBar');
+			assert.strictEqual(fooBarBaz.baz, 'newBaz');
+		},
+
+		'overlay'() {
+			const createFoo = compose({
+				foo: 'foo'
+			});
+
+			// Provide target argument to infer base type without
+			// specifying generics
+			const overlayMixin = compose.createMixin(createFoo)
+				.overlay((proto) => {
+					proto.foo = 'bar';
+				});
+
+			assert.strictEqual(createFoo.mixin(overlayMixin)().foo, 'bar', 'Didn\'t apply overlay function properly');
+		},
+
+		'override'() {
+			const createFoo = compose({
+				foo: 'foo'
+			});
+
+			const overrideMixin = compose.createMixin()
+				.override({
+					foo: 'bar'
+				});
+
+			assert.strictEqual(createFoo.mixin(overrideMixin)().foo, 'bar');
+		},
+
+		'from'() {
+			class Foo {
+				bar: string;
+				foo(): string {
+					return this.bar;
+				}
+			}
+
+			const fromFooMixin = compose.createMixin()
+				.from(Foo, 'foo');
+
+			const createFooBar = compose({
+				bar: 'qat',
+				foo: function (): string { return 'foo'; }
+			}).mixin(fromFooMixin);
+
+			const foobar = createFooBar();
+			assert.strictEqual(foobar.foo(), 'qat', 'Return from ".foo()" should equal "qat"');
+		},
+
+		'before'() {
+			function advice(...args: any[]): any[] {
+				args[0] = args[0] + 'bar';
+				return args;
+			}
+
+			const createFoo = compose({
+				foo: (foo: string) => foo
+			});
+			const plusBarMixin = compose.createMixin()
+				.before('foo', advice);
+
+			const foobar = createFoo.mixin(plusBarMixin)();
+			const result = foobar.foo('foo');
+			assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
+		},
+
+		'after'() {
+			function advice(result: string, ...args: any[]): string {
+				return result + 'bar';
+			}
+
+			const createFoo = compose({
+				foo: () => 'foo'
+			});
+
+			const plusBarMixin = compose.createMixin()
+				.after('foo', advice);
+			const foobar = createFoo.mixin(plusBarMixin)();
+			const result = foobar.foo();
+			assert.strictEqual(result, 'foobar', '"result" should equal "foobar"');
+		},
+
+		'around'() {
+			function advice(original: (...args: any[]) => any) {
+				return (...args: any[]) => 'foo' + original(...args) + 'baz';
+			}
+
+			const createBar = compose({
+				bar: (bar: string) => bar
+			});
+			const aroundMixin = compose.createMixin()
+				.around('bar', advice);
+			const foobarbaz = createBar.mixin(aroundMixin)();
+			const result = foobarbaz.bar('bar');
+			assert.strictEqual(result, 'foobarbaz', '"result" should equal "foobarbaz"');
 		}
 	}
 });
