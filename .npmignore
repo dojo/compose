@@ -6,6 +6,7 @@
 !/typings/extras.d.ts
 .editorconfig
 .gitattributes
+.github
 .gitignore
 .npmignore
 .travis.yml
