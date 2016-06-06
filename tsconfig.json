@@ -22,6 +22,7 @@
 		"./src/mixins/createDestroyable.ts",
 		"./src/mixins/createEvented.ts",
 		"./src/mixins/createStateful.ts",
+		"./src/mixins/interfaces.d.ts",
 		"./tests/functional/all.ts",
 		"./tests/intern-local.ts",
 		"./tests/intern-saucelabs.ts",

@@ -2,7 +2,7 @@ import { Handle } from 'dojo-core/interfaces';
 import { deepAssign } from 'dojo-core/lang';
 import Promise from 'dojo-core/Promise';
 import WeakMap from 'dojo-core/WeakMap';
-import { Observable, Subscription } from 'rxjs/Rx';
+import { Observable, Subscription } from './interfaces';
 import createEvented, { Evented, EventedOptions, EventedListener, TargettedEventObject } from './createEvented';
 import compose, { ComposeFactory } from '../compose';
 
