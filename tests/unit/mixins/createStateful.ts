@@ -240,6 +240,34 @@ registerSuite({
 			assert.throws(() => {
 				stateful.observeState('foo', observer2);
 			}, Error);
+		},
+		'observeState() - destroy handle'() {
+			let observerRef: Observer<State>;
+			const observer = {
+				observe(id: string): Observable<State> {
+					return new Observable(function subscribe(observer: Observer<State>) {
+						observerRef = observer;
+						observerRef.next({ foo: 'bar' });
+					});
+				},
+				patch(value: any, options?: { id?: string }): Promise<State> {
+					observerRef.next(value);
+					return Promise.resolve(value);
+				}
+			};
+
+			const stateful = createStateful();
+
+			const handle = stateful.observeState('foo', observer);
+			assert.deepEqual(stateful.state, { foo: 'bar' });
+
+			handle.destroy();
+			observer.patch({ foo: 'qat' }, { id: 'foo' });
+			assert.deepEqual(stateful.state, { foo: 'bar' });
+
+			assert.doesNotThrow(() => {
+				handle.destroy();
+			});
 		}
 	},
 	'"statechange" event type': {
