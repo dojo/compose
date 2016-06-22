@@ -229,7 +229,7 @@ const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOp
 					instance.own(instance.observeState(id, stateFrom));
 				}
 				else if (stateFrom) {
-					throw new TypeError('Factory requires options "id" and "stateFrom" to be supplied together.');
+					throw new TypeError('When "stateFrom" option is supplied, factory also requires "id" option.');
 				}
 			}
 		}
