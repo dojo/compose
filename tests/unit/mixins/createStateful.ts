@@ -42,7 +42,7 @@ registerSuite({
 			assert.strictEqual(called, 1);
 			assert.deepEqual(stateful.state, { foo: 'bar' });
 		},
-		'with only id or stateForm throws'() {
+		'with only stateForm throws'() {
 			const observer = {
 				observe(id: string): Observable<State> {
 					return new Observable(() => {});
@@ -51,12 +51,6 @@ registerSuite({
 					return Promise.resolve(value);
 				}
 			};
-
-			assert.throws(() => {
-				createStateful({
-					id: 'foo'
-				});
-			}, TypeError);
 
 			assert.throws(() => {
 				createStateful({
