@@ -225,7 +225,7 @@ const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOp
 			});
 			if (options) {
 				const { id, stateFrom } = options;
-				if (id && stateFrom) {
+				if (typeof id !== 'undefined' && stateFrom) {
 					instance.own(instance.observeState(id, stateFrom));
 				}
 				else if (stateFrom) {

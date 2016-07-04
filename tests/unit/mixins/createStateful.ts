@@ -42,6 +42,33 @@ registerSuite({
 			assert.strictEqual(called, 1);
 			assert.deepEqual(stateful.state, { foo: 'bar' });
 		},
+		'with id of 0'() {
+			/* while the interface specifies a string for an ID, real world usage may very well pass
+			 * a numeric ID which will eventually get coerced into a string, therefore the number of
+			 * 0 should be halnded gracefully */
+			let called = 0;
+			const observer = {
+				observe(id: string): Observable<State> {
+					called++;
+					return new Observable(function subscribe(observer: Observer<State>) {
+						observer.next({ foo: 'bar' });
+						observer.complete();
+					});
+				},
+				patch(value: any, options?: { id?: string }): Promise<State> {
+					assert.strictEqual(options.id, 0);
+					return Promise.resolve(value);
+				}
+			};
+
+			const stateful = createStateful<{ foo?: string; }>({
+				id: <any> 0,
+				stateFrom: observer
+			});
+
+			assert.strictEqual(called, 1);
+			assert.deepEqual(stateful.state, { foo: 'bar' });
+		},
 		'with only stateForm throws'() {
 			const observer = {
 				observe(id: string): Observable<State> {
