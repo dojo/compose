@@ -1227,6 +1227,38 @@ registerSuite({
 				assert.strictEqual(resultFoo, 'foobarbarfoobar', '"resultFoo" should equal "foobarbarfoobar"');
 				assert.strictEqual(resultBar, 'foobarqat', '"resultBar" should equal "foobarqat"');
 			},
+			'multiple advice'() {
+				const createFoo = compose({
+					foo(a: string): string {
+						return a;
+					}
+				});
+
+				const createAspectFoo = createFoo
+					.mixin({
+						aspectAdvice: {
+							after: {
+								foo(previousResult: string): string {
+									return previousResult + 'foo';
+								}
+							}
+						}
+					});
+
+				createAspectFoo
+					.mixin({
+						aspectAdvice: {
+							after: {
+								foo(previousResult: string): string {
+									return previousResult + 'bar';
+								}
+							}
+						}
+					});
+
+				const foo = createAspectFoo();
+				assert.strictEqual(foo.foo('baz'), 'bazfoo', 'should only apply advice in chain');
+			},
 			'missing method': function () {
 				const createFoo = compose({
 					foo: function (a: string): string {

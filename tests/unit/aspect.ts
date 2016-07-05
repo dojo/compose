@@ -109,8 +109,8 @@ registerSuite({
 				return prevResult + args[0] + 1;
 			}
 
-			const fn = after(foo, advice1);
-			after(fn, advice2);
+			let fn = after(foo, advice1);
+			fn = after(fn, advice2);
 			const result = fn(2);
 			assert.strictEqual(result, 7, '"result" should equal 7');
 			assert.deepEqual(calls, [ '1', '2' ], 'call should have been made in order');
@@ -194,10 +194,23 @@ registerSuite({
 				return origResult + args[0] + 1;
 			}
 
-			const fn = after(foo, adviceAfter);
-			before(fn, adviceBefore);
+			let fn = after(foo, adviceAfter);
+			fn = before(fn, adviceBefore);
 			const result = fn(2);
 			assert.strictEqual(result, 13, '"result" should equal 13');
 		}
+	},
+	'chained advice'() {
+		function foo(a: string): string {
+			return a;
+		}
+
+		function adviceAfter(origResult: string): string {
+			return origResult + 'foo';
+		}
+
+		const fn = after(after(foo, adviceAfter), adviceAfter);
+		after(fn, adviceAfter);
+		assert.strictEqual(fn('bar'), 'barfoofoo', 'should only apply advice twice');
 	}
 });
