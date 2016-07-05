@@ -1158,6 +1158,37 @@ registerSuite({
 					const resultBar = foo.bar('foo');
 					assert.strictEqual(resultFoo, 'foo', '"resultFoo" should equal "foo"');
 					assert.strictEqual(resultBar, 'foo', '"resultBar" should equal "foo"');
+				},
+				'original method unmodified'() {
+					const createFoo = compose({
+						foo: function (a: string): string {
+							return a;
+						},
+						bar: function (a: string): string {
+							return a;
+						}
+					});
+
+					const createAspectFoo = compose.aspect(createFoo, {
+						before: {
+							foo(...args: any[]): any[] {
+								args[0] = args[0] + 'bar';
+								return args;
+							}
+						},
+						after: {
+							bar(previousResult: string): string {
+								return previousResult + 'bar';
+							}
+						}
+					});
+
+					const foo = createFoo();
+					const aspectFoo = createAspectFoo();
+					assert.strictEqual(foo.foo('foo'), 'foo', 'original results should be the same');
+					assert.strictEqual(aspectFoo.foo('foo'), 'foobar', 'modified method properly returns');
+					assert.strictEqual(foo.bar('foo'), 'foo', 'original results should be the same');
+					assert.strictEqual(aspectFoo.bar('foo'), 'foobar', 'modified method properly returns');
 				}
 			},
 			'chaining': function () {
