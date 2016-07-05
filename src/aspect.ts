@@ -1,4 +1,3 @@
-import {  } from 'dojo-core/lang';
 import WeakMap from 'dojo-core/WeakMap';
 
 export interface AdvisingFunction extends Function {
