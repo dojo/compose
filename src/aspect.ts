@@ -1,4 +1,4 @@
-import WeakMap from 'dojo-core/WeakMap';
+import WeakMap from 'dojo-shim/WeakMap';
 
 export interface AdvisingFunction extends Function {
 	/**

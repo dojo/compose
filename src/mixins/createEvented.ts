@@ -1,6 +1,6 @@
 import { on } from 'dojo-core/aspect';
 import { EventObject, Handle } from 'dojo-core/interfaces';
-import WeakMap from 'dojo-core/WeakMap';
+import WeakMap from 'dojo-shim/WeakMap';
 import compose, { ComposeFactory } from '../compose';
 import createDestroyable, { Destroyable } from './createDestroyable';
 

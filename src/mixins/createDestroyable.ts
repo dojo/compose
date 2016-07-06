@@ -1,6 +1,6 @@
 import { Handle } from 'dojo-core/interfaces';
-import Promise from 'dojo-core/Promise';
-import WeakMap from 'dojo-core/WeakMap';
+import Promise from 'dojo-shim/Promise';
+import WeakMap from 'dojo-shim/WeakMap';
 import compose, { ComposeFactory } from '../compose';
 
 export interface DestroyableOptions { }

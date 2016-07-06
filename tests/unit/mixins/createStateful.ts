@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import Promise from 'dojo-core/Promise';
+import Promise from 'dojo-shim/Promise';
 import { Observable, Observer } from 'rxjs/Rx';
 import createStateful, { State } from 'src/mixins/createStateful';
 

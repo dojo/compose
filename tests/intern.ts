@@ -56,6 +56,8 @@ export const loaderOptions = {
 		{ name: 'src', location: '_build/src' },
 		{ name: 'tests', location: '_build/tests' },
 		{ name: 'dojo-core', location: 'node_modules/dojo-core/dist/umd' },
+		{ name: 'dojo-has', location: 'node_modules/dojo-has/dist/umd' },
+		{ name: 'dojo-shim', location: 'node_modules/dojo-shim/dist/umd' },
 		{ name: 'rxjs', location: 'node_modules/@reactivex/rxjs/dist/amd' }
 	]
 };
