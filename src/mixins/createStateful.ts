@@ -1,8 +1,8 @@
 import { Handle } from 'dojo-core/interfaces';
 import { deepAssign } from 'dojo-core/lang';
-import Promise from 'dojo-core/Promise';
-import WeakMap from 'dojo-core/WeakMap';
-import { Observable, Subscription } from 'rxjs/Rx';
+import Promise from 'dojo-shim/Promise';
+import WeakMap from 'dojo-shim/WeakMap';
+import { Observable, Subscription } from './interfaces';
 import createEvented, { Evented, EventedOptions, EventedListener, TargettedEventObject } from './createEvented';
 import compose, { ComposeFactory } from '../compose';
 
@@ -64,7 +64,7 @@ export interface StateChangeEvent<S extends State> extends TargettedEventObject 
 	target: Stateful<S>;
 }
 
-export interface Stateful<S extends State> extends Evented {
+export interface StatefulMixin<S extends State>{
 	/**
 	 * A read only view of the state
 	 */
@@ -87,7 +87,9 @@ export interface Stateful<S extends State> extends Evented {
 	 *                   manage its state.
 	 */
 	observeState(id: string, observable: ObservableState<S>): Handle;
+}
 
+export type Stateful<S extends State> = StatefulMixin<S> & Evented & {
 	/**
 	 * Add a listener for an event
 	 * @param type The event type to listen for
@@ -154,8 +156,8 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
 /**
  * Create an instance of a stateful object
  */
-const createStateful: StatefulFactory = compose<any, StatefulOptions<State>>({
-		get state(this: Stateful<State>): State {
+const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOptions<State>>({
+		get state(): any {
 			return stateWeakMap.get(this);
 		},
 
@@ -205,26 +207,30 @@ const createStateful: StatefulFactory = compose<any, StatefulOptions<State>>({
 			observedStateMap.set(this, observedState);
 			return observedState.handle;
 		}
+	}, (instance, options) => {
+		if (options) {
+			const { state } = options;
+			if (state) {
+				instance.setState(state);
+			}
+		}
 	})
 	.mixin({
 		mixin: createEvented,
-		initialize(instance: Stateful<State>, options: StatefulOptions<State>) {
-			const state = {};
-			stateWeakMap.set(instance, state);
+		initialize(instance, options) {
+			stateWeakMap.set(instance, {});
 			instance.own({
 				destroy() {
 					stateWeakMap.delete(instance);
 				}
 			});
 			if (options) {
-				if (options.state) {
-					instance.setState(options.state);
+				const { id, stateFrom } = options;
+				if (typeof id !== 'undefined' && stateFrom) {
+					instance.own(instance.observeState(id, stateFrom));
 				}
-				if (options.id && options.stateFrom) {
-					instance.own(instance.observeState(options.id, options.stateFrom));
-				}
-				else if (options.id || options.stateFrom) {
-					throw new TypeError('Factory requires options "id" and "stateFrom" to be supplied together.');
+				else if (stateFrom) {
+					throw new TypeError('When "stateFrom" option is supplied, factory also requires "id" option.');
 				}
 			}
 		}

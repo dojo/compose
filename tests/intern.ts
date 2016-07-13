@@ -20,14 +20,15 @@ export const capabilities = {
 // OnDemand. Options that will be permutated are browserName, version, platform, and platformVersion; any other
 // capabilities options specified for an environment will be copied as-is
 export const environments = [
-	{ browserName: 'internet explorer', version: [ '9', '10', '11' ], platform: 'WINDOWS' },
+	{ browserName: 'internet explorer', version: [ '10', '11' ], platform: 'WINDOWS' },
+	{ browserName: 'microsoftedge', platform: 'WINDOWS' },
 	{ browserName: 'firefox', platform: 'WINDOWS' },
-	{ browserName: 'chrome', platform: 'WINDOWS' }/*,
-	{ browserName: 'Safari', version: '9', platform: 'OS X' }*/
+	{ browserName: 'chrome', platform: 'WINDOWS' },
+	{ browserName: 'safari', version: '9', platform: 'MAC' }
 ];
 
 // Maximum number of simultaneous integration tests that should be executed on the remote WebDriver service
-export const maxConcurrency = 2;
+export const maxConcurrency = 1;
 
 // Name of the tunnel class to use for WebDriver tests
 export const tunnel = 'BrowserStackTunnel';
@@ -43,7 +44,7 @@ export const initialBaseUrl: string | null = (function () {
 // The desired AMD loader to use when running unit tests (client.html/client.js). Omit to use the default Dojo
 // loader
 export const loaders = {
-	'host-browser': 'node_modules/dojo-loader/loader.js',
+	'host-browser': 'node_modules/dojo-loader/dist/umd/loader.js',
 	'host-node': 'dojo-loader'
 };
 
@@ -54,7 +55,9 @@ export const loaderOptions = {
 	packages: [
 		{ name: 'src', location: '_build/src' },
 		{ name: 'tests', location: '_build/tests' },
-		{ name: 'dojo-core', location: 'node_modules/dojo-core' },
+		{ name: 'dojo-core', location: 'node_modules/dojo-core/dist/umd' },
+		{ name: 'dojo-has', location: 'node_modules/dojo-has/dist/umd' },
+		{ name: 'dojo-shim', location: 'node_modules/dojo-shim/dist/umd' },
 		{ name: 'rxjs', location: 'node_modules/@reactivex/rxjs/dist/amd' }
 	]
 };

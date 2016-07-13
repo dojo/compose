@@ -1,6 +1,7 @@
 .sublimets
 .tscache
 *.js
+!/index.js
 *.js.map
 !/*.js
 !/tasks/*.js
@@ -9,5 +10,7 @@ _build
 node_modules
 bower_components
 tests/typings/dist/
+/typings/**
 .baseDir.ts
 html-report
+coverage-unmapped.json

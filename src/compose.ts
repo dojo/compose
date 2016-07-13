@@ -1,5 +1,4 @@
-import { assign } from 'dojo-core/lang';
-import WeakMap from 'dojo-core/WeakMap';
+import WeakMap from 'dojo-shim/WeakMap';
 import {
 	before as aspectBefore,
 	after as aspectAfter,

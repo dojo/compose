@@ -7,31 +7,39 @@
 		"url": "https://github.com/dojo/compose/issues"
 	},
 	"license": "BSD-3-Clause",
+	"main": "index.js",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/dojo/compose.git"
 	},
+	"scripts": {
+		"prepublish": "grunt dist",
+		"test": "grunt test"
+	},
+	"typings": "./dist/umd/dojo-compose.d.ts",
 	"peerDependencies": {
-		"dojo-core": ">=2.0.0-alpha.5"
+		"dojo-core": ">=2.0.0-alpha.7"
 	},
 	"devDependencies": {
 		"@reactivex/rxjs": "5.0.0-beta.6",
 		"codecov.io": "0.1.6",
-		"dojo-loader": ">=2.0.0-beta.4",
+		"dojo-loader": ">=2.0.0-beta.5",
 		"dts-generator": "~1.7.0",
 		"glob": "^7.0.3",
-		"grunt": "0.4.5",
+		"grunt": "^1.0.1",
 		"grunt-contrib-clean": "^1.0.0",
 		"grunt-contrib-copy": "^1.0.0",
 		"grunt-contrib-watch": "^1.0.0",
-		"grunt-release": "0.13.0",
+		"grunt-dojo2": "2.0.0-beta.7",
+		"grunt-release": "0.13.1",
 		"grunt-text-replace": "0.4.0",
-		"grunt-ts": "^5.5.0-beta.2",
+		"grunt-ts": "^5.5.1",
 		"grunt-tslint": "^3.0.3",
-		"intern": "~3.1.1",
+		"grunt-typings": ">=0.1.5",
+		"intern": "~3.2.3",
 		"istanbul": "0.4.3",
-		"remap-istanbul": "0.6.2",
-		"tslint": "next",
-		"typescript": "next"
+		"remap-istanbul": ">=0.6.4",
+		"tslint": "^3.7.4",
+		"typescript": "~1.8.10"
 	}
 }
