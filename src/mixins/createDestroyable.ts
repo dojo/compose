@@ -56,7 +56,7 @@ export function isDestroyable(value: any): value is Destroyable {
  * *owns*
  */
 const createDestroyable: DestroyableFactory = compose({
-	own(handle: Handle): Handle {
+	own(this: Destroyable, handle: Handle): Handle {
 		const handles = handlesWeakMap.get(this);
 		handles.push(handle);
 		return {
@@ -66,7 +66,7 @@ const createDestroyable: DestroyableFactory = compose({
 			}
 		};
 	},
-	destroy() {
+	destroy(this: Destroyable) {
 		return new Promise((resolve) => {
 			handlesWeakMap.get(this).forEach((handle) => {
 				handle && handle.destroy && handle.destroy();

@@ -103,7 +103,7 @@ registerSuite({
 			assert.strictEqual(counter, 1, 'counter only called once');
 			assert.instanceOf(foo, createFoo, 'foo is an instanceOf Foo');
 		},
-		'typescript class': function () {
+		'typescript class': function (this: any) {
 			this.skip('initialised own values from classes not supported');
 			let result = 0;
 
@@ -268,7 +268,7 @@ registerSuite({
 				foo;
 			}, SyntaxError, 'Factories cannot be called with "new"');
 		},
-		'immutability': function () {
+		'immutability': function (this: any) {
 			'use strict';
 
 			if (typeof navigator !== 'undefined' && navigator.userAgent.match('Trident/5.0')) {
@@ -289,7 +289,7 @@ registerSuite({
 		'getters and setters': function() {
 			const createFoo = compose({
 				_foo: '',
-				set foo(foo: string) {
+				set foo(this: any, foo: string) {
 					this._foo = foo;
 				},
 				get foo(): string {
@@ -307,7 +307,7 @@ registerSuite({
 		'only getter': function() {
 			const createFoo = compose({
 				_foo: '',
-				get foo(): string {
+				get foo(this: any): string {
 					return this._foo + 'bar';
 				}
 			});
@@ -322,7 +322,7 @@ registerSuite({
 		'only setter': function() {
 			const createFoo = compose({
 				_foo: '',
-				set foo(foo: string) {
+				set foo(this: any, foo: string) {
 					this._foo = foo;
 				}
 			});
@@ -606,7 +606,7 @@ registerSuite({
 
 		'only aspect': function() {
 			const createFoo = compose({
-				foo: function() {
+				foo: function(this: any) {
 					this.baz = 'bar';
 				},
 				bar: '',
@@ -614,7 +614,7 @@ registerSuite({
 			}).mixin({
 				aspectAdvice: {
 					after: {
-						foo: function() {
+						foo: function(this: any) {
 							this.bar = 'baz';
 						}
 					}
@@ -633,7 +633,7 @@ registerSuite({
 					foo: 'foo',
 					bar: '',
 					doneFoo: false,
-					doFoo: function() {
+					doFoo: function(this: any) {
 						this.foo = 'bar';
 					}
 				}),
@@ -642,7 +642,7 @@ registerSuite({
 				},
 				aspectAdvice: {
 					after: {
-						doFoo: function() {
+						doFoo: function(this: any) {
 							this.doneFoo = true;
 						}
 					}
@@ -985,7 +985,7 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(...args: any[]): string {
+					return function(this: any, ...args: any[]): string {
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1005,7 +1005,7 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(...args: any[]): string {
+					return function(this: any, ...args: any[]): string {
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1027,7 +1027,7 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(...args: any[]): string {
+					return function(this: any, ...args: any[]): string {
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1092,7 +1092,7 @@ registerSuite({
 					const createAroundFoo = compose.aspect(createFoo, {
 						around: {
 							foo: function (origFn: (a: string) => string): (...args: any[]) => string {
-								return function(...args: any[]): string {
+								return function(this: any, ...args: any[]): string {
 									args[0] = args[0] + 'bar';
 									return origFn.apply(this, args) + 'qat';
 								};
@@ -1128,7 +1128,7 @@ registerSuite({
 						},
 						around: {
 							bar: function (origFn: (a: string) => string): (...args: any[]) => string {
-								return function(...args: any[]): string {
+								return function(this: any, ...args: any[]): string {
 									args[0] = args[0] + 'bar';
 									return origFn.apply(this, args) + 'qat';
 								};
@@ -1214,7 +1214,7 @@ registerSuite({
 					},
 					around: {
 						bar: function (origFn: (a: string) => string): (...args: any[]) => string {
-							return function(...args: any[]): string {
+							return function(this: any, ...args: any[]): string {
 								args[0] = args[0] + 'bar';
 								return origFn.apply(this, args) + 'qat';
 							};
@@ -1317,7 +1317,7 @@ registerSuite({
 				const createFoo = compose({
 					foo: 1
 				}).static({
-					factoryDescriptor(): ComposeMixinDescriptor<any, any, { foo: number }, any> {
+					factoryDescriptor(this: any): ComposeMixinDescriptor<any, any, { foo: number }, any> {
 						return {
 							mixin: this,
 							initialize: function(instance: { foo: number }) {
