@@ -56,7 +56,7 @@ registerSuite({
 					});
 				},
 				patch(value: any, options?: { id?: string }): Promise<State> {
-					assert.strictEqual(options.id, 0);
+					assert.strictEqual(options && options.id, 0);
 					return Promise.resolve(value);
 				}
 			};
