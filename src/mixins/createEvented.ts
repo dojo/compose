@@ -141,7 +141,12 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 				method.call(this, event);
 			}
 		},
-		on(this: Evented, ...args: any[]): Handle {
+		on(this: Evented): Handle {
+			/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+			const args: any[] = [];
+			for (let i = 0; i < arguments.length; i++) {
+				args[i] = arguments[i];
+			}
 			const listenerMap = listenersMap.get(this);
 			if (args.length === 2) { /* overload: on(type, listener) */
 				let type: string;

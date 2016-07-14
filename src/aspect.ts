@@ -71,7 +71,12 @@ export interface GenericFunction<T> {
  */
 function getDispatcher<F extends GenericFunction<T>, T>(joinPoint: F): F {
 
-	function dispatcher(this: Function, ...args: any[]): T {
+	function dispatcher(this: Function): T {
+		/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+		let args: any[] = [];
+		for (let i = 0; i < arguments.length; i++) {
+			args[i] = arguments[i];
+		}
 		const { before, after, joinPoint } = dispatchAdviceMap.get(dispatcher);
 		if (before) {
 			args = before.reduce((previousArgs, advice) => {

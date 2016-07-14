@@ -123,7 +123,12 @@ registerSuite({
 			}
 
 			function advice(origFn: Function): (...args: any[]) => number {
-				return function(this: any, ...args: any[]): number {
+				return function(this: any): number {
+					/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+					const args: any[] = [];
+					for (let i = 0; i < arguments.length; i++) {
+						args[i] = arguments[i];
+					}
 					args[0] = args[0] + args[0];
 					let result = origFn.apply(this, args);
 					return ++result;
@@ -140,7 +145,12 @@ registerSuite({
 			}
 
 			function advice(origFn: Function): (...args: any[]) => number {
-				return function(this: any, ...args: any[]): number {
+				return function(this: any): number {
+					/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+					const args: any[] = [];
+					for (let i = 0; i < arguments.length; i++) {
+						args[i] = arguments[i];
+					}
 					this.a = 2;
 					return origFn.apply(this, args);
 				};
@@ -158,7 +168,12 @@ registerSuite({
 			}
 
 			function advice1(origFn: Function): (...args: any[]) => number {
-				return function (this: any, ...args: any[]): number {
+				return function (this: any): number {
+					/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+					const args: any[] = [];
+					for (let i = 0; i < arguments.length; i++) {
+						args[i] = arguments[i];
+					}
 					calls.push('1');
 					args[0]++;
 					return origFn.apply(this, args) + 1;
@@ -166,7 +181,12 @@ registerSuite({
 			}
 
 			function advice2(origFn: Function): (...args: any[]) => number {
-				return function (this: any, ...args: any[]): number {
+				return function (this: any): number {
+					/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+					const args: any[] = [];
+					for (let i = 0; i < arguments.length; i++) {
+						args[i] = arguments[i];
+					}
 					calls.push('2');
 					args[0] += args[0];
 					return origFn.apply(this, args) + 1;

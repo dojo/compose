@@ -29,7 +29,12 @@ const staticPropertyMap = new WeakMap<Function, {}>();
  * @return    The rebased function
  */
 function rebase(fn: (base: any, ...args: any[]) => any): (...args: any[]) => any {
-	return function(this: any, ...args: any[]) {
+	return function(this: any) {
+		/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+		const args: any[] = [];
+		for (let i = 0; i < arguments.length; i++) {
+			args[i] = arguments[i];
+		}
 		return fn.apply(this, [ this ].concat(args));
 	};
 }
@@ -130,7 +135,12 @@ function cloneFactory<T, O>(base: ComposeFactory<T, O>): ComposeFactory<T, O>;
 function cloneFactory<T, O>(): ComposeFactory<T, O>;
 function cloneFactory(base?: any, staticProperties?: any): any {
 
-	function factory(this: ComposeFactory<any, any>, ...args: any[]): any {
+	function factory(this: ComposeFactory<any, any>): any {
+		/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+		const args: any[] = [];
+		for (let i = 0; i < arguments.length; i++) {
+			args[i] = arguments[i];
+		}
 		if (this && this.constructor === factory) {
 			throw new SyntaxError('Factories cannot be called with "new".');
 		}

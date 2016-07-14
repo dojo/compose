@@ -985,7 +985,12 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(this: any, ...args: any[]): string {
+					return function(this: any): string {
+						/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+						const args: any[] = [];
+						for (let i = 0; i < arguments.length; i++) {
+							args[i] = arguments[i];
+						}
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1005,7 +1010,12 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(this: any, ...args: any[]): string {
+					return function(this: any): string {
+						/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+						const args: any[] = [];
+						for (let i = 0; i < arguments.length; i++) {
+							args[i] = arguments[i];
+						}
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1027,7 +1037,12 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(this: any, ...args: any[]): string {
+					return function(this: any): string {
+						/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+						const args: any[] = [];
+						for (let i = 0; i < arguments.length; i++) {
+							args[i] = arguments[i];
+						}
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1092,7 +1107,12 @@ registerSuite({
 					const createAroundFoo = compose.aspect(createFoo, {
 						around: {
 							foo: function (origFn: (a: string) => string): (...args: any[]) => string {
-								return function(this: any, ...args: any[]): string {
+								return function(this: any): string {
+									/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+									const args: any[] = [];
+									for (let i = 0; i < arguments.length; i++) {
+										args[i] = arguments[i];
+									}
 									args[0] = args[0] + 'bar';
 									return origFn.apply(this, args) + 'qat';
 								};
@@ -1128,7 +1148,12 @@ registerSuite({
 						},
 						around: {
 							bar: function (origFn: (a: string) => string): (...args: any[]) => string {
-								return function(this: any, ...args: any[]): string {
+								return function(this: any): string {
+									/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+									const args: any[] = [];
+									for (let i = 0; i < arguments.length; i++) {
+										args[i] = arguments[i];
+									}
 									args[0] = args[0] + 'bar';
 									return origFn.apply(this, args) + 'qat';
 								};
@@ -1214,7 +1239,12 @@ registerSuite({
 					},
 					around: {
 						bar: function (origFn: (a: string) => string): (...args: any[]) => string {
-							return function(this: any, ...args: any[]): string {
+							return function(this: any): string {
+								/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+								const args: any[] = [];
+								for (let i = 0; i < arguments.length; i++) {
+									args[i] = arguments[i];
+								}
 								args[0] = args[0] + 'bar';
 								return origFn.apply(this, args) + 'qat';
 							};
