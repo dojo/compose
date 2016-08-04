@@ -1,3 +1,4 @@
+import { from as arrayFrom } from 'dojo-shim/array';
 import WeakMap from 'dojo-shim/WeakMap';
 import {
 	before as aspectBefore,
@@ -140,7 +141,7 @@ function cloneFactory(base?: any, staticProperties?: any): any {
 
 	if (base) {
 		copyProperties(factory.prototype, base.prototype);
-		initFnMap.set(factory, [].concat(initFnMap.get(base)));
+		initFnMap.set(factory, arrayFrom(initFnMap.get(base)));
 	}
 	else {
 		initFnMap.set(factory, []);
