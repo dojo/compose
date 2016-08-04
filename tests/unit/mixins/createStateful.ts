@@ -29,7 +29,7 @@ registerSuite({
 					});
 				},
 				patch(value: any, options?: { id?: string }): Promise<State> {
-					assert.strictEqual(options.id, 'foo');
+					assert.strictEqual(options && options.id, 'foo');
 					return Promise.resolve(value);
 				}
 			};
@@ -56,7 +56,7 @@ registerSuite({
 					});
 				},
 				patch(value: any, options?: { id?: string }): Promise<State> {
-					assert.strictEqual(options.id, 0);
+					assert.strictEqual(options && options.id, 0);
 					return Promise.resolve(value);
 				}
 			};
@@ -104,13 +104,14 @@ registerSuite({
 			stateFrom: observer
 		});
 
-		stateful.destroy();
+		return stateful.destroy()
+			.then(() => {
+				assert.isUndefined(stateful.state);
 
-		assert.isUndefined(stateful.state);
-
-		assert.throws(() => {
-			stateful.setState({ foo: 'bar' });
-		}, TypeError);
+				assert.throws(() => {
+					stateful.setState({ foo: 'bar' });
+				}, TypeError);
+			});
 	},
 	'setState'() {
 		const stateful = createStateful();
@@ -150,7 +151,7 @@ registerSuite({
 				patch(value: any, options?: { id?: string }): Promise<State> {
 					patchCalled++;
 					observerRef.next(value);
-					assert.strictEqual(options.id, 'foo');
+					assert.strictEqual(options && options.id, 'foo');
 					return Promise.resolve(value);
 				}
 			};
@@ -174,7 +175,7 @@ registerSuite({
 		},
 		'observeState() - completed'() {
 			let called = 0;
-			let observerRef: Observer<State>;
+			let observerRef: Observer<State> = <any> undefined;
 			const observer = {
 				observe(id: string): Observable<State> {
 					assert.strictEqual(id, 'foo');

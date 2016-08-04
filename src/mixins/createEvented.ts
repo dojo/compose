@@ -115,7 +115,8 @@ function isActionable(value: any): value is Actionable<any> {
  */
 export function resolveListener<E extends TargettedEventObject>(listener: EventedListener<E>): EventedCallback<E> {
 	return isActionable(listener) ? function (event: E) {
-			listener.do({ event });
+			/* TODO: Resolve when Microsoft/TypeScript#8367 fixed */
+			(<Actionable<E>> listener).do({ event });
 		} : listener;
 }
 
@@ -134,15 +135,19 @@ function handlesArraytoHandle(handles: Handle[]): Handle {
  * Creates a new instance of an `Evented`
  */
 const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
-		emit<E extends EventObject>(event: E): void {
+		emit<E extends EventObject>(this: Evented, event: E): void {
 			const method = listenersMap.get(this)[event.type];
 			if (method) {
 				method.call(this, event);
 			}
 		},
-		on(...args: any[]): Handle {
-			const evented: Evented = this;
-			const listenerMap = listenersMap.get(evented);
+		on(this: Evented): Handle {
+			/* FIXME: Remove when https://github.com/Microsoft/TypeScript/issues/9682 is fixed */
+			const args: any[] = [];
+			for (let i = 0; i < arguments.length; i++) {
+				args[i] = arguments[i];
+			}
+			const listenerMap = listenersMap.get(this);
 			if (args.length === 2) { /* overload: on(type, listener) */
 				let type: string;
 				let listeners: EventedListenerOrArray<TargettedEventObject>;
@@ -157,7 +162,7 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 			}
 			else if (args.length === 1) { /* overload: on(listeners) */
 				const listenerMapArg: EventedListenersMap = args[0];
-				const handles = Object.keys(listenerMapArg).map((type) => evented.on(type, listenerMapArg[type]));
+				const handles = Object.keys(listenerMapArg).map((type) => this.on(type, listenerMapArg[type]));
 				return handlesArraytoHandle(handles);
 			}
 			else { /* unexpected signature */
