@@ -18,9 +18,9 @@
 	},
 	"typings": "./dist/umd/dojo-compose.d.ts",
 	"peerDependencies": {
-		"dojo-core": ">=2.0.0-alpha.7",
 		"dojo-has": ">=2.0.0-alpha.1",
-		"dojo-shim": ">=2.0.0-alpha.1"
+		"dojo-shim": ">=2.0.0-alpha.1",
+		"dojo-core": ">=2.0.0-alpha.7"
 	},
 	"devDependencies": {
 		"@reactivex/rxjs": "5.0.0-beta.6",
@@ -32,7 +32,7 @@
 		"grunt-contrib-clean": "^1.0.0",
 		"grunt-contrib-copy": "^1.0.0",
 		"grunt-contrib-watch": "^1.0.0",
-		"grunt-dojo2": "2.0.0-beta.7",
+		"grunt-dojo2": ">=2.0.0-beta.7",
 		"grunt-release": "0.13.1",
 		"grunt-text-replace": "0.4.0",
 		"grunt-ts": "^5.5.1",
@@ -42,6 +42,6 @@
 		"istanbul": "0.4.3",
 		"remap-istanbul": ">=0.6.4",
 		"tslint": "^3.7.4",
-		"typescript": "~1.8.10"
+		"typescript": "beta"
 	}
 }

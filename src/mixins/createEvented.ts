@@ -115,7 +115,8 @@ function isActionable(value: any): value is Actionable<any> {
  */
 export function resolveListener<E extends TargettedEventObject>(listener: EventedListener<E>): EventedCallback<E> {
 	return isActionable(listener) ? function (event: E) {
-			listener.do({ event });
+			/* TODO: Resolve when Microsoft/TypeScript#8367 fixed */
+			(<Actionable<E>> listener).do({ event });
 		} : listener;
 }
 
