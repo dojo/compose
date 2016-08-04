@@ -42,6 +42,6 @@
 		"istanbul": "0.4.3",
 		"remap-istanbul": ">=0.6.4",
 		"tslint": "^3.7.4",
-		"typescript": "beta"
+		"typescript": "next"
 	}
 }

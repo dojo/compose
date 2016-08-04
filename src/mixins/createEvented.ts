@@ -135,13 +135,13 @@ function handlesArraytoHandle(handles: Handle[]): Handle {
  * Creates a new instance of an `Evented`
  */
 const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
-		emit<E extends EventObject>(event: E): void {
+		emit<E extends EventObject>(this: Evented, event: E): void {
 			const method = listenersMap.get(this)[event.type];
 			if (method) {
 				method.call(this, event);
 			}
 		},
-		on(...args: any[]): Handle {
+		on(this: Evented, ...args: any[]): Handle {
 			const evented: Evented = this;
 			const listenerMap = listenersMap.get(evented);
 			if (args.length === 2) { /* overload: on(type, listener) */
