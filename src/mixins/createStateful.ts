@@ -217,11 +217,6 @@ const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOp
 		mixin: createEvented,
 		initialize(instance, options) {
 			stateWeakMap.set(instance, {});
-			instance.own({
-				destroy() {
-					stateWeakMap.delete(instance);
-				}
-			});
 			if (options) {
 				const { id, stateFrom } = options;
 				if (typeof id !== 'undefined' && stateFrom) {
