@@ -140,7 +140,7 @@ function unobserve(stateful: Stateful<State>): void {
  * @param state The State to be set
  */
 function setStatefulState(stateful: Stateful<State>, state: State): void {
-	state = deepAssign(stateMap.get(stateful), state);
+	state = deepAssign(stateWeakMap.get(stateful), state);
 	stateful.emit({
 		type: 'statechange',
 		state,
@@ -151,14 +151,14 @@ function setStatefulState(stateful: Stateful<State>, state: State): void {
 /**
  * A weak map that contains the stateful's state
  */
-const stateMap = new WeakMap<Stateful<State>, State>();
+const stateWeakMap = new WeakMap<Stateful<State>, State>();
 
 /**
  * Create an instance of a stateful object
  */
 const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOptions<State>>({
 		get state(this: Stateful<State>): any {
-			return stateMap.get(this);
+			return stateWeakMap.get(this);
 		},
 
 		setState(this: Stateful<State>, value: State): void {
@@ -216,10 +216,10 @@ const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOp
 	.mixin({
 		mixin: createEvented,
 		initialize(instance, options) {
-			stateMap.set(instance, {});
+			stateWeakMap.set(instance, {});
 			instance.own({
 				destroy() {
-					stateMap.delete(instance);
+					stateWeakMap.delete(instance);
 				}
 			});
 			if (options) {
