@@ -28,7 +28,7 @@ export interface CompletionObserver<T> {
 
 export type PartialObserver<T> = NextObserver<T> | ErrorObserver<T> | CompletionObserver<T>;
 
-export class Observable<T> {
+export interface Observable<T> {
 	/**
 	 * Registers handlers for handling emitted values, error and completions from the observable, and
 	 *  executes the observable's subscriber function, which will take action to set up the underlying data stream

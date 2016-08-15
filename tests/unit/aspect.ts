@@ -22,12 +22,12 @@ registerSuite({
 			assert.strictEqual(result, 4, '"result" should equal 4');
 		},
 		'passes this': function () {
-			let result: number;
-			function foo() {
+			let result: number = 0;
+			function foo(this: any) {
 				result = this.a;
 			}
 
-			function advice() {
+			function advice(this: any) {
 				this.a = 2;
 			}
 
@@ -38,7 +38,7 @@ registerSuite({
 			assert.strictEqual(result, 2, 'result should equal 2');
 		},
 		'multiple before advice': function () {
-			let result: number;
+			let result: number = 0;
 			const calls: string[] = [];
 			function foo(a: number) {
 				result = a;
@@ -78,11 +78,11 @@ registerSuite({
 			assert.strictEqual(result, 4, '"result" should equal 4');
 		},
 		'passes this': function () {
-			function foo() {
+			function foo(this: any) {
 				return this.a;
 			}
 
-			function advice(prevResult: number) {
+			function advice(this: any, prevResult: number) {
 				this.c = prevResult + this.b;
 				return this.c;
 			}
@@ -123,7 +123,7 @@ registerSuite({
 			}
 
 			function advice(origFn: Function): (...args: any[]) => number {
-				return function(...args: any[]): number {
+				return function(this: any, ...args: any[]): number {
 					args[0] = args[0] + args[0];
 					let result = origFn.apply(this, args);
 					return ++result;
@@ -135,12 +135,12 @@ registerSuite({
 			assert.strictEqual(result, 5, '"result" should equal 5');
 		},
 		'preserves this': function () {
-			function foo(a: number): number {
+			function foo(this: any, a: number): number {
 				return this.a;
 			}
 
 			function advice(origFn: Function): (...args: any[]) => number {
-				return function(...args: any[]): number {
+				return function(this: any, ...args: any[]): number {
 					this.a = 2;
 					return origFn.apply(this, args);
 				};
@@ -158,7 +158,7 @@ registerSuite({
 			}
 
 			function advice1(origFn: Function): (...args: any[]) => number {
-				return function (...args: any[]): number {
+				return function (this: any, ...args: any[]): number {
 					calls.push('1');
 					args[0]++;
 					return origFn.apply(this, args) + 1;
@@ -166,7 +166,7 @@ registerSuite({
 			}
 
 			function advice2(origFn: Function): (...args: any[]) => number {
-				return function (...args: any[]): number {
+				return function (this: any, ...args: any[]): number {
 					calls.push('2');
 					args[0] += args[0];
 					return origFn.apply(this, args) + 1;

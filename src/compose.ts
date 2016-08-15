@@ -1,3 +1,4 @@
+import { from as arrayFrom } from 'dojo-shim/array';
 import WeakMap from 'dojo-shim/WeakMap';
 import {
 	before as aspectBefore,
@@ -27,7 +28,7 @@ const staticPropertyMap = new WeakMap<Function, {}>();
  * @return    The rebased function
  */
 function rebase(fn: (base: any, ...args: any[]) => any): (...args: any[]) => any {
-	return function(...args: any[]) {
+	return function(this: any, ...args: any[]) {
 		return fn.apply(this, [ this ].concat(args));
 	};
 }
@@ -128,7 +129,7 @@ function cloneFactory<T, O>(base: ComposeFactory<T, O>): ComposeFactory<T, O>;
 function cloneFactory<T, O>(): ComposeFactory<T, O>;
 function cloneFactory(base?: any, staticProperties?: any): any {
 
-	function factory(...args: any[]): any {
+	function factory(this: ComposeFactory<any, any>, ...args: any[]): any {
 		if (this && this.constructor === factory) {
 			throw new SyntaxError('Factories cannot be called with "new".');
 		}
@@ -140,7 +141,7 @@ function cloneFactory(base?: any, staticProperties?: any): any {
 
 	if (base) {
 		copyProperties(factory.prototype, base.prototype);
-		initFnMap.set(factory, [].concat(initFnMap.get(base)));
+		initFnMap.set(factory, arrayFrom(initFnMap.get(base)));
 	}
 	else {
 		initFnMap.set(factory, []);
@@ -487,7 +488,7 @@ function from<T extends Function>(base: GenericClass<any> | ComposeFactory<any, 
 	return base.prototype[method];
 }
 
-function doFrom<T, O>(base: GenericClass<any> | ComposeFactory<any, any>, method: string): ComposeFactory<T, O> {
+function doFrom<T, O>(this: ComposeFactory<T, O>, base: GenericClass<any> | ComposeFactory<any, any>, method: string): ComposeFactory<T, O> {
 	const clone = cloneFactory(this);
 	(<any> clone.prototype)[method] = base.prototype[method];
 	return clone as ComposeFactory<T, O>;
@@ -509,7 +510,7 @@ function before(...args: any[]): GenericFunction<any> {
 	return aspectBefore(<GenericFunction<any>> method, advice);
 }
 
-function doBefore<T, O>(method: string, advice: BeforeAdvice): ComposeFactory<T, O> {
+function doBefore<T, O>(this: ComposeFactory<T, O>, method: string, advice: BeforeAdvice): ComposeFactory<T, O> {
 	const clone = cloneFactory(this);
 	(<any> clone.prototype)[method] = aspectBefore((<any> clone.prototype)[method], advice);
 	return <ComposeFactory<T, O>> clone;
@@ -531,7 +532,7 @@ function after(...args: any[]): GenericFunction<any> {
 	return aspectAfter(<GenericFunction<any>> method, advice);
 }
 
-function doAfter<T, P, O>(method: string, advice: AfterAdvice<P>): ComposeFactory<T, O> {
+function doAfter<T, P, O>(this: ComposeFactory<T, O>, method: string, advice: AfterAdvice<P>): ComposeFactory<T, O> {
 	const clone = cloneFactory(this);
 	(<any> clone.prototype)[method] = aspectAfter((<any> clone.prototype)[method], advice);
 	return <ComposeFactory <T, O>> clone;
@@ -553,7 +554,7 @@ function around(...args: any[]): GenericFunction<any> {
 	return aspectAround(<GenericFunction<any>> method, advice);
 }
 
-function doAround<T, P, O>(method: string, advice: AroundAdvice<P>): ComposeFactory<T, O> {
+function doAround<T, P, O>(this: ComposeFactory<T, O>, method: string, advice: AroundAdvice<P>): ComposeFactory<T, O> {
 	const clone = cloneFactory(this);
 	(<any> clone.prototype)[method] = aspectAround((<any> clone.prototype)[method], advice);
 	return <ComposeFactory <T, O>> clone;

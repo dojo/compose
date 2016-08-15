@@ -157,30 +157,29 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
  * Create an instance of a stateful object
  */
 const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOptions<State>>({
-		get state(): any {
+		get state(this: Stateful<State>): any {
 			return stateWeakMap.get(this);
 		},
 
-		setState(value: State): void {
-			const stateful: Stateful<State> = this;
-			const observedState = observedStateMap.get(stateful);
+		setState(this: Stateful<State>, value: State): void {
+			const observedState = observedStateMap.get(this);
 			if (observedState) {
 				observedState.observable.patch(value, { id: observedState.id });
 			}
 			else {
-				setStatefulState(stateful, value);
+				setStatefulState(this, value);
 			}
 		},
 
-		observeState(id: string, observable: ObservableState<State>): Handle {
-			const stateful: Stateful<State> = this;
-			let observedState = observedStateMap.get(stateful);
+		observeState(this: Stateful<State>, id: string, observable: ObservableState<State>): Handle {
+			let observedState = observedStateMap.get(this);
 			if (observedState) {
 				if (observedState.id === id && observedState.observable === observable) {
 					return observedState.handle;
 				}
 				throw new Error(`Already observing state with ID '${observedState.id}'`);
 			}
+			const stateful = this;
 			observedState = {
 				id,
 				observable,

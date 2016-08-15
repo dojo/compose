@@ -103,7 +103,7 @@ registerSuite({
 			assert.strictEqual(counter, 1, 'counter only called once');
 			assert.instanceOf(foo, createFoo, 'foo is an instanceOf Foo');
 		},
-		'typescript class': function () {
+		'typescript class': function (this: any) {
 			this.skip('initialised own values from classes not supported');
 			let result = 0;
 
@@ -150,7 +150,7 @@ registerSuite({
 				foo: function () {
 					counter++;
 				},
-				bar: <string> undefined
+				bar: ''
 			}, initFoo);
 
 			const foo = createFoo();
@@ -181,7 +181,7 @@ registerSuite({
 				foo: function () {
 					counter++;
 				},
-				bar: <string> undefined
+				bar: ''
 			};
 
 			function initFoo(instance: {foo: () => any, bar: string}, options?: any) {
@@ -268,7 +268,7 @@ registerSuite({
 				foo;
 			}, SyntaxError, 'Factories cannot be called with "new"');
 		},
-		'immutability': function () {
+		'immutability': function (this: any) {
 			'use strict';
 
 			if (typeof navigator !== 'undefined' && navigator.userAgent.match('Trident/5.0')) {
@@ -289,10 +289,10 @@ registerSuite({
 		'getters and setters': function() {
 			const createFoo = compose({
 				_foo: '',
-				set foo(foo) {
+				set foo(this: any, foo) {
 					this._foo = foo;
 				},
-				get foo() {
+				get foo(this: any) {
 					return this._foo;
 				}
 			});
@@ -307,7 +307,7 @@ registerSuite({
 		'only getter': function() {
 			const createFoo = compose({
 				_foo: '',
-				get foo() {
+				get foo(this: any) {
 					return this._foo + 'bar';
 				}
 			});
@@ -322,7 +322,7 @@ registerSuite({
 		'only setter': function() {
 			const createFoo = compose({
 				_foo: '',
-				set foo(foo: string) {
+				set foo(this: any, foo: string) {
 					this._foo = foo;
 				}
 			});
@@ -604,9 +604,9 @@ registerSuite({
 			assert.strictEqual(foo.foo, 'bar', 'initialize was called');
 		},
 
-		'only aspect': function() {
+		'only aspect': function(this: any) {
 			const createFoo = compose({
-				foo: function() {
+				foo: function(this: any) {
 					this.baz = 'bar';
 				},
 				bar: '',
@@ -614,7 +614,7 @@ registerSuite({
 			}).mixin({
 				aspectAdvice: {
 					after: {
-						foo: function() {
+						foo: function(this: any) {
 							this.bar = 'baz';
 						}
 					}
@@ -633,7 +633,7 @@ registerSuite({
 					foo: 'foo',
 					bar: '',
 					doneFoo: false,
-					doFoo: function() {
+					doFoo: function(this: any) {
 						this.foo = 'bar';
 					}
 				}),
@@ -642,7 +642,7 @@ registerSuite({
 				},
 				aspectAdvice: {
 					after: {
-						doFoo: function() {
+						doFoo: function(this: any) {
 							this.doneFoo = true;
 						}
 					}
@@ -723,18 +723,19 @@ registerSuite({
 				},
 				mixin: createBaz
 			});
-			createBar.mixin({
-				initialize: function(instance: { baz: number }, options: { baz: number }) {
+			/* Doesn't compile with new flow control typing, which maybe is a good thing? */
+			// createBar.mixin({
+			// 	initialize: function(instance: { baz: number }, options: { baz: number }) {
 
-				},
-				mixin: createBaz
-			});
-			createBar.mixin({
-				initialize: function(instance: { bar: string }, options: { bar: string }) {
+			// 	},
+			// 	mixin: createBaz
+			// });
+			// createBar.mixin({
+			// 	initialize: function(instance: { bar: string }, options: { bar: string }) {
 
-				},
-				mixin: createBaz
-			});
+			// 	},
+			// 	mixin: createBaz
+			// });
 			// Shouldn\'t compile
 			// const createBarBazIllegalInstanceType = createBar.mixin({
 			// initialize: function(instance: { baz: number; foo: number }) {
@@ -984,7 +985,7 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(...args: any[]): string {
+					return function(this: any, ...args: any[]): string {
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1004,7 +1005,7 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(...args: any[]): string {
+					return function(this: any, ...args: any[]): string {
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1026,7 +1027,7 @@ registerSuite({
 				}
 
 				function advice(origFn: (a: string) => string): (...args: any[]) => string {
-					return function(...args: any[]): string {
+					return function(this: any, ...args: any[]): string {
 						args[0] = args[0] + 'bar';
 						return origFn.apply(this, args) + 'qat';
 					};
@@ -1091,7 +1092,7 @@ registerSuite({
 					const createAroundFoo = compose.aspect(createFoo, {
 						around: {
 							foo: function (origFn: (a: string) => string): (...args: any[]) => string {
-								return function(...args: any[]): string {
+								return function(this: any, ...args: any[]): string {
 									args[0] = args[0] + 'bar';
 									return origFn.apply(this, args) + 'qat';
 								};
@@ -1103,7 +1104,7 @@ registerSuite({
 					const result = foo.foo('foo');
 					assert.strictEqual(result, 'foobarqat', '"result" should qual "foobarqat"');
 				},
-				'mixed': function () {
+				'mixed': function (this: any) {
 					const createFoo = compose({
 						foo: function (a: string): string {
 							return a;
@@ -1127,7 +1128,7 @@ registerSuite({
 						},
 						around: {
 							bar: function (origFn: (a: string) => string): (...args: any[]) => string {
-								return function(...args: any[]): string {
+								return function(this: any, ...args: any[]): string {
 									args[0] = args[0] + 'bar';
 									return origFn.apply(this, args) + 'qat';
 								};
@@ -1213,7 +1214,7 @@ registerSuite({
 					},
 					around: {
 						bar: function (origFn: (a: string) => string): (...args: any[]) => string {
-							return function(...args: any[]): string {
+							return function(this: any, ...args: any[]): string {
 								args[0] = args[0] + 'bar';
 								return origFn.apply(this, args) + 'qat';
 							};
@@ -1316,7 +1317,7 @@ registerSuite({
 				const createFoo = compose({
 					foo: 1
 				}).static({
-					factoryDescriptor(): ComposeMixinDescriptor<any, any, { foo: number }, any> {
+					factoryDescriptor(this: any): ComposeMixinDescriptor<any, any, { foo: number }, any> {
 						return {
 							mixin: this,
 							initialize: function(instance: { foo: number }) {
