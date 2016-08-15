@@ -162,13 +162,12 @@ const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOp
 		},
 
 		setState(this: Stateful<State>, value: State): void {
-			const stateful: Stateful<State> = this;
-			const observedState = observedStateMap.get(stateful);
+			const observedState = observedStateMap.get(this);
 			if (observedState) {
 				observedState.observable.patch(value, { id: observedState.id });
 			}
 			else {
-				setStatefulState(stateful, value);
+				setStatefulState(this, value);
 			}
 		},
 
