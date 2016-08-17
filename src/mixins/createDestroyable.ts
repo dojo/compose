@@ -72,7 +72,6 @@ const createDestroyable: DestroyableFactory = compose({
 			handlesWeakMap.get(destroyable).forEach((handle) => {
 				handle && handle.destroy && handle.destroy();
 			});
-			handlesWeakMap.delete(destroyable);
 			destroyable.destroy = noop;
 			destroyable.own = destroyed;
 			resolve(true);
