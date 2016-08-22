@@ -1,4 +1,4 @@
-import { from as arrayFrom } from 'dojo-shim/array';
+import { from as arrayFrom, includes } from 'dojo-shim/array';
 import WeakMap from 'dojo-shim/WeakMap';
 import {
 	before as aspectBefore,
@@ -37,13 +37,23 @@ function rebase(fn: (base: any, ...args: any[]) => any): (...args: any[]) => any
  * A helper function that copies own properties and their descriptors
  * from one or more sources to a target object. Includes non-enumerable properties
  */
-function copyProperties(target: {}, ...sources: {}[]) {
-	sources.forEach(source => {
+function copyProperties(target: any, ...sources: any[]) {
+	sources.forEach((source) => {
 		Object.defineProperties(
 			target,
 			Object.getOwnPropertyNames(source).reduce(
 				(descriptors: { [ index: string ]: any }, key: string) => {
-					descriptors[ key ] = Object.getOwnPropertyDescriptor(source, key);
+					/* Special handling to merge array proprties */
+					const descriptor = Object.getOwnPropertyDescriptor(source, key);
+					if (Array.isArray(descriptor.value) && Array.isArray(target[key])) {
+						descriptor.value = descriptor.value.reduce((value: any[], current: any) => {
+							if (!includes(target[key], current)) {
+								value.push(current);
+							}
+							return value;
+						}, target[key]);
+					}
+					descriptors[key] = descriptor;
 					return descriptors;
 				},
 				{}
@@ -134,6 +144,14 @@ function cloneFactory(base?: any, staticProperties?: any): any {
 			throw new SyntaxError('Factories cannot be called with "new".');
 		}
 		const instance = Object.create(factory.prototype);
+
+		/* Clone any arrays in the instance */
+		for (const key in instance) {
+			if (Array.isArray(instance[key])) {
+				instance[key] = arrayFrom(instance[key]);
+			}
+		}
+
 		args.unshift(instance);
 		initFnMap.get(factory).forEach(fn => fn.apply(null, args));
 		return instance;

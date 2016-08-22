@@ -389,6 +389,16 @@ registerSuite({
 			assert.notInclude(Object.keys(fooPrototype), 'nonEnumerable', 'Keys included non-enumerable property');
 			assert.include(Object.getOwnPropertyNames(fooPrototype), 'nonEnumerable',
 				'Own property names did not include non-enumerable property');
+		},
+
+		'array prototype property': function() {
+			const arr = [ function () { return 'foo'; }, function () { return 'bar'; } ];
+			const createFoo = compose({ arr });
+			const foo = createFoo();
+			assert.isArray(foo.arr);
+			assert.notStrictEqual(foo.arr, arr);
+			assert.deepEqual(foo.arr, arr);
+			assert.deepEqual([ 'foo', 'bar' ], arr.map((value) => value()));
 		}
 	},
 	extend: {
@@ -434,6 +444,60 @@ registerSuite({
 
 			assert.strictEqual(fooBar.foo, 'bar', 'Should have run original init function');
 			assert.strictEqual(fooBar.bar, 'bar', 'Should have included extension type and not init function');
+		},
+		'arrays': {
+			'present in base': function () {
+				const createFoo = compose.create({
+					foo: [ 'bar' ]
+				}).extend({
+					foo: [ 'baz' ]
+				}).extend({
+					foo: [ 'qat' ]
+				});
+
+				const foo = createFoo();
+
+				assert.deepEqual(foo.foo, [ 'bar', 'baz', 'qat' ]);
+			},
+
+			'not present in base': function () {
+				const createFoo = compose.create({
+					foo: 'bar'
+				}).extend({
+					bar: [ 'bar' ]
+				});
+
+				const foo = createFoo();
+
+				assert.deepEqual(foo.bar, [ 'bar' ]);
+			},
+
+			'overwrite in base': function () {
+				const createFoo = compose.create({
+					foo: 'bar',
+					bar: [ 'bar' ]
+				}).extend({
+					foo: [ 'bar' ],
+					bar: 'foo'
+				});
+
+				const foo = createFoo();
+
+				assert.deepEqual(foo.foo, [ 'bar' ]);
+				assert.deepEqual(foo.bar, 'foo');
+			},
+
+			'merging duplicates': function () {
+				const createFoo = compose.create({
+					foo: [ 'foo', 'bar' ]
+				}).extend({
+					foo: [ 'bar', 'baz' ]
+				});
+
+				const foo = createFoo();
+
+				assert.deepEqual(foo.foo, [ 'foo', 'bar', 'baz' ]);
+			}
 		}
 	},
 	mixin: {
@@ -773,6 +837,81 @@ registerSuite({
 			const fooBar = createFooBar();
 			assert.strictEqual(fooBar.foo, 'foo', 'Foo property not present');
 			assert.strictEqual(fooBar.bar, 3, 'Bar property not present');
+		},
+
+		'arrays': {
+			'present in base': function () {
+				const createFoo = compose({
+					foo: [ 'foo' ]
+				});
+
+				const createBar = compose({
+					foo: [ 'bar' ]
+				});
+
+				const createBaz = compose({
+					foo: [ 'baz' ]
+				});
+
+				const createFooBarBaz = createFoo
+					.mixin(createBar)
+					.mixin(createBaz);
+
+				const foobarbaz = createFooBarBaz();
+
+				assert.deepEqual(foobarbaz.foo, [ 'foo', 'bar', 'baz' ]);
+			},
+
+			'not present in base': function () {
+				const createFoo = compose({
+					foo: 'bar'
+				});
+
+				const createBar = compose({
+					bar: [ 'bar' ]
+				});
+
+				const createFooBar = createFoo.mixin(createBar);
+
+				const foo = createFooBar();
+
+				assert.deepEqual(foo.bar, [ 'bar' ]);
+			},
+
+			'overwrite in base': function () {
+				const createFoo = compose({
+					foo: 'bar',
+					bar: [ 'bar' ]
+				});
+
+				const createBar = compose({
+					foo: [ 'bar' ],
+					bar: 'foo'
+				});
+
+				const createFooBar = createFoo.mixin(createBar);
+
+				const foo = createFooBar();
+
+				assert.deepEqual(foo.foo, [ 'bar' ]);
+				assert.deepEqual(foo.bar, 'foo');
+			},
+
+			'merging duplicates': function () {
+				const createFoo = compose({
+					foo: [ 'foo', 'bar' ]
+				});
+
+				const createBar = compose({
+					foo: [ 'bar', 'baz' ]
+				});
+
+				const createFooBar = createFoo.mixin(createBar);
+
+				const foo = createFooBar();
+
+				assert.deepEqual(foo.foo, [ 'foo', 'bar', 'baz' ]);
+			}
 		}
 	},
 	overlay: {
