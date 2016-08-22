@@ -18,9 +18,9 @@
 	},
 	"typings": "./dist/umd/dojo-compose.d.ts",
 	"peerDependencies": {
-		"dojo-has": "next",
-		"dojo-shim": "next",
-		"dojo-core": "next"
+		"dojo-has": ">=2.0.0-alpha.3",
+		"dojo-shim": ">=2.0.0-alpha.3",
+		"dojo-core": ">=2.0.0-alpha.11"
 	},
 	"devDependencies": {
 		"@reactivex/rxjs": "5.0.0-beta.6",
