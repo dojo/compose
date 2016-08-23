@@ -42,21 +42,29 @@ function copyProperties(target: any, ...sources: any[]) {
 		Object.defineProperties(
 			target,
 			Object.getOwnPropertyNames(source).reduce(
-				(descriptors: { [ index: string ]: any }, key: string) => {
+				(descriptors: PropertyDescriptorMap, key: string) => {
+					const sourceDescriptor = Object.getOwnPropertyDescriptor(source, key);
+					const sourceValue = sourceDescriptor && sourceDescriptor.value;
+					const targetDescriptor = Object.getOwnPropertyDescriptor(target, key);
+					const targetValue = targetDescriptor && targetDescriptor.value;
+
 					/* Special handling to merge array proprties */
-					const descriptor = Object.getOwnPropertyDescriptor(source, key);
-					if (Array.isArray(descriptor.value) && Array.isArray(target[key])) {
-						descriptor.value = descriptor.value.reduce((value: any[], current: any) => {
-							if (!includes(target[key], current)) {
-								value.push(current);
-							}
-							return value;
-						}, arrayFrom(target[key]));
+					if (Array.isArray(sourceValue) && Array.isArray(targetValue)) {
+						sourceDescriptor.value = sourceValue.reduce(
+							(value: any[], current: any) => {
+								if (!includes(target[key], current)) {
+									value.push(current);
+								}
+								return value;
+							},
+							arrayFrom(targetValue)
+						);
 					}
-					descriptors[key] = descriptor;
+
+					descriptors[key] = sourceDescriptor;
 					return descriptors;
 				},
-				{}
+				Object.create(null)
 			)
 		);
 	});
