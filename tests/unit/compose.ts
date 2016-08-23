@@ -511,6 +511,18 @@ registerSuite({
 				const foo = createFoo();
 
 				assert.deepEqual(foo.foo, [ 'foo', 'bar', 'baz' ]);
+			},
+
+			'arrays on prototype are not equal': function () {
+				const arr1 = [ 'foo', 'bar' ];
+				const arr2 = [ 'bar', 'baz' ];
+				const createFoo = compose({ arr: arr1 });
+				const createBar = createFoo.extend({ arr: arr2 });
+				assert.deepEqual(arr1, [ 'foo', 'bar' ]);
+				assert.deepEqual(arr2, [ 'bar', 'baz' ]);
+				assert.strictEqual(createFoo.prototype.arr, arr1);
+				assert.deepEqual(createFoo.prototype.arr, [ 'foo', 'bar' ]);
+				assert.deepEqual(createBar.prototype.arr, [ 'foo', 'bar', 'baz' ]);
 			}
 		}
 	},
@@ -925,6 +937,20 @@ registerSuite({
 				const foo = createFooBar();
 
 				assert.deepEqual(foo.foo, [ 'foo', 'bar', 'baz' ]);
+			},
+
+			'arrays on prototype are not equal': function () {
+				const arr1 = [ 'foo', 'bar' ];
+				const arr2 = [ 'bar', 'baz' ];
+				const createFoo = compose({ arr: arr1 });
+				const createBar = compose({ arr: arr2 });
+				const createFooBar = createFoo.mixin(createBar);
+				assert.deepEqual(arr1, [ 'foo', 'bar' ]);
+				assert.deepEqual(arr2, [ 'bar', 'baz' ]);
+				assert.strictEqual(createFoo.prototype.arr, arr1);
+				assert.deepEqual(createFoo.prototype.arr, [ 'foo', 'bar' ]);
+				assert.deepEqual(createBar.prototype.arr, [ 'bar', 'baz' ]);
+				assert.deepEqual(createFooBar.prototype.arr, [ 'foo', 'bar', 'baz' ]);
 			}
 		}
 	},

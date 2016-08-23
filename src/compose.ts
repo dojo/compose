@@ -51,7 +51,7 @@ function copyProperties(target: any, ...sources: any[]) {
 								value.push(current);
 							}
 							return value;
-						}, target[key]);
+						}, arrayFrom(target[key]));
 					}
 					descriptors[key] = descriptor;
 					return descriptors;
