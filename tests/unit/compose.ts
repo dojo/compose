@@ -399,6 +399,20 @@ registerSuite({
 			assert.notStrictEqual(foo.arr, arr);
 			assert.deepEqual(foo.arr, arr);
 			assert.deepEqual([ 'foo', 'bar' ], arr.map((value) => value()));
+		},
+
+		'getters not accessed during creation': function () {
+			let count = 0;
+			const createFoo = compose({
+				get foo() {
+					count++;
+					return [];
+				}
+			});
+			const foo = createFoo();
+			assert.strictEqual(count, 0);
+			assert.isArray(foo.foo);
+			assert.strictEqual(count, 1);
 		}
 	},
 	extend: {

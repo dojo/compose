@@ -147,7 +147,7 @@ function cloneFactory(base?: any, staticProperties?: any): any {
 
 		/* Clone any arrays in the instance */
 		for (const key in instance) {
-			if (Array.isArray(instance[key])) {
+			if (Array.isArray(Object.getOwnPropertyDescriptor(factory.prototype, key).value)) {
 				instance[key] = arrayFrom(instance[key]);
 			}
 		}
