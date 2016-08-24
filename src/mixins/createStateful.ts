@@ -68,7 +68,7 @@ export interface StatefulMixin<S extends State>{
 	/**
 	 * A read only view of the state
 	 */
-	state: S;
+	readonly state: S;
 
 	/**
 	 * Set the state on the instance.
@@ -157,7 +157,7 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
  * Create an instance of a stateful object
  */
 const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOptions<State>>({
-		get state(this: Stateful<State>): any {
+		get state(this: Stateful<State>): State {
 			return stateWeakMap.get(this);
 		},
 
@@ -216,7 +216,8 @@ const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOp
 	.mixin({
 		mixin: createEvented,
 		initialize(instance, options) {
-			stateWeakMap.set(instance, {});
+			/* Using Object.create(null) will improve performance when looking up properties in state */
+			stateWeakMap.set(instance, Object.create(null));
 			instance.own({
 				destroy() {
 					stateWeakMap.delete(instance);
