@@ -1,11 +1,13 @@
 {
 	"version": "2.0.0",
 	"compilerOptions": {
+		"baseUrl": "node_modules",
 		"declaration": false,
 		"module": "umd",
+		"moduleResolution": "classic",
 		"noImplicitAny": true,
+		"noImplicitThis": true,
 		"outDir": "_build/",
-		"baseUrl": "node_modules",
 		"paths": {
 			"dojo-has/*": [
 				"dojo-has/dist/umd/*"
@@ -19,10 +21,8 @@
 		},
 		"removeComments": false,
 		"sourceMap": true,
-		"target": "es5",
-		"moduleResolution": "classic",
 		"strictNullChecks": true,
-		"noImplicitThis": true
+		"target": "es5"
 	},
 	"include": [
 		"./src/**/*.ts",

@@ -4,24 +4,25 @@ export interface AdvisingFunction extends Function {
 	/**
 	 * The next advice in an advice chain
 	 */
-	next: AdvisingFunction;
+	readonly next: AdvisingFunction;
 
 	/**
 	 * The previous advice in an advice chain
 	 */
-	previous: AdvisingFunction;
+	readonly previous: AdvisingFunction;
 }
 
 export interface DispatchAdvice<T> {
 	before?: BeforeAdvice[];
 	after?: AfterAdvice<T>[];
-	joinPoint: Function;
+	readonly joinPoint: Function;
 }
 
 export interface BeforeAdvice {
 	/**
-	 * Advice which is applied *before*, receiving the original arguments, if the advising function returns
-	 * a value, it is passed further along taking the place of the original arguments.
+	 * Advice which is applied *before*, receiving the original arguments, if the advising
+	 * function returns a value, it is passed further along taking the place of the original
+	 * arguments.
 	 *
 	 * @param args The arguments the method was called with
 	 */
@@ -41,8 +42,8 @@ export interface AfterAdvice<T> {
 
 export interface AroundAdvice<T> {
 	/**
-	 * Advice which is applied *around*.  The advising function receives the original function and needs to
-	 * return a new function which will then invoke the original function.
+	 * Advice which is applied *around*.  The advising function receives the original function and
+	 * needs to return a new function which will then invoke the original function.
 	 *
 	 * @param origFn The original function
 	 * @returns A new function which will inoke the original function.
@@ -132,7 +133,7 @@ function advise<F extends GenericFunction<T>, T>(this: any, joinPoint: F, type: 
 			(adviceMap.before || (adviceMap.before = [])).unshift(<BeforeAdvice> advice);
 		}
 		else {
-			(adviceMap.after || (adviceMap.after = [])).push(<AfterAdvice<T>> advice);
+			(adviceMap.after || (adviceMap.after = [])).push(advice);
 		}
 	}
 	return dispatcher;
