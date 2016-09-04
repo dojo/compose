@@ -22,6 +22,7 @@ export interface ActionableOptions<E extends TargettedEventObject> {
 export interface Actionable<E extends TargettedEventObject> {
 	/**
 	 * The *do* method of an Action, which can take a `options` property of an `event`
+	 *
 	 * @param options Options passed which includes an `event` object
 	 */
 	do(options?: ActionableOptions<E>): any;
@@ -30,6 +31,7 @@ export interface Actionable<E extends TargettedEventObject> {
 export interface EventedCallback<E extends EventObject> {
 	/**
 	 * A callback that takes an `event` argument
+	 *
 	 * @param event The event object
 	 */
 	(event: E): boolean | void;
@@ -40,6 +42,9 @@ export interface EventedCallback<E extends EventObject> {
  */
 export type EventedListener<E extends TargettedEventObject> = EventedCallback<E> | Actionable<E>;
 
+/**
+ * Either a single `EventedListener` or an array
+ */
 export type EventedListenerOrArray<E extends TargettedEventObject> = EventedListener<E> | EventedListener<E>[];
 
 /**
@@ -69,6 +74,7 @@ export interface EventedMixin {
 	 *
 	 * The event is determined by the `event.type`, if there are no listeners for an event type,
 	 * `emit` is essentially a noop.
+	 *
 	 * @param event The `EventObject` to be delivered to listeners based on `event.type`
 	 */
 	emit<E extends EventObject>(event: E): void;
@@ -111,6 +117,7 @@ function isActionable(value: any): value is Actionable<any> {
 
 /**
  * An internal function that always returns an EventedCallback
+ *
  * @param listener Either a `EventedCallback` or an `Actionable`
  */
 export function resolveListener<E extends TargettedEventObject>(listener: EventedListener<E>): EventedCallback<E> {
@@ -141,6 +148,7 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 				method.call(this, event);
 			}
 		},
+
 		on(this: Evented, ...args: any[]): Handle {
 			const evented: Evented = this;
 			const listenerMap = listenersMap.get(evented);
@@ -170,7 +178,7 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 		mixin: createDestroyable,
 		initialize(instance, options) {
 			/* Initialise listener map */
-			listenersMap.set(instance, {});
+			listenersMap.set(instance, Object.create(null));
 
 			if (options && options.listeners) {
 				instance.own(instance.on(options.listeners));
