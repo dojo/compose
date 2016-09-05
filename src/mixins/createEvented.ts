@@ -1,5 +1,6 @@
 import { on } from 'dojo-core/aspect';
 import { EventObject, Handle } from 'dojo-core/interfaces';
+import Map from 'dojo-shim/Map';
 import WeakMap from 'dojo-shim/WeakMap';
 import compose, { ComposeFactory } from '../compose';
 import createDestroyable, { Destroyable } from './createDestroyable';
@@ -57,9 +58,7 @@ export interface EventedListenersMap {
 /**
  * A map of callbacks where the key is the event `type`
  */
-interface EventedCallbackMap {
-	[type: string]: EventedCallback<EventObject>;
-}
+type EventedCallbackMap = Map<string, EventedCallback<EventObject>>;
 
 export interface EventedOptions {
 	/**
@@ -88,6 +87,7 @@ export interface EventedMixin {
 	 * @returns A handle which can be used to remove the listener
 	 */
 	on(type: string, listener: EventedListenerOrArray<TargettedEventObject>): Handle;
+
 	/**
 	 * Attach a `listener` to a particular event `type`.
 	 *
@@ -112,7 +112,7 @@ const listenersMap = new WeakMap<Evented, EventedCallbackMap>();
  * @param value The value to guard against
  */
 function isActionable(value: any): value is Actionable<any> {
-	return Boolean(value && 'do' in value && typeof value.do === 'function');
+	return Boolean(value && typeof value.do === 'function');
 }
 
 /**
@@ -121,14 +121,14 @@ function isActionable(value: any): value is Actionable<any> {
  * @param listener Either a `EventedCallback` or an `Actionable`
  */
 export function resolveListener<E extends TargettedEventObject>(listener: EventedListener<E>): EventedCallback<E> {
-	return isActionable(listener) ? function (event: E) {
-			/* TODO: Resolve when Microsoft/TypeScript#8367 fixed */
-			(<Actionable<E>> listener).do({ event });
-		} : listener;
+	return isActionable(listener) ? (event: E) => listener.do({ event }) : listener;
 }
 
 /**
  * Internal function to convert an array of handles to a single handle
+ *
+ * @param handles The array of handles to convert into a signle handle
+ * @return The single handle
  */
 function handlesArraytoHandle(handles: Handle[]): Handle {
 	return {
@@ -143,19 +143,16 @@ function handlesArraytoHandle(handles: Handle[]): Handle {
  */
 const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 		emit<E extends EventObject>(this: Evented, event: E): void {
-			const method = listenersMap.get(this)[event.type];
+			const method = listenersMap.get(this).get(event.type);
 			if (method) {
 				method.call(this, event);
 			}
 		},
 
 		on(this: Evented, ...args: any[]): Handle {
-			const evented: Evented = this;
-			const listenerMap = listenersMap.get(evented);
+			const listenerMap = listenersMap.get(this);
 			if (args.length === 2) { /* overload: on(type, listener) */
-				let type: string;
-				let listeners: EventedListenerOrArray<TargettedEventObject>;
-				[ type, listeners ] = args;
+				const [ type, listeners ] = <[ string, EventedListenerOrArray<TargettedEventObject>]> args;
 				if (Array.isArray(listeners)) {
 					const handles = listeners.map((listener) => on(listenerMap, type, resolveListener(listener)));
 					return handlesArraytoHandle(handles);
@@ -165,8 +162,8 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 				}
 			}
 			else if (args.length === 1) { /* overload: on(listeners) */
-				const listenerMapArg: EventedListenersMap = args[0];
-				const handles = Object.keys(listenerMapArg).map((type) => evented.on(type, listenerMapArg[type]));
+				const [ listenerMapArg ] = <[EventedListenersMap]> args;
+				const handles = Object.keys(listenerMapArg).map((type) => this.on(type, listenerMapArg[type]));
 				return handlesArraytoHandle(handles);
 			}
 			else { /* unexpected signature */
@@ -178,7 +175,7 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 		mixin: createDestroyable,
 		initialize(instance, options) {
 			/* Initialise listener map */
-			listenersMap.set(instance, Object.create(null));
+			listenersMap.set(instance, new Map<string, EventedCallback<EventObject>>());
 
 			if (options && options.listeners) {
 				instance.own(instance.on(options.listeners));
