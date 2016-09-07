@@ -3,4 +3,5 @@ coverage:
     slack:
       default:
         url: "secret:xFUa0lt2M/nuUHstJueiNzbRTTrVFWCyIbF3RCW/N9puOHc8T4nWF6FxVafy/QUzSrBkAczSO848HQfLeUDZ+HHN4Dg8rwBGSXoNE61rlDk+2o6CEgagVD+AqMNmMNms1JOPb6QFnQlev0dD1oiGE/3iUHicYkj4mL5SOQ3OTbY="
+        threshold: 2
         attachments: "sunburst, diff"
