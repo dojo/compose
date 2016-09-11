@@ -238,7 +238,7 @@ registerSuite({
 
 			createFooBarBazQat();
 
-			assert.deepEqual(callstack, [ 'foo', 'foobaz', 'foobazMixinInit', 'foobar', 'foobarbazqat' ],
+			assert.deepEqual(callstack, [ 'foobarbazqat', 'foobar', 'foo', 'foobaz', 'foobazMixinInit' ],
 				'Init functions should be called in proper order and duplicates eliminated');
 		},
 		'.create()': function () {
@@ -664,9 +664,9 @@ registerSuite({
 				foo: 'foo',
 				baz: ''
 			}, function(instance: any) {
-				// This runs last, as it's the initialize on the base class
+				// This runs first, and shouldn't expect anything from subsequent mixins
 				instance.bar = 3;
-				assert.strictEqual(instance.baz, 'baz', 'instance contains baz');
+				assert.strictEqual(instance.baz, '', 'instance contains baz');
 			}).mixin({
 				mixin: createBar,
 				initialize: function(instance: any) {
@@ -861,7 +861,7 @@ registerSuite({
 			});
 
 			const fooBar = createFooBar();
-			assert.strictEqual(fooBar.foo, 'foo', 'Foo property not present');
+			assert.strictEqual(fooBar.foo, 'bar', 'Foo property not present');
 			assert.strictEqual(fooBar.bar, 3, 'Bar property not present');
 		},
 
