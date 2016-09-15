@@ -5,6 +5,7 @@ import WeakMap from 'dojo-shim/WeakMap';
 import { Observable, Subscription } from './interfaces';
 import createEvented, { Evented, EventedOptions, EventedListener, TargettedEventObject } from './createEvented';
 import { ComposeFactory } from '../compose';
+import createCancelableEvent, { CancelableEvent } from '../util/createCancelableEvent';
 
 /**
  * Base State interface
@@ -91,7 +92,18 @@ export interface StatefulMixin<S extends State>{
 
 export type Stateful<S extends State> = StatefulMixin<S> & Evented & {
 	/**
-	 * Add a listener for an event
+	 * Add a listener for a `statecomplete` event, which occures when state is observed
+	 * and is completed.  If the event is not cancelled, the instance will continue and
+	 * call `target.destroy()`.
+	 *
+	 * @param type The event type to listen for
+	 * @param listener The listener that will be called when the event occurs
+	 */
+	on(type: 'statecomplete', listener: EventedListener<CancelableEvent<'statecomplete', Stateful<S>>>): Handle;
+
+	/**
+	 * Add a listener for a `statechange` event, which occures whenever the state changes on the instance.
+	 *
 	 * @param type The event type to listen for
 	 * @param listener The listener that will be called when the event occurs
 	 */
@@ -119,23 +131,30 @@ interface ObservedState {
 const observedStateMap = new WeakMap<Stateful<State>, ObservedState>();
 
 /**
- * Internal function to unobserve the state of a `Stateful`
+ * Internal function to unobserve the state of a `Stateful`.  It emits a `statecomplete` event which can be
+ * cancelled.
+ *
  * @param stateful The `Stateful` object to unobserve
  */
 function unobserve(stateful: Stateful<State>): void {
 	const observedState = observedStateMap.get(stateful);
 	if (observedState) {
 		observedState.handle.destroy();
-		stateful.emit({
-			type: 'observe:complete',
+		const statecomplete = createCancelableEvent({
+			type: 'statecomplete',
 			target: stateful
 		});
+		stateful.emit(statecomplete);
+		if (!statecomplete.defaultPrevented) {
+			stateful.destroy();
+		}
 	}
 }
 
 /**
  * Internal function that actually applies the state to the Stateful's state and
  * emits the `statechange` event.
+ *
  * @param stateful The Stateful instance
  * @param state The State to be set
  */

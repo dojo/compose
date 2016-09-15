@@ -172,8 +172,9 @@ registerSuite({
 			assert.strictEqual(patchCalled, 2);
 			assert.deepEqual(stateful.state, { foo: 'foo' });
 		},
-		'observeState() - completed'() {
+		'observeState() - completed/destroyed'() {
 			let called = 0;
+			let destroyed = 0;
 			let observerRef: Observer<State> = <any> undefined;
 			const observer = {
 				observe(id: string): Observable<State> {
@@ -190,21 +191,78 @@ registerSuite({
 
 			const stateful = createStateful();
 
-			stateful.on('observe:complete', (evt) => {
+			stateful.own({
+				destroy() {
+					destroyed++;
+				}
+			});
+
+			stateful.on('statecomplete', (evt) => {
 				called++;
-				assert.strictEqual((<any> evt).target, stateful);
+				assert.strictEqual(evt.target, stateful);
 			});
 
 			stateful.observeState('foo', observer);
 			assert.deepEqual(stateful.state, { foo: 'bar' });
 
+			assert.strictEqual(called, 0);
+			assert.strictEqual(destroyed, 0);
+
 			observerRef.complete();
 
 			assert.strictEqual(called, 1);
+			assert.strictEqual(destroyed, 1);
+
+			assert.throws(() => {
+				stateful.setState({ foo: 'qat' });
+			});
+		},
+		'observeState() - completed but preventDefaut'() {
+			let called = 0;
+			let destroyed = 0;
+			let observerRef: Observer<State> = <any> undefined;
+			const observer = {
+				observe(id: string): Observable<State> {
+					assert.strictEqual(id, 'foo');
+					return new Observable(function subscribe(observer: Observer<State>) {
+						observerRef = observer;
+						observerRef.next({ foo: 'bar' });
+					});
+				},
+				patch(value: any, options?: { id?: string }): Promise<State> {
+					throw new Error('Should not have been called');
+				}
+			};
+
+			const stateful = createStateful();
+
+			stateful.own({
+				destroy() {
+					destroyed++;
+				}
+			});
+
+			stateful.on('statecomplete', (evt) => {
+				called++;
+				assert.strictEqual(evt.target, stateful);
+				evt.preventDefault();
+			});
+
+			stateful.observeState('foo', observer);
+			assert.deepEqual(stateful.state, { foo: 'bar' });
+
+			assert.strictEqual(called, 0);
+			assert.strictEqual(destroyed, 0);
+
+			observerRef.complete();
+
+			assert.strictEqual(called, 1);
+			assert.strictEqual(destroyed, 0);
 
 			stateful.setState({ foo: 'qat' });
-
 			assert.deepEqual(stateful.state, { foo: 'qat' });
+			assert.strictEqual(called, 1);
+			assert.strictEqual(destroyed, 0);
 		},
 		'observeState() - error'() {
 			const observer = {
