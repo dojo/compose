@@ -202,21 +202,22 @@ function cloneFactory(base?: any, staticProperties?: any): any {
 }
 
 /**
- * Takes any init functions from source and concats them to base
+ * Takes any init functions from source and concats them to base and sets the map property for
+ * the target
  *
  * @param target The compose factory to copy the init functions onto
  * @param source The ComposeFactory to copy the init functions from
  */
 function concatInitFn<T, O, U, P>(target: ComposeFactory<T, O>, source: ComposeFactory<U, P>): void {
-	const sourceInitFns = initFnMap.get(source);
+	const targetInitFns = initFnMap.get(target);
 
-	/* making sure only unique functions get added */
-	const targetInitFns = initFnMap.get(target).filter((fn) => {
-		return sourceInitFns.indexOf(fn) < 0;
-	});
+	/* initFn ordering is complicated, see dojo/compose#42 */
 
-	/* now prepend the source init functions to the unique init functions for the target */
-	initFnMap.set(target, sourceInitFns.concat(targetInitFns));
+	/* Remove any duplicates from source */
+	const sourceInitFns = initFnMap.get(source).filter((fn) => !includes(targetInitFns, fn));
+
+	/* now append the unique source init functions onto the target init functions */
+	initFnMap.set(target, [ ...targetInitFns, ...sourceInitFns ]);
 }
 
 /**
@@ -461,22 +462,23 @@ function mixin<T, O, U, P>(
 	toMixin: ComposeMixinable<U, P> | ComposeMixinDescriptor<T, O, U, P>
 ): ComposeFactory<T & U, O & P> {
 	base = cloneFactory(base);
-	const baseInitFns = initFnMap.get(base);
 	const mixin = isComposeMixinable(toMixin) ? toMixin.factoryDescriptor() : toMixin;
 	const mixinType =  mixin.mixin;
 	if (mixinType) {
-		let mixinFactory = isComposeFactory(mixinType) ? mixinType : create(mixinType);
+		const mixinFactory = isComposeFactory(mixinType) ? mixinType : create(mixinType);
+		concatInitFn(base, mixinFactory);
+		const baseInitFns = initFnMap.get(base);
 		if (mixin.initialize) {
-			if (baseInitFns.indexOf(mixin.initialize) < 0) {
-				baseInitFns.unshift(mixin.initialize);
+			if (!includes(baseInitFns, mixin.initialize)) {
+				baseInitFns.push(mixin.initialize);
 			}
 		}
-		concatInitFn(base, mixinFactory);
 		copyProperties(base.prototype, mixinFactory.prototype);
 	}
 	else if (mixin.initialize) {
-		if (baseInitFns.indexOf(mixin.initialize) < 0) {
-			baseInitFns.unshift(mixin.initialize);
+		const baseInitFns = initFnMap.get(base);
+		if (!includes(baseInitFns, mixin.initialize)) {
+			baseInitFns.push(mixin.initialize);
 		}
 	}
 	if (mixin.aspectAdvice) {

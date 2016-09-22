@@ -4,7 +4,7 @@ import Promise from 'dojo-shim/Promise';
 import WeakMap from 'dojo-shim/WeakMap';
 import { Observable, Subscription } from './interfaces';
 import createEvented, { Evented, EventedOptions, EventedListener, TargettedEventObject } from './createEvented';
-import compose, { ComposeFactory } from '../compose';
+import { ComposeFactory } from '../compose';
 import createCancelableEvent, { CancelableEvent } from '../util/createCancelableEvent';
 
 /**
@@ -175,66 +175,59 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
 /**
  * Create an instance of a stateful object
  */
-const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOptions<State>>({
-		get state(this: Stateful<State>): State {
-			return stateWeakMap.get(this);
-		},
+const createStateful: StatefulFactory = createEvented
+	.mixin({
+		mixin: {
+			get state(this: Stateful<State>): State {
+				return stateWeakMap.get(this);
+			},
 
-		setState(this: Stateful<State>, value: State): void {
-			const observedState = observedStateMap.get(this);
-			if (observedState) {
-				observedState.observable.patch(value, { id: observedState.id });
-			}
-			else {
-				setStatefulState(this, value);
-			}
-		},
-
-		observeState(this: Stateful<State>, id: string, observable: ObservableState<State>): Handle {
-			let observedState = observedStateMap.get(this);
-			if (observedState) {
-				if (observedState.id === id && observedState.observable === observable) {
-					return observedState.handle;
+			setState(this: Stateful<State>, value: State): void {
+				const observedState = observedStateMap.get(this);
+				if (observedState) {
+					observedState.observable.patch(value, { id: observedState.id });
 				}
-				throw new Error(`Already observing state with ID '${observedState.id}'`);
-			}
-			const stateful = this;
-			observedState = {
-				id,
-				observable,
-				subscription: observable
-					.observe(id)
-					.subscribe(
-						(item) => setStatefulState(stateful, item), /* next handler */
-						(err) => {
-							/* TODO: Should we emit an error, instead of throwing? */
-							throw err;
-						}, /* error handler */
-						() => unobserve(stateful)), /* completed handler */
-				handle: {
-					destroy() {
-						const observedState = observedStateMap.get(stateful);
-						if (observedState) {
-							observedState.subscription.unsubscribe();
-							observedStateMap.delete(stateful);
+				else {
+					setStatefulState(this, value);
+				}
+			},
+
+			observeState(this: Stateful<State>, id: string, observable: ObservableState<State>): Handle {
+				let observedState = observedStateMap.get(this);
+				if (observedState) {
+					if (observedState.id === id && observedState.observable === observable) {
+						return observedState.handle;
+					}
+					throw new Error(`Already observing state with ID '${observedState.id}'`);
+				}
+				const stateful = this;
+				observedState = {
+					id,
+					observable,
+					subscription: observable
+						.observe(id)
+						.subscribe(
+							(item) => setStatefulState(stateful, item), /* next handler */
+							(err) => {
+								/* TODO: Should we emit an error, instead of throwing? */
+								throw err;
+							}, /* error handler */
+							() => unobserve(stateful)), /* completed handler */
+					handle: {
+						destroy() {
+							const observedState = observedStateMap.get(stateful);
+							if (observedState) {
+								observedState.subscription.unsubscribe();
+								observedStateMap.delete(stateful);
+							}
 						}
 					}
-				}
-			};
-			observedStateMap.set(stateful, observedState);
-			return observedState.handle;
-		}
-	}, (instance, options) => {
-		if (options) {
-			const { state } = options;
-			if (state) {
-				instance.setState(state);
+				};
+				observedStateMap.set(stateful, observedState);
+				return observedState.handle;
 			}
-		}
-	})
-	.mixin({
-		mixin: createEvented,
-		initialize(instance, options) {
+		},
+		initialize(instance: StatefulMixin<State> & Evented, options: StatefulOptions<State>) {
 			/* Using Object.create(null) will improve performance when looking up properties in state */
 			stateWeakMap.set(instance, Object.create(null));
 			instance.own({
@@ -243,12 +236,15 @@ const createStateful: StatefulFactory = compose<StatefulMixin<State>, StatefulOp
 				}
 			});
 			if (options) {
-				const { id, stateFrom } = options;
+				const { id, stateFrom, state } = options;
 				if (typeof id !== 'undefined' && stateFrom) {
 					instance.own(instance.observeState(id, stateFrom));
 				}
 				else if (stateFrom) {
 					throw new TypeError('When "stateFrom" option is supplied, factory also requires "id" option.');
+				}
+				if (state) {
+					instance.setState(state);
 				}
 			}
 		}
