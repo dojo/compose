@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import compose, { GenericClass, ComposeMixinDescriptor } from '../../src/compose';
+import compose, { GenericClass, ComposeMixinDescriptor, getInitFunctionNames } from '../../src/compose';
 
 let _hasStrictModeCache: boolean;
 
@@ -1531,6 +1531,65 @@ registerSuite({
 					compose({}).static(compose({}));
 				}, 'Should have handled factory with no static methods without throwing');
 			}
+		}
+	},
+
+	debugging: {
+		'getInitFunctionNames'() {
+			const createFoo = compose({
+				foo: 'foo'
+			}, function () {}, 'Foo');
+			assert.deepEqual(getInitFunctionNames(createFoo), [ 'initFoo' ]);
+			const createBar = compose({
+				bar: 1
+			}, function () {}, 'Bar');
+			const createFooBar = createFoo.mixin(createBar);
+			assert.deepEqual(getInitFunctionNames(createFooBar), [ 'initFoo', 'initBar' ]);
+			const createFooBarMixin = createFoo.mixin({
+				mixin: createBar,
+				initialize(instance) {
+					instance.bar = 3;
+				},
+				className: 'FooBar'
+			});
+			assert.deepEqual(getInitFunctionNames(createFooBarMixin), [ 'initFoo', 'initBar', 'mixinFooBar' ]);
+			const createFooBarNoClassName = createBar.mixin({
+				mixin: createFoo,
+				initialize(instance) {
+					instance.foo = 'bar';
+				}
+			});
+			assert.deepEqual(getInitFunctionNames(createFooBarNoClassName), [ 'initBar', 'initFoo', 'mixinFoo' ]);
+			const createFooNamed = createFoo.mixin({
+				initialize(instance) {
+					instance.foo = 'bar';
+				},
+				className: 'FooNamed'
+			});
+			assert.deepEqual(getInitFunctionNames(createFooNamed), [ 'initFoo', 'mixinFooNamed' ]);
+		},
+
+		'instance to string'() {
+			const createFoo = compose({}, 'Foo');
+			const foo = createFoo();
+			assert.strictEqual((<any> foo).toString(), '[object Foo]');
+			const createFooBar = createFoo
+				.mixin({
+					mixin: {
+						bar: 1
+					},
+					className: 'FooBar'
+				});
+			const foobar = createFooBar();
+			assert.strictEqual((<any> foobar).toString(), '[object FooBar]');
+			const createFooBarNoName = createFoo
+				.mixin({
+					mixin: {
+						bar: 1
+					}
+				});
+			const foobarnoname = createFooBarNoName();
+			assert.strictEqual((<any> foobarnoname).toString(), '[object Foo]');
 		}
 	}
 });
