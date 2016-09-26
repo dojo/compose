@@ -297,7 +297,7 @@ function concatInitFn<T, O, U, P>(target: ComposeFactory<T, O>, source: ComposeF
  * @returns       Return true if it is a ComposeFactory, otherwise false
  */
 export function isComposeFactory(value: any): value is ComposeFactory<any, any> {
-	return Boolean(initFnMap.get(value));
+	return Boolean(value && initFnMap.get(value));
 }
 
 /* General Interfaces */
