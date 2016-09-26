@@ -29,11 +29,14 @@ const staticPropertyMap = new WeakMap<Function, {}>();
  * Internal function which can label a function with a name
  */
 function labelFunction(fn: Function, value: string): void {
-	defineProperty(fn, 'name', {
-		value,
-		writable: true,
-		configurable: true
-	});
+	const nameDescriptor = Object.getOwnPropertyDescriptor(fn, 'name');
+	if (typeof nameDescriptor === 'undefined' || nameDescriptor.configurable) {
+		defineProperty(fn, 'name', {
+			value,
+			writable: true,
+			configurable: true
+		});
+	}
 }
 
 /**
@@ -557,7 +560,7 @@ function mixin<T, O, U, P>(
 		}
 		copyProperties(base.prototype, mixinFactory.prototype);
 	}
-	else if (mixin.initialize) {
+	else if (base && mixin.initialize) {
 		/* TODO: We should be able to combine with the logic above */
 		const baseInitFns = initFnMap.get(base);
 		if (!includes(baseInitFns, mixin.initialize)) {
