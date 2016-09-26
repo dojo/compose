@@ -566,7 +566,7 @@ function mixin<T, O, U, P>(
 		if (!includes(baseInitFns, mixin.initialize)) {
 			labelFunction(
 				mixin.initialize,
-				`mixin${mixin.className || (isComposeFactory(mixin.mixin) && mixin.mixin.name) || base.name}`
+				`mixin${mixin.className || base.name || 'Anonymous'}`
 			);
 			baseInitFns.push(mixin.initialize);
 		}
