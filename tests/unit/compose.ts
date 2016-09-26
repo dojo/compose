@@ -2,37 +2,21 @@ import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import compose, { GenericClass, ComposeMixinDescriptor, getInitFunctionNames } from '../../src/compose';
 
-let _hasStrictModeCache: boolean;
+let _hasConfigurableName: boolean;
 
 /**
- * Detects if the current runtime environment fully supports
- * strict mode (IE9 does not).
+ * Detects if functions have configurable names, some browsers that are not 100% ES2015
+ * compliant do not.
  */
-function hasStrictMode(): boolean {
-	if (_hasStrictModeCache !== undefined) {
-		return _hasStrictModeCache;
+function hasConfigurableName(): boolean {
+	if (_hasConfigurableName !== undefined) {
+		return _hasConfigurableName;
 	}
-	try {
-		const f = new Function(`return function f() {
-			'use strict';
-			var a = 021;
-			var b = function (eval) {}
-			var c = function (arguments) {}
-			function d(foo, foo) {}
-			function e(eval, arguments) {}
-			function eval() {}
-			function arguments() {}
-			function interface(){}
-			with (x) { }
-			try { eval++; } catch (arguments) {}
-			return { x: 1, y: 2, x: 1 }
-		}`);
-		f();
+	const nameDescriptor = Object.getOwnPropertyDescriptor(function foo() {}, 'name');
+	if (nameDescriptor && !nameDescriptor.configurable) {
+		return _hasConfigurableName = false;
 	}
-	catch (err) {
-		return _hasStrictModeCache = true;
-	}
-	return _hasStrictModeCache = false;
+	return _hasConfigurableName = true;
 }
 
 registerSuite({
@@ -363,18 +347,11 @@ registerSuite({
 
 			assert.strictEqual(foo['nonWritable'], 'constant', 'Didn\'t copy property value');
 
-			if (hasStrictMode()) {
-				/* modules are now emitted in strict mode, which causes a throw
-				* when trying to assign to a read-only property */
-				assert.throws(() => {
-					foo['nonWritable'] = 'variable';
-				}, TypeError);
-			}
-			else {
-				/* unless of course it is IE9 :-( */
+			/* modules are now emitted in strict mode, which causes a throw
+			* when trying to assign to a read-only property */
+			assert.throws(() => {
 				foo['nonWritable'] = 'variable';
-				assert.strictEqual(foo['nonWritable'], 'constant');
-			}
+			}, TypeError);
 		},
 
 		'non-enumerable property': function() {
@@ -1535,7 +1512,10 @@ registerSuite({
 	},
 
 	debugging: {
-		'getInitFunctionNames'() {
+		'getInitFunctionNames'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
 			const createFoo = compose({
 				foo: 'foo'
 			}, function () {}, 'Foo');
@@ -1569,7 +1549,10 @@ registerSuite({
 			assert.deepEqual(getInitFunctionNames(createFooNamed), [ 'initFoo', 'mixinFooNamed' ]);
 		},
 
-		'instance to string'() {
+		'instance to string'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
 			const createFoo = compose({}, 'Foo');
 			const foo = createFoo();
 			assert.strictEqual((<any> foo).toString(), '[object Foo]');

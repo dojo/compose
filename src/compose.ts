@@ -560,7 +560,7 @@ function mixin<T, O, U, P>(
 		}
 		copyProperties(base.prototype, mixinFactory.prototype);
 	}
-	else if (base && mixin.initialize) {
+	else if (mixin.initialize) {
 		/* TODO: We should be able to combine with the logic above */
 		const baseInitFns = initFnMap.get(base);
 		if (!includes(baseInitFns, mixin.initialize)) {
