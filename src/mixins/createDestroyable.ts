@@ -58,7 +58,7 @@ export function isDestroyable(value: any): value is Destroyable {
  * A mixin which adds the concepts of being able to *destroy* handles which the instance
  * *owns*
  */
-const createDestroyable: DestroyableFactory = compose({
+const createDestroyable: DestroyableFactory = compose('Destroyable', {
 	own(this: Destroyable, handle: Handle): Handle {
 		const handles = handlesWeakMap.get(this);
 		handles.push(handle);

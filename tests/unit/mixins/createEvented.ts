@@ -209,5 +209,9 @@ registerSuite({
 
 			assert.deepEqual(eventStack, [ 'foo', 'bar', 'bar' ]);
 		}
+	},
+	'toString()'() {
+		const evented = createEvented();
+		assert.strictEqual((<any> evented).toString(), '[object Evented]');
 	}
 });

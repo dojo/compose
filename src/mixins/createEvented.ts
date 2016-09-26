@@ -172,6 +172,7 @@ const createEvented: EventedFactory = compose<EventedMixin, EventedOptions>({
 		}
 	})
 	.mixin({
+		className: 'Evented',
 		mixin: createDestroyable,
 		initialize(instance, options) {
 			/* Initialise listener map */

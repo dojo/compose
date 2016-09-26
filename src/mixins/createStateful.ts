@@ -177,6 +177,7 @@ const stateWeakMap = new WeakMap<Stateful<State>, State>();
  */
 const createStateful: StatefulFactory = createEvented
 	.mixin({
+		className: 'Stateful',
 		mixin: {
 			get state(this: Stateful<State>): State {
 				return stateWeakMap.get(this);

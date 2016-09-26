@@ -1516,21 +1516,21 @@ registerSuite({
 			if (!hasConfigurableName()) {
 				this.skip('Functions do not have configurable names');
 			}
-			const createFoo = compose({
+			const createFoo = compose('Foo', {
 				foo: 'foo'
-			}, function () {}, 'Foo');
+			}, function () {});
 			assert.deepEqual(getInitFunctionNames(createFoo), [ 'initFoo' ]);
-			const createBar = compose({
+			const createBar = compose('Bar', {
 				bar: 1
-			}, function () {}, 'Bar');
+			}, function () {});
 			const createFooBar = createFoo.mixin(createBar);
 			assert.deepEqual(getInitFunctionNames(createFooBar), [ 'initFoo', 'initBar' ]);
 			const createFooBarMixin = createFoo.mixin({
+				className: 'FooBar',
 				mixin: createBar,
 				initialize(instance) {
 					instance.bar = 3;
-				},
-				className: 'FooBar'
+				}
 			});
 			assert.deepEqual(getInitFunctionNames(createFooBarMixin), [ 'initFoo', 'initBar', 'mixinFooBar' ]);
 			const createFooBarNoClassName = createBar.mixin({
@@ -1541,10 +1541,10 @@ registerSuite({
 			});
 			assert.deepEqual(getInitFunctionNames(createFooBarNoClassName), [ 'initBar', 'initFoo', 'mixinFoo' ]);
 			const createFooNamed = createFoo.mixin({
+				className: 'FooNamed',
 				initialize(instance) {
 					instance.foo = 'bar';
-				},
-				className: 'FooNamed'
+				}
 			});
 			assert.deepEqual(getInitFunctionNames(createFooNamed), [ 'initFoo', 'mixinFooNamed' ]);
 		},
@@ -1553,15 +1553,15 @@ registerSuite({
 			if (!hasConfigurableName()) {
 				this.skip('Functions do not have configurable names');
 			}
-			const createFoo = compose({}, 'Foo');
+			const createFoo = compose('Foo', {});
 			const foo = createFoo();
 			assert.strictEqual((<any> foo).toString(), '[object Foo]');
 			const createFooBar = createFoo
 				.mixin({
+					className: 'FooBar',
 					mixin: {
 						bar: 1
-					},
-					className: 'FooBar'
+					}
 				});
 			const foobar = createFooBar();
 			assert.strictEqual((<any> foobar).toString(), '[object FooBar]');
@@ -1573,6 +1573,19 @@ registerSuite({
 				});
 			const foobarnoname = createFooBarNoName();
 			assert.strictEqual((<any> foobarnoname).toString(), '[object Foo]');
+			const createOverrideClassName = createFoo
+				.mixin({
+					className: 'OverrideClassName'
+				});
+			const overrideClassName = createOverrideClassName();
+			assert.strictEqual((<any> overrideClassName).toString(), '[object OverrideClassName]');
+			const createBar = compose({})
+				.mixin({
+					className: 'Bar',
+					mixin: createFoo
+				});
+			const bar = createBar();
+			assert.strictEqual((<any> bar).toString(), '[object Bar]');
 		}
 	}
 });

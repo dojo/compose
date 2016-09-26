@@ -40,14 +40,6 @@ function labelFunction(fn: Function, value: string): void {
 }
 
 /**
- * Internal getter which will be set on the `toString` of the prototype of a factory
- * which will return the class name of the object.
- */
-function getPrototypeString(this: { name: string; }): string {
-	return `[object ${this.name}]`;
-}
-
-/**
  * Internal function which can label a factory with a name and also provides a
  * function which
  *
@@ -58,7 +50,9 @@ function labelFactory(factory: Function, value: string): void {
 	if (typeof factory === 'function' && factory.prototype) {
 		labelFunction(factory, value);
 		defineProperty(factory.prototype, 'toString', {
-			value: getPrototypeString.bind(factory),
+			value() {
+				return `[object ${value}]`;
+			},
 			configurable: true
 		});
 	}
@@ -104,25 +98,27 @@ function copyProperties(target: any, ...sources: any[]) {
 			target,
 			Object.getOwnPropertyNames(source).reduce(
 				(descriptors: PropertyDescriptorMap, key: string) => {
-					const sourceDescriptor = Object.getOwnPropertyDescriptor(source, key);
-					const sourceValue = sourceDescriptor && sourceDescriptor.value;
-					const targetDescriptor = Object.getOwnPropertyDescriptor(target, key);
-					const targetValue = targetDescriptor && targetDescriptor.value;
+					if (key !== 'toString') { /* copying toString from a mixin causes issues */
+						const sourceDescriptor = Object.getOwnPropertyDescriptor(source, key);
+						const sourceValue = sourceDescriptor && sourceDescriptor.value;
+						const targetDescriptor = Object.getOwnPropertyDescriptor(target, key);
+						const targetValue = targetDescriptor && targetDescriptor.value;
 
-					/* Special handling to merge array proprties */
-					if (Array.isArray(sourceValue) && Array.isArray(targetValue)) {
-						sourceDescriptor.value = sourceValue.reduce(
-							(value: any[], current: any) => {
-								if (!includes(target[key], current)) {
-									value.push(current);
-								}
-								return value;
-							},
-							arrayFrom(targetValue)
-						);
+						/* Special handling to merge array proprties */
+						if (Array.isArray(sourceValue) && Array.isArray(targetValue)) {
+							sourceDescriptor.value = sourceValue.reduce(
+								(value: any[], current: any) => {
+									if (!includes(target[key], current)) {
+										value.push(current);
+									}
+									return value;
+								},
+								arrayFrom(targetValue)
+							);
+						}
+
+						descriptors[key] = sourceDescriptor;
 					}
-
-					descriptors[key] = sourceDescriptor;
 					return descriptors;
 				},
 				Object.create(null)
@@ -254,6 +250,9 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 	else {
 		initFnMap.set(factory, []);
 	}
+	if (name) {
+		labelFactory(factory, name);
+	}
 	factory.prototype.constructor = factory;
 	stamp(factory);
 	if (staticProperties) {
@@ -262,9 +261,6 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 		}
 		staticPropertyMap.set(factory, staticProperties);
 		copyProperties(factory, staticProperties);
-	}
-	if (name) {
-		labelFactory(factory, name);
 	}
 	Object.freeze(factory);
 
@@ -544,7 +540,7 @@ function mixin<T, O, U, P>(
 ): ComposeFactory<T & U, O & P> {
 	const mixin = isComposeMixinable(toMixin) ? toMixin.factoryDescriptor() : toMixin;
 	const mixinType =  mixin.mixin;
-	base = cloneFactory(base, mixin.className);
+	base = cloneFactory(base, mixin.className || base.name);
 	if (mixinType) {
 		const mixinFactory = isComposeFactory(mixinType) ? mixinType : create(mixinType);
 		concatInitFn(base, mixinFactory);
@@ -843,9 +839,12 @@ export interface Compose {
 	 * @param initFunction An optional function that will be passed the instance and any creation options
 	 * @param className An optional class name that is used to label the factory for debug purposes
 	 */
-	<T, O>(base: GenericClass<T> | T, className?: string): ComposeFactory<T, O>;
-	<T, O>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>, className?: string): ComposeFactory<T, O>;
-	<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>, className?: string): ComposeFactory<T, O & P>;
+	<T, O>(base: GenericClass<T> | T): ComposeFactory<T, O>;
+	<T, O>(className: string, base: GenericClass<T> | T): ComposeFactory<T, O>;
+	<T, O>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	<T, O>(className: string, base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
+	<T, O, P>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
 
 	/**
 	 * Create a new factory based on a supplied Class, Factory or Object prototype with an optional
@@ -854,9 +853,12 @@ export interface Compose {
 	 * @param base The base Class, Facotry or Object prototype to use
 	 * @param initFunction An optional function that will be passed the instance and nay creation options
 	 */
-	create<T, O>(base: GenericClass<T> | T, className?: string): ComposeFactory<T, O>;
-	create<T, O>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>, className?: string): ComposeFactory<T, O>;
-	create<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>, className?: string): ComposeFactory<T, O & P>;
+	create<T, O>(base: GenericClass<T> | T): ComposeFactory<T, O>;
+	create<T, O>(className: string, base: GenericClass<T> | T): ComposeFactory<T, O>;
+	create<T, O>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	create<T, O>(className: string, base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	create<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
+	create<T, O, P>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
 }
 
 /**
@@ -865,13 +867,17 @@ export interface Compose {
  * @param base The base to use for creating the factory
  * @param initFunction Any function that should be run after the factory creates the instance
  */
-function create<T, O>(base: GenericClass<T> | T, className?: string): ComposeFactory<T, O>;
+function create<T, O>(base: GenericClass<T> | T): ComposeFactory<T, O>;
+function create<T, O>(className: string, base: GenericClass<T> | T): ComposeFactory<T, O>;
 function create<T, O>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+function create<T, O>(className: string, base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
 function create<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
-function create<O>(base: any, initFunction?: ComposeInitializationFunction<any, O> | string, className?: string): ComposeFactory<any, any> {
-	if (typeof initFunction === 'string') {
-		className = initFunction;
-		initFunction = undefined;
+function create<T, O, P>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
+function create<O>(className: any, base?: any, initFunction?: ComposeInitializationFunction<any, O>): ComposeFactory<any, any> {
+	if (typeof className !== 'string') {
+		initFunction = base;
+		base = className;
+		className = undefined;
 	}
 	const factory = cloneFactory(className);
 	if (initFunction) {

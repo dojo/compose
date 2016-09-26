@@ -56,5 +56,9 @@ registerSuite({
 		assert.isFalse(isDestroyable(undefined));
 		assert.isFalse(isDestroyable(/foo/));
 		assert.isFalse(isDestroyable(() => { }));
+	},
+	'toString()'() {
+		const destroyable = createDestroyable();
+		assert.strictEqual((<any> destroyable).toString(), '[object Destroyable]');
 	}
 });
