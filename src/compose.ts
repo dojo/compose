@@ -342,7 +342,9 @@ export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
 	 * @template P The type of the extension factory options
 	 */
 	extend<U>(extension: U | GenericClass<U>): ComposeFactory<T & U, O>;
+	extend<U>(className: string, extension: U | GenericClass<U>): ComposeFactory<T & U, O>;
 	extend<U, P>(extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
+	extend<U, P>(className: string, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
 }
 
 export interface Compose {
@@ -358,7 +360,9 @@ export interface Compose {
 	 * @template P The type of the extension factory options
 	 */
 	extend<T, O, U>(base: ComposeFactory<T, O>, extension: U | GenericClass<U>): ComposeFactory<T & U, O>;
+	extend<T, O, U>(base: ComposeFactory<T, O>, className: string, extension: U | GenericClass<U>): ComposeFactory<T & U, O>;
 	extend<T, O, U, P>(base: ComposeFactory<T, O>, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
+	extend<T, O, U, P>(base: ComposeFactory<T, O>, className: string, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
 }
 
 /**
@@ -367,8 +371,13 @@ export interface Compose {
  * @param base The base compose factory that is being extended
  * @param extension The extension to apply to the compose factory
  */
-function extend<T, O, U, P>(base: ComposeFactory<T, O>, extension: ComposeFactory<U, P>, className?: string): ComposeFactory<T & U, O & P>;
-function extend<O>(base: ComposeFactory<any, O>, extension: any, className?: string): ComposeFactory<any, O> {
+function extend<T, O, U, P>(base: ComposeFactory<T, O>, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
+function extend<T, O, U, P>(base: ComposeFactory<T, O>, className: string, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
+function extend<O>(base: ComposeFactory<any, O>, className: any, extension?: any): ComposeFactory<any, O> {
+	if (typeof className !== 'string') {
+		extension = className;
+		className = undefined;
+	}
 	base = cloneFactory(base, className);
 	copyProperties(base.prototype, typeof extension === 'function' ? extension.prototype : extension);
 	return base;

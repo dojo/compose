@@ -1586,6 +1586,10 @@ registerSuite({
 				});
 			const bar = createBar();
 			assert.strictEqual((<any> bar).toString(), '[object Bar]');
+			const createExtendedBar = createBar
+				.extend('ExtendedBar', {});
+			const extendedBar = createExtendedBar();
+			assert.strictEqual((<any> extendedBar).toString(), '[object ExtendedBar]');
 		}
 	}
 });
