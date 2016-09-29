@@ -414,5 +414,9 @@ registerSuite({
 			assert.deepEqual(stateful.state, { foo: 'qat' });
 			assert.strictEqual(count, 2, 'listener called again');
 		}
+	},
+	'toString()'() {
+		const stateful: any = createStateful();
+		assert.strictEqual(stateful.toString(), '[object Stateful]');
 	}
 });

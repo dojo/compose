@@ -1,38 +1,22 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import compose, { GenericClass, ComposeMixinDescriptor } from '../../src/compose';
+import compose, { GenericClass, ComposeMixinDescriptor, getInitFunctionNames } from '../../src/compose';
 
-let _hasStrictModeCache: boolean;
+let _hasConfigurableName: boolean;
 
 /**
- * Detects if the current runtime environment fully supports
- * strict mode (IE9 does not).
+ * Detects if functions have configurable names, some browsers that are not 100% ES2015
+ * compliant do not.
  */
-function hasStrictMode(): boolean {
-	if (_hasStrictModeCache !== undefined) {
-		return _hasStrictModeCache;
+function hasConfigurableName(): boolean {
+	if (_hasConfigurableName !== undefined) {
+		return _hasConfigurableName;
 	}
-	try {
-		const f = new Function(`return function f() {
-			'use strict';
-			var a = 021;
-			var b = function (eval) {}
-			var c = function (arguments) {}
-			function d(foo, foo) {}
-			function e(eval, arguments) {}
-			function eval() {}
-			function arguments() {}
-			function interface(){}
-			with (x) { }
-			try { eval++; } catch (arguments) {}
-			return { x: 1, y: 2, x: 1 }
-		}`);
-		f();
+	const nameDescriptor = Object.getOwnPropertyDescriptor(function foo() {}, 'name');
+	if (nameDescriptor && !nameDescriptor.configurable) {
+		return _hasConfigurableName = false;
 	}
-	catch (err) {
-		return _hasStrictModeCache = true;
-	}
-	return _hasStrictModeCache = false;
+	return _hasConfigurableName = true;
 }
 
 registerSuite({
@@ -363,18 +347,11 @@ registerSuite({
 
 			assert.strictEqual(foo['nonWritable'], 'constant', 'Didn\'t copy property value');
 
-			if (hasStrictMode()) {
-				/* modules are now emitted in strict mode, which causes a throw
-				* when trying to assign to a read-only property */
-				assert.throws(() => {
-					foo['nonWritable'] = 'variable';
-				}, TypeError);
-			}
-			else {
-				/* unless of course it is IE9 :-( */
+			/* modules are now emitted in strict mode, which causes a throw
+			* when trying to assign to a read-only property */
+			assert.throws(() => {
 				foo['nonWritable'] = 'variable';
-				assert.strictEqual(foo['nonWritable'], 'constant');
-			}
+			}, TypeError);
 		},
 
 		'non-enumerable property': function() {
@@ -1531,6 +1508,147 @@ registerSuite({
 					compose({}).static(compose({}));
 				}, 'Should have handled factory with no static methods without throwing');
 			}
+		}
+	},
+
+	debugging: {
+		'getInitFunctionNames'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
+			const createFoo = compose('Foo', {
+				foo: 'foo'
+			}, function () {});
+			assert.deepEqual(getInitFunctionNames(createFoo), [ 'initFoo' ]);
+			const createBar = compose('Bar', {
+				bar: 1
+			}, function () {});
+			const createFooBar = createFoo.mixin(createBar);
+			assert.deepEqual(getInitFunctionNames(createFooBar), [ 'initFoo', 'initBar' ]);
+			const createFooBarMixin = createFoo.mixin({
+				className: 'FooBar',
+				mixin: createBar,
+				initialize(instance) {
+					instance.bar = 3;
+				}
+			});
+			assert.deepEqual(getInitFunctionNames(createFooBarMixin), [ 'initFoo', 'initBar', 'mixinFooBar' ]);
+			const createFooBarNoClassName = createBar.mixin({
+				mixin: createFoo,
+				initialize(instance) {
+					instance.foo = 'bar';
+				}
+			});
+			assert.deepEqual(getInitFunctionNames(createFooBarNoClassName), [ 'initBar', 'initFoo', 'mixinFoo' ]);
+			const createFooNamed = createFoo.mixin({
+				className: 'FooNamed',
+				initialize(instance) {
+					instance.foo = 'bar';
+				}
+			});
+			assert.deepEqual(getInitFunctionNames(createFooNamed), [ 'initFoo', 'mixinFooNamed' ]);
+		},
+
+		'getInitFunctionNames does no throw on environments with non-configurable names'(this: any) {
+			if (hasConfigurableName()) {
+				this.skip('Only valid for non-configurable function name environments');
+			}
+			const createFoo = compose('Foo', {
+				foo: 'foo'
+			}, function () {});
+			assert.strictEqual((<any> getInitFunctionNames(createFoo)).length, 1);
+			const createBar = compose('Bar', {
+				bar: 1
+			}, function () {});
+			const createFooBar = createFoo.mixin(createBar);
+			assert.strictEqual((<any> getInitFunctionNames(createFooBar)).length, 2);
+			const createFooBarMixin = createFoo.mixin({
+				className: 'FooBar',
+				mixin: createBar,
+				initialize(instance) {
+					instance.bar = 3;
+				}
+			});
+			assert.strictEqual((<any> getInitFunctionNames(createFooBarMixin)).length, 3);
+			const createFooBarNoClassName = createBar.mixin({
+				mixin: createFoo,
+				initialize(instance) {
+					instance.foo = 'bar';
+				}
+			});
+			assert.strictEqual((<any> getInitFunctionNames(createFooBarNoClassName)).length, 3);
+			const createFooNamed = createFoo.mixin({
+				className: 'FooNamed',
+				initialize(instance) {
+					instance.foo = 'bar';
+				}
+			});
+			assert.strictEqual((<any> getInitFunctionNames(createFooNamed)).length, 2);
+		},
+
+		'instance to string'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
+			const createFoo = compose('Foo', {});
+			const foo = createFoo();
+			assert.strictEqual((<any> foo).toString(), '[object Foo]');
+			const createFooBar = createFoo
+				.mixin({
+					className: 'FooBar',
+					mixin: {
+						bar: 1
+					}
+				});
+			const foobar = createFooBar();
+			assert.strictEqual((<any> foobar).toString(), '[object FooBar]');
+			const createFooBarNoName = createFoo
+				.mixin({
+					mixin: {
+						bar: 1
+					}
+				});
+			const foobarnoname = createFooBarNoName();
+			assert.strictEqual((<any> foobarnoname).toString(), '[object Foo]');
+			const createOverrideClassName = createFoo
+				.mixin({
+					className: 'OverrideClassName'
+				});
+			const overrideClassName = createOverrideClassName();
+			assert.strictEqual((<any> overrideClassName).toString(), '[object OverrideClassName]');
+			const createBar = compose({})
+				.mixin({
+					className: 'Bar',
+					mixin: createFoo
+				});
+			const bar = createBar();
+			assert.strictEqual((<any> bar).toString(), '[object Bar]');
+			const createExtendedBar = createBar
+				.extend('ExtendedBar', {});
+			const extendedBar = createExtendedBar();
+			assert.strictEqual((<any> extendedBar).toString(), '[object ExtendedBar]');
+		},
+
+		'unlabelled factories use "Compose"'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
+			const createEmpty = compose({});
+			const empty = createEmpty();
+			assert.strictEqual((<any> empty).toString(), '[object Compose]');
+		},
+
+		'factories "inherit" names when not supplied'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
+			const createStatic = compose('Static', {})
+				.static({
+					foo: 'bar'
+				});
+
+			const s = createStatic();
+			assert.strictEqual((<any> s).toString(), '[object Static]');
 		}
 	}
 });
