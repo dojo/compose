@@ -1549,6 +1549,43 @@ registerSuite({
 			assert.deepEqual(getInitFunctionNames(createFooNamed), [ 'initFoo', 'mixinFooNamed' ]);
 		},
 
+		'getInitFunctionNames does no throw on environments with non-configurable names'(this: any) {
+			if (hasConfigurableName()) {
+				this.skip('Only valid for non-configurable function name environments');
+			}
+			const createFoo = compose('Foo', {
+				foo: 'foo'
+			}, function () {});
+			assert.strictEqual((<any> getInitFunctionNames(createFoo)).length, 1);
+			const createBar = compose('Bar', {
+				bar: 1
+			}, function () {});
+			const createFooBar = createFoo.mixin(createBar);
+			assert.strictEqual((<any> getInitFunctionNames(createFooBar)), 2);
+			const createFooBarMixin = createFoo.mixin({
+				className: 'FooBar',
+				mixin: createBar,
+				initialize(instance) {
+					instance.bar = 3;
+				}
+			});
+			assert.strictEqual((<any> getInitFunctionNames(createFooBarMixin)), 3);
+			const createFooBarNoClassName = createBar.mixin({
+				mixin: createFoo,
+				initialize(instance) {
+					instance.foo = 'bar';
+				}
+			});
+			assert.strictEqual((<any> getInitFunctionNames(createFooBarNoClassName)), 3);
+			const createFooNamed = createFoo.mixin({
+				className: 'FooNamed',
+				initialize(instance) {
+					instance.foo = 'bar';
+				}
+			});
+			assert.strictEqual((<any> getInitFunctionNames(createFooNamed)), 2);
+		},
+
 		'instance to string'(this: any) {
 			if (!hasConfigurableName()) {
 				this.skip('Functions do not have configurable names');
