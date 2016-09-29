@@ -16,6 +16,11 @@ import {
 const initFnMap = new WeakMap<Function, ComposeInitializationFunction<any, any>[]>();
 
 /**
+ * The default factory label if no label can be derived during the factory creation process
+ */
+const COMPOSE_LABEL = 'Compose';
+
+/**
  * Reference to defineProperty to support minification
  */
 const defineProperty = Object.defineProperty;
@@ -250,9 +255,7 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 	else {
 		initFnMap.set(factory, []);
 	}
-	if (name) {
-		labelFactory(factory, name);
-	}
+	labelFactory(factory, name || (base && base.name) || COMPOSE_LABEL);
 	factory.prototype.constructor = factory;
 	stamp(factory);
 	if (staticProperties) {

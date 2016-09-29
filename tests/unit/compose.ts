@@ -1590,6 +1590,28 @@ registerSuite({
 				.extend('ExtendedBar', {});
 			const extendedBar = createExtendedBar();
 			assert.strictEqual((<any> extendedBar).toString(), '[object ExtendedBar]');
+		},
+
+		'unlabelled factories use "Compose"'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
+			const createEmpty = compose({});
+			const empty = createEmpty();
+			assert.strictEqual((<any> empty).toString(), '[object Compose]');
+		},
+
+		'factories "inherit" names when not supplied'(this: any) {
+			if (!hasConfigurableName()) {
+				this.skip('Functions do not have configurable names');
+			}
+			const createStatic = compose('Static', {})
+				.static({
+					foo: 'bar'
+				});
+
+			const s = createStatic();
+			assert.strictEqual((<any> s).toString(), '[object Static]');
 		}
 	}
 });
