@@ -33,7 +33,7 @@ const staticPropertyMap = new WeakMap<Function, {}>();
 /**
  * Internal function which can label a function with a name
  */
-function labelFunction(fn: Function, value: string): void {
+function setFunctionName(fn: Function, value: string): void {
 	const nameDescriptor = Object.getOwnPropertyDescriptor(fn, 'name');
 	if (typeof nameDescriptor === 'undefined' || nameDescriptor.configurable) {
 		defineProperty(fn, 'name', {
@@ -45,15 +45,16 @@ function labelFunction(fn: Function, value: string): void {
 }
 
 /**
- * Internal function which can label a factory with a name and also provides a
- * function which
+ * Internal function which can label a factory with a name and also sets
+ * the `toString()` method on the prototype to return the approriate
+ * name for instances.
  *
  * @param fn The name of the factory to label
  * @param value The name to supply for the label
  */
-function labelFactory(factory: Function, value: string): void {
+function setFactoryName(factory: Function, value: string): void {
 	if (typeof factory === 'function' && factory.prototype) {
-		labelFunction(factory, value);
+		setFunctionName(factory, value);
 		defineProperty(factory.prototype, 'toString', {
 			value() {
 				return `[object ${value}]`;
@@ -255,7 +256,7 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 	else {
 		initFnMap.set(factory, []);
 	}
-	labelFactory(factory, name || (base && base.name) || COMPOSE_LABEL);
+	setFactoryName(factory, name || (base && base.name) || COMPOSE_LABEL);
 	factory.prototype.constructor = factory;
 	stamp(factory);
 	if (staticProperties) {
@@ -559,7 +560,7 @@ function mixin<T, O, U, P>(
 		const baseInitFns = initFnMap.get(base);
 		if (mixin.initialize) {
 			if (!includes(baseInitFns, mixin.initialize)) {
-				labelFunction(
+				setFunctionName(
 					mixin.initialize,
 					`mixin${mixin.className || (isComposeFactory(mixin.mixin) && mixin.mixin.name) || base.name || 'Anonymous'}`
 				);
@@ -572,7 +573,7 @@ function mixin<T, O, U, P>(
 		/* TODO: We should be able to combine with the logic above */
 		const baseInitFns = initFnMap.get(base);
 		if (!includes(baseInitFns, mixin.initialize)) {
-			labelFunction(
+			setFunctionName(
 				mixin.initialize,
 				`mixin${mixin.className || base.name || 'Anonymous'}`
 			);
@@ -894,7 +895,7 @@ function create<O>(className: any, base?: any, initFunction?: ComposeInitializat
 	const factory = cloneFactory(className);
 	if (initFunction) {
 		if (className) {
-			labelFunction(initFunction, `init${className}`);
+			setFunctionName(initFunction, `init${className}`);
 		}
 		initFnMap.get(factory).push(initFunction);
 	}
