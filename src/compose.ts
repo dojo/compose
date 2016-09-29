@@ -562,7 +562,7 @@ function mixin<T, O, U, P>(
 			if (!includes(baseInitFns, mixin.initialize)) {
 				setFunctionName(
 					mixin.initialize,
-					`mixin${mixin.className || (isComposeFactory(mixin.mixin) && mixin.mixin.name) || base.name || 'Anonymous'}`
+					`mixin${mixin.className || (isComposeFactory(mixin.mixin) && mixin.mixin.name) || base.name}`
 				);
 				baseInitFns.push(mixin.initialize);
 			}
@@ -575,7 +575,7 @@ function mixin<T, O, U, P>(
 		if (!includes(baseInitFns, mixin.initialize)) {
 			setFunctionName(
 				mixin.initialize,
-				`mixin${mixin.className || base.name || 'Anonymous'}`
+				`mixin${mixin.className || base.name}`
 			);
 			baseInitFns.push(mixin.initialize);
 		}
