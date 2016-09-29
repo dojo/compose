@@ -368,6 +368,28 @@ registerSuite({
 				'Own property names did not include non-enumerable property');
 		},
 
+		'constructor property not copied'() {
+			function constructor() {
+				throw new Error('Should not be copied');
+			}
+			const composeObj = { constructor };
+			const createFoo = compose({
+				foo: 'bar'
+			}).extend(composeObj);
+			assert.notStrictEqual(createFoo.prototype.constructor, constructor);
+		},
+
+		'toString property not copied'() {
+			function toString() {
+				throw new Error('Should not be copied');
+			}
+			const composeObj = { toString };
+			const createFoo = compose({
+				foo: 'bar'
+			}).extend(composeObj);
+			assert.notStrictEqual(createFoo.prototype.toString, toString);
+		},
+
 		'array prototype property': function() {
 			const arr = [ function () { return 'foo'; }, function () { return 'bar'; } ];
 			const createFoo = compose({ arr });
