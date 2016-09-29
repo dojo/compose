@@ -6,21 +6,14 @@ Our issue tracker is for bugs for Dojo 2.
 Please make sure you have read our Contributing Guidelines
 available at: https://github.com/dojo/meta/blob/master/CONTRIBUTING.md
 
-For general questions and discussion, please use the #dojo channel on
-IRC, or submit a question on StackOverflow.
-
-Before logging new issues, please search for similar existing issues.
-
-For items you believe to be defects, please provide the following information:
+For general questions and discussion, join us on Gitter.im at: https://gitter.im/dojo/dojo2
 -->
 
-**Version and Environment:**
+**Bug / Enhancement** <!-- delete as appropriate -->
 
-Dojo 2 version: ???
+<!-- Summary of enhancement or bug-->
 
-Environment(s): IE10 / IE11 / Edge / Chrome / Firefox / Safari / iOS / Android / NodeJS
-
-Environment version(s): ???
+Package Version: <!-- package version -->
 
 **Code**
 
