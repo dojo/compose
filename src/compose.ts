@@ -104,7 +104,7 @@ function copyProperties(target: any, ...sources: any[]) {
 			target,
 			Object.getOwnPropertyNames(source).reduce(
 				(descriptors: PropertyDescriptorMap, key: string) => {
-					if (key !== 'toString') { /* copying toString from a mixin causes issues */
+					if (key !== 'toString' && key !== 'constructor') { /* don't copy toString or constructor */
 						const sourceDescriptor = Object.getOwnPropertyDescriptor(source, key);
 						const sourceValue = sourceDescriptor && sourceDescriptor.value;
 						const targetDescriptor = Object.getOwnPropertyDescriptor(target, key);
