@@ -24,6 +24,10 @@
   },
   "devDependencies": {
     "@reactivex/rxjs": "5.0.0-beta.6",
+    "@types/chai": "3.4.*",
+    "@types/es6-shim": "0.0.*",
+    "@types/glob": "5.0.*",
+    "@types/grunt": "0.4.*",
     "codecov.io": "0.1.6",
     "dojo-loader": ">=2.0.0-beta.7",
     "dts-generator": "~1.7.0",

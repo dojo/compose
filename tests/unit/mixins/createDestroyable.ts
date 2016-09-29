@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import createDestroyable, { isDestroyable } from 'src/mixins/createDestroyable';
+import createDestroyable, { isDestroyable } from '../../../src/mixins/createDestroyable';
 
 registerSuite({
 	name: 'mixins/createDestroyable',

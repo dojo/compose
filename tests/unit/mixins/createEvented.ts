@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import createEvented from 'src/mixins/createEvented';
+import createEvented from '../../../src/mixins/createEvented';
 
 registerSuite({
 	name: 'mixins/createEvented',
