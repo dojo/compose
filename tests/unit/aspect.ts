@@ -22,7 +22,7 @@ registerSuite({
 			assert.strictEqual(result, 4, '"result" should equal 4');
 		},
 		'passes this': function () {
-			let result: number = 0;
+			let result = 0;
 			function foo(this: any) {
 				result = this.a;
 			}
@@ -38,7 +38,7 @@ registerSuite({
 			assert.strictEqual(result, 2, 'result should equal 2');
 		},
 		'multiple before advice': function () {
-			let result: number = 0;
+			let result = 0;
 			const calls: string[] = [];
 			function foo(a: number) {
 				result = a;

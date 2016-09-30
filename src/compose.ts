@@ -509,10 +509,8 @@ export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
 	 *
 	 * @param mixin An object literal that describes what to mixin
 	 */
-	mixin<U, P>(mixin: ComposeMixinable<U, P>):
-		ComposeFactory<T & U, O & P>;
-	mixin<U, P>(mixin: ComposeMixinDescriptor<T, O, U, P>):
-		ComposeFactory<T & U, O & P>;
+	mixin<U, P>(mixin: ComposeMixinable<U, P>): ComposeFactory<T & U, O & P>;
+	mixin<U, P>(mixin: ComposeMixinDescriptor<T, O, U, P>): ComposeFactory<T & U, O & P>;
 }
 
 export interface Compose {

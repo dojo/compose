@@ -955,7 +955,7 @@ registerSuite({
 	},
 	overlay: {
 		'.overlay()': function () {
-			let count: number = 0;
+			let count = 0;
 
 			const createFoo = compose.create({
 				foo: 'foo'
@@ -1446,6 +1446,7 @@ registerSuite({
 				});
 
 				assert.throws(function () {
+					/* tslint:disable */
 					const BeforeFoo = compose.aspect(createFoo, {
 						before: {
 							bar: function(...args: any[]): any[] {
@@ -1454,6 +1455,7 @@ registerSuite({
 							}
 						}
 					});
+					/* tslint:enable */
 					BeforeFoo;
 				}, Error, 'Trying to advise non-existing method: "bar"');
 			}
