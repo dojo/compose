@@ -22,17 +22,15 @@ function hasConfigurableName(): boolean {
 let _hasToStringTag: boolean;
 
 /**
- * Detects if Object.prototype has a
+ * Detects if the runtime environment supports specifying a Symbol.toStringTag
  */
 function hasToStringTag(): boolean {
 	if (_hasToStringTag !== undefined) {
 		return _hasToStringTag;
 	}
-	const toStringTagDescriptor = Object.getOwnPropertyDescriptor(Math, <any> Symbol.toStringTag);
-	if (toStringTagDescriptor) {
-		return _hasToStringTag = true;
-	}
-	return _hasToStringTag = false;
+	const a: any = {};
+	a[Symbol.toStringTag] = 'foo';
+	return _hasToStringTag = (a + '') === '[object foo]';
 }
 
 registerSuite({
