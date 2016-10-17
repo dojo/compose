@@ -4,6 +4,20 @@ import Promise from 'dojo-shim/Promise';
 import { Observable, Observer } from 'rxjs/Rx';
 import createStateful, { State } from '../../../src/mixins/createStateful';
 
+let _hasToStringTag: boolean;
+
+/**
+ * Detects if the runtime environment supports specifying a Symbol.toStringTag
+ */
+function hasToStringTag(): boolean {
+	if (_hasToStringTag !== undefined) {
+		return _hasToStringTag;
+	}
+	const a: any = {};
+	a[Symbol.toStringTag] = 'foo';
+	return _hasToStringTag = (a + '') === '[object foo]';
+}
+
 registerSuite({
 	name: 'mixins/createStateful',
 	creation: {
@@ -415,7 +429,10 @@ registerSuite({
 			assert.strictEqual(count, 2, 'listener called again');
 		}
 	},
-	'toString()'() {
+	'toString()'(this: any) {
+		if (!hasToStringTag()) {
+			this.skip('Environment doesn\'t support Symbol.toStringTag');
+		}
 		const stateful: any = createStateful();
 		assert.strictEqual(stateful.toString(), '[object Stateful]');
 	}
