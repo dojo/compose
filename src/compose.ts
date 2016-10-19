@@ -24,7 +24,8 @@ type AdviceMap = Map<string, AdviceTuple[]>;
 interface PrivateFactoryData {
 	advice?: AdviceMap;
 	base?: any;
-	initFunctions: ComposeInitializationFunction<any, any>[];
+	initFns: ComposeInitializationFunction<any, any>[];
+	staticProperties?: any;
 }
 
 /**
@@ -37,15 +38,10 @@ const privateFactoryData = new WeakMap<Function, PrivateFactoryData>();
  */
 const COMPOSE_LABEL = 'Compose';
 
-/**
- * Reference to defineProperty to support minification
- */
+/* References to support minification */
 const defineProperty = Object.defineProperty;
-
-/**
- * A weakmap that will store static properties for compose factories
- */
-const staticPropertyMap = new WeakMap<Function, {}>();
+const isArray = Array.isArray;
+const objectCreate = Object.create;
 
 /**
  * Internal function which can label a function with a name
@@ -88,7 +84,7 @@ function setFactoryName(factory: Function, value: string): void {
  * @param factory The factory that the array of function names should be returned for
  */
 export function getInitFunctionNames(factory: ComposeFactory<any, any>): string[] | undefined {
-	const initFns = privateFactoryData.get(factory).initFunctions;
+	const initFns = privateFactoryData.get(factory).initFns;
 	if (initFns) {
 		return initFns.map((fn) => (<any> fn).name);
 	}
@@ -128,7 +124,7 @@ function copyProperties(target: any, ...sources: any[]) {
 						const targetValue = targetDescriptor && targetDescriptor.value;
 
 						/* Special handling to merge array proprties */
-						if (Array.isArray(sourceValue) && Array.isArray(targetValue)) {
+						if (isArray(sourceValue) && isArray(targetValue)) {
 							sourceDescriptor.value = sourceValue.reduce(
 								(value: any[], current: any) => {
 									if (!includes(target[key], current)) {
@@ -144,7 +140,7 @@ function copyProperties(target: any, ...sources: any[]) {
 					}
 					return descriptors;
 				},
-				Object.create(null)
+				objectCreate(null)
 			)
 		);
 	});
@@ -244,17 +240,17 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 		if (this && this.constructor === factory) {
 			throw new SyntaxError('Factories cannot be called with "new".');
 		}
-		const instance = Object.create(factory.prototype);
+		const instance = objectCreate(factory.prototype);
 
 		/* Clone any arrays in the instance */
 		for (const key in instance) {
-			if (Array.isArray(Object.getOwnPropertyDescriptor(factory.prototype, key).value)) {
+			if (isArray(Object.getOwnPropertyDescriptor(factory.prototype, key).value)) {
 				instance[key] = arrayFrom(instance[key]);
 			}
 		}
 
 		args.unshift(instance);
-		privateFactoryData.get(factory).initFunctions.forEach(fn => {
+		privateFactoryData.get(factory).initFns.forEach(fn => {
 			fn.apply(null, args);
 		});
 		return instance;
@@ -268,25 +264,25 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 		name = base;
 		base = undefined;
 	}
-	let initFunctions: ComposeInitializationFunction<any, any>[];
+	let initFns: ComposeInitializationFunction<any, any>[];
 	if (base) {
 		copyProperties(factory.prototype, base.prototype);
-		initFunctions = privateFactoryData.get(base).initFunctions;
+		initFns = privateFactoryData.get(base).initFns;
 	}
 	else {
-		initFunctions = [];
+		initFns = [];
 	}
 	privateFactoryData.set(factory, {
-		initFunctions
+		initFns
 	});
 	setFactoryName(factory, name || (base && base.name) || COMPOSE_LABEL);
 	factory.prototype.constructor = factory;
 	stamp(factory);
 	if (staticProperties) {
 		if (isComposeFactory(staticProperties)) {
-			staticProperties = staticPropertyMap.get(staticProperties) || {};
+			staticProperties = privateFactoryData.get(staticProperties).staticProperties || {};
 		}
-		staticPropertyMap.set(factory, staticProperties);
+		privateFactoryData.get(factory).staticProperties = staticProperties;
 		copyProperties(factory, staticProperties);
 	}
 	Object.freeze(factory);
@@ -302,15 +298,15 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
  * @param source The ComposeFactory to copy the init functions from
  */
 function concatInitFn<T, O, U, P>(target: ComposeFactory<T, O>, source: ComposeFactory<U, P>): void {
-	const targetInitFns = privateFactoryData.get(target).initFunctions;
+	const targetInitFns = privateFactoryData.get(target).initFns;
 
 	/* initFn ordering is complicated, see dojo/compose#42 */
 
 	/* Remove any duplicates from source */
-	const sourceInitFns = privateFactoryData.get(source).initFunctions.filter((fn) => !includes(targetInitFns, fn));
+	const sourceInitFns = privateFactoryData.get(source).initFns.filter((fn) => !includes(targetInitFns, fn));
 
 	/* now append the unique source init functions onto the target init functions */
-	privateFactoryData.get(target).initFunctions = [ ...targetInitFns, ...sourceInitFns ];
+	privateFactoryData.get(target).initFns = [ ...targetInitFns, ...sourceInitFns ];
 }
 
 /**
@@ -578,7 +574,7 @@ function mixin<T, O, U, P>(
 	if (mixinType) {
 		const mixinFactory = isComposeFactory(mixinType) ? mixinType : create(mixinType);
 		concatInitFn(base, mixinFactory);
-		const baseInitFns = privateFactoryData.get(base).initFunctions;
+		const baseInitFns = privateFactoryData.get(base).initFns;
 		if (mixin.initialize) {
 			if (!includes(baseInitFns, mixin.initialize)) {
 				setFunctionName(
@@ -592,7 +588,7 @@ function mixin<T, O, U, P>(
 	}
 	else if (mixin.initialize) {
 		/* TODO: We should be able to combine with the logic above */
-		const baseInitFns = privateFactoryData.get(base).initFunctions;
+		const baseInitFns = privateFactoryData.get(base).initFns;
 		if (!includes(baseInitFns, mixin.initialize)) {
 			setFunctionName(
 				mixin.initialize,
@@ -918,7 +914,7 @@ function create<O>(className: any, base?: any, initFunction?: ComposeInitializat
 		if (className) {
 			setFunctionName(initFunction, `init${className}`);
 		}
-		privateFactoryData.get(factory).initFunctions.push(initFunction);
+		privateFactoryData.get(factory).initFns.push(initFunction);
 	}
 
 	/* mixin the base into the prototype */
