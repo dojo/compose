@@ -111,7 +111,7 @@ function rebase(fn: (base: any, ...args: any[]) => any): (...args: any[]) => any
  * @param target The target that properties should be copied onto
  * @param sources The rest of the parameters treated as sources to apply
  */
-function copyProperties(target: any, ...sources: any[]) {
+function assignProperties(target: any, ...sources: any[]) {
 	sources.forEach((source) => {
 		Object.defineProperties(
 			target,
@@ -266,7 +266,7 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 	}
 	let initFns: ComposeInitializationFunction<any, any>[];
 	if (base) {
-		copyProperties(factory.prototype, base.prototype);
+		assignProperties(factory.prototype, base.prototype);
 		initFns = privateFactoryData.get(base).initFns;
 	}
 	else {
@@ -283,7 +283,7 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 			staticProperties = privateFactoryData.get(staticProperties).staticProperties || {};
 		}
 		privateFactoryData.get(factory).staticProperties = staticProperties;
-		copyProperties(factory, staticProperties);
+		assignProperties(factory, staticProperties);
 	}
 	Object.freeze(factory);
 
@@ -402,7 +402,7 @@ function extend<O>(base: ComposeFactory<any, O>, className: any, extension?: any
 		className = undefined;
 	}
 	base = cloneFactory(base, className);
-	copyProperties(base.prototype, typeof extension === 'function' ? extension.prototype : extension);
+	assignProperties(base.prototype, typeof extension === 'function' ? extension.prototype : extension);
 	return base;
 }
 
@@ -584,7 +584,7 @@ function mixin<T, O, U, P>(
 				baseInitFns.push(mixin.initialize);
 			}
 		}
-		copyProperties(base.prototype, mixinFactory.prototype);
+		assignProperties(base.prototype, mixinFactory.prototype);
 	}
 	else if (mixin.initialize) {
 		/* TODO: We should be able to combine with the logic above */
@@ -918,7 +918,7 @@ function create<O>(className: any, base?: any, initFunction?: ComposeInitializat
 	}
 
 	/* mixin the base into the prototype */
-	copyProperties(factory.prototype, typeof base === 'function' ? base.prototype : base);
+	assignProperties(factory.prototype, typeof base === 'function' ? base.prototype : base);
 
 	/* return the new constructor */
 	return factory;
