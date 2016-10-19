@@ -1,5 +1,6 @@
 import { assign } from 'dojo-core/lang';
 import { from as arrayFrom, includes } from 'dojo-shim/array';
+import Map from 'dojo-shim/Map';
 import WeakMap from 'dojo-shim/WeakMap';
 import {
 	before as aspectBefore,
@@ -11,9 +12,25 @@ import {
 } from './aspect';
 
 /**
- * A weakmap that will store initialization functions for compose constructors
+ * A tuple of advice types and advice
  */
-const initFnMap = new WeakMap<Function, ComposeInitializationFunction<any, any>[]>();
+type AdviceTuple = ['before', BeforeAdvice] | ['after', AfterAdvice<any>] | ['around', AroundAdvice<any>];
+
+/**
+ * A map of advice to apply to a method, with the `key` be
+ */
+type AdviceMap = Map<string, AdviceTuple[]>;
+
+interface PrivateFactoryData {
+	advice?: AdviceMap;
+	base?: any;
+	initFunctions: ComposeInitializationFunction<any, any>[];
+}
+
+/**
+ * A weakmap that stores all the private data for a factory
+ */
+const privateFactoryData = new WeakMap<Function, PrivateFactoryData>();
 
 /**
  * The default factory label if no label can be derived during the factory creation process
@@ -71,7 +88,7 @@ function setFactoryName(factory: Function, value: string): void {
  * @param factory The factory that the array of function names should be returned for
  */
 export function getInitFunctionNames(factory: ComposeFactory<any, any>): string[] | undefined {
-	const initFns = initFnMap.get(factory);
+	const initFns = privateFactoryData.get(factory).initFunctions;
 	if (initFns) {
 		return initFns.map((fn) => (<any> fn).name);
 	}
@@ -237,7 +254,9 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 		}
 
 		args.unshift(instance);
-		initFnMap.get(factory).forEach(fn => fn.apply(null, args));
+		privateFactoryData.get(factory).initFunctions.forEach(fn => {
+			fn.apply(null, args);
+		});
 		return instance;
 	}
 
@@ -249,13 +268,17 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 		name = base;
 		base = undefined;
 	}
+	let initFunctions: ComposeInitializationFunction<any, any>[];
 	if (base) {
 		copyProperties(factory.prototype, base.prototype);
-		initFnMap.set(factory, arrayFrom(initFnMap.get(base)));
+		initFunctions = privateFactoryData.get(base).initFunctions;
 	}
 	else {
-		initFnMap.set(factory, []);
+		initFunctions = [];
 	}
+	privateFactoryData.set(factory, {
+		initFunctions
+	});
 	setFactoryName(factory, name || (base && base.name) || COMPOSE_LABEL);
 	factory.prototype.constructor = factory;
 	stamp(factory);
@@ -279,15 +302,15 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
  * @param source The ComposeFactory to copy the init functions from
  */
 function concatInitFn<T, O, U, P>(target: ComposeFactory<T, O>, source: ComposeFactory<U, P>): void {
-	const targetInitFns = initFnMap.get(target);
+	const targetInitFns = privateFactoryData.get(target).initFunctions;
 
 	/* initFn ordering is complicated, see dojo/compose#42 */
 
 	/* Remove any duplicates from source */
-	const sourceInitFns = initFnMap.get(source).filter((fn) => !includes(targetInitFns, fn));
+	const sourceInitFns = privateFactoryData.get(source).initFunctions.filter((fn) => !includes(targetInitFns, fn));
 
 	/* now append the unique source init functions onto the target init functions */
-	initFnMap.set(target, [ ...targetInitFns, ...sourceInitFns ]);
+	privateFactoryData.get(target).initFunctions = [ ...targetInitFns, ...sourceInitFns ];
 }
 
 /**
@@ -297,7 +320,7 @@ function concatInitFn<T, O, U, P>(target: ComposeFactory<T, O>, source: ComposeF
  * @returns       Return true if it is a ComposeFactory, otherwise false
  */
 export function isComposeFactory(value: any): value is ComposeFactory<any, any> {
-	return Boolean(value && initFnMap.get(value));
+	return Boolean(value && privateFactoryData.get(value));
 }
 
 /* General Interfaces */
@@ -555,7 +578,7 @@ function mixin<T, O, U, P>(
 	if (mixinType) {
 		const mixinFactory = isComposeFactory(mixinType) ? mixinType : create(mixinType);
 		concatInitFn(base, mixinFactory);
-		const baseInitFns = initFnMap.get(base);
+		const baseInitFns = privateFactoryData.get(base).initFunctions;
 		if (mixin.initialize) {
 			if (!includes(baseInitFns, mixin.initialize)) {
 				setFunctionName(
@@ -569,7 +592,7 @@ function mixin<T, O, U, P>(
 	}
 	else if (mixin.initialize) {
 		/* TODO: We should be able to combine with the logic above */
-		const baseInitFns = initFnMap.get(base);
+		const baseInitFns = privateFactoryData.get(base).initFunctions;
 		if (!includes(baseInitFns, mixin.initialize)) {
 			setFunctionName(
 				mixin.initialize,
@@ -895,7 +918,7 @@ function create<O>(className: any, base?: any, initFunction?: ComposeInitializat
 		if (className) {
 			setFunctionName(initFunction, `init${className}`);
 		}
-		initFnMap.get(factory).push(initFunction);
+		privateFactoryData.get(factory).initFunctions.push(initFunction);
 	}
 
 	/* mixin the base into the prototype */
