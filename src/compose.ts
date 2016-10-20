@@ -36,7 +36,7 @@ const privateFactoryData = new WeakMap<Function, PrivateFactoryData>();
 /**
  * The default factory label if no label can be derived during the factory creation process
  */
-const COMPOSE_LABEL = 'Compose';
+const DEFAULT_FACTORY_LABEL = 'Compose';
 
 /* References to support minification */
 const defineProperty = Object.defineProperty;
@@ -212,12 +212,13 @@ const stampFunctions = {
 };
 
 /**
- * A convenience function to decorate compose class factories
+ * A convenience function to decorate compose class factories, including any static prpoerties
  *
  * @param base The target constructor
  */
 function stamp(base: any): void {
-	assign(base, stampFunctions);
+	const staticProperties = privateFactoryData.get(base).staticProperties;
+	assign(base, stampFunctions, staticProperties);
 }
 
 /**
@@ -227,11 +228,11 @@ function stamp(base: any): void {
  * @param  staticProperties Any static properties for the factory
  * @return                  The cloned constructor function
  */
-function cloneFactory<T, O, S>(base: ComposeFactory<T, O>, staticProperties: S): ComposeFactory<T, O> & S;
-function cloneFactory<T, O>(base: ComposeFactory<T, O>, name?: string): ComposeFactory<T, O>;
+function cloneFactory<T, O, S>(baseFactory: ComposeFactory<T, O>, staticProperties: S): ComposeFactory<T, O> & S;
+function cloneFactory<T, O>(baseFactory: ComposeFactory<T, O>, name?: string): ComposeFactory<T, O>;
 function cloneFactory<T, O>(name: string | undefined): ComposeFactory<T, O>;
 function cloneFactory<T, O>(): ComposeFactory<T, O>;
-function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
+function cloneFactory(baseFactory?: any, staticProperties?: any, name?: string): any {
 
 	/**
 	 * A compose factory
@@ -256,35 +257,48 @@ function cloneFactory(base?: any, staticProperties?: any, name?: string): any {
 		return instance;
 	}
 
+	/* disambiguate arguments */
 	if (typeof staticProperties === 'string') {
 		name = staticProperties;
 		staticProperties = undefined;
 	}
-	else if (typeof base === 'string') {
-		name = base;
-		base = undefined;
+	else if (typeof baseFactory === 'string') {
+		name = baseFactory;
+		baseFactory = undefined;
 	}
-	let initFns: ComposeInitializationFunction<any, any>[];
-	if (base) {
-		assignProperties(factory.prototype, base.prototype);
-		initFns = privateFactoryData.get(base).initFns;
-	}
-	else {
-		initFns = [];
-	}
-	privateFactoryData.set(factory, {
-		initFns
-	});
-	setFactoryName(factory, name || (base && base.name) || COMPOSE_LABEL);
-	factory.prototype.constructor = factory;
-	stamp(factory);
+
+	/* determine if there are "custom" static properties/methods */
 	if (staticProperties) {
 		if (isComposeFactory(staticProperties)) {
 			staticProperties = privateFactoryData.get(staticProperties).staticProperties || {};
 		}
-		privateFactoryData.get(factory).staticProperties = staticProperties;
-		assignProperties(factory, staticProperties);
 	}
+
+	/* determine if we are cloning a baseFactory, or if this is a "blank" factory */
+	if (baseFactory) {
+		assignProperties(factory.prototype, baseFactory.prototype);
+		const { advice, base, initFns } = privateFactoryData.get(baseFactory);
+		privateFactoryData.set(factory, {
+			advice: typeof advice !== 'undefined' ? assign({}, advice) : advice,
+			base: assign({}, base),
+			initFns: arrayFrom(initFns),
+			staticProperties
+		});
+	}
+	else {
+		privateFactoryData.set(factory, {
+			base: {},
+			initFns: [],
+			staticProperties
+		});
+	}
+	factory.prototype.constructor = factory;
+
+	/* stamp out static factory methods */
+	stamp(factory);
+
+	/* set the factory "class" name */
+	setFactoryName(factory, name || (baseFactory && baseFactory.name) || DEFAULT_FACTORY_LABEL);
 	Object.freeze(factory);
 
 	return factory;
@@ -598,6 +612,7 @@ function mixin<T, O, U, P>(
 		}
 	}
 	if (mixin.aspectAdvice) {
+		/* TODO: aspect() reclones the factory :-( */
 		base = aspect(base, mixin.aspectAdvice);
 	}
 	return base as ComposeFactory<T & U, O & P>;
