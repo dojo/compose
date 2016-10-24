@@ -1,6 +1,5 @@
 import { assign } from 'dojo-core/lang';
 import { from as arrayFrom, includes } from 'dojo-shim/array';
-import Map from 'dojo-shim/Map';
 import WeakMap from 'dojo-shim/WeakMap';
 import {
 	before as aspectBefore,
@@ -19,19 +18,34 @@ type AdviceTuple = ['before', BeforeAdvice] | ['after', AfterAdvice<any>] | ['ar
 /**
  * A map of advice to apply to a method, with the `key` be
  */
-type AdviceMap = Map<string, AdviceTuple[]>;
-
-interface PrivateFactoryData {
-	advice?: AdviceMap;
-	base?: any;
-	initFns: ComposeInitializationFunction<any, any>[];
-	staticProperties?: any;
-}
+type AdviceMap = {
+	[method: string]: AdviceTuple[];
+};
 
 /**
- * A weakmap that stores all the private data for a factory
+ * Interface for storing the private meta data related to a factory
  */
-const privateFactoryData = new WeakMap<Function, PrivateFactoryData>();
+interface PrivateFactoryData {
+	/**
+	 * A map of advice that should be applied to a prototype of a factory as it is being constructed
+	 */
+	advice?: AdviceMap;
+
+	/**
+	 * The base prototype that contains the methods and properties without advice applied
+	 */
+	base?: any;
+
+	/**
+	 * The array of initialization functions that should be applied to the instance upon creation
+	 */
+	initFns: ComposeInitializationFunction<any, any>[];
+
+	/**
+	 * Any static properties/methods that should be applied when creating a factory
+	 */
+	staticProperties?: any;
+}
 
 /**
  * The default factory label if no label can be derived during the factory creation process
@@ -42,11 +56,48 @@ const DEFAULT_FACTORY_LABEL = 'Compose';
 const defineProperty = Object.defineProperty;
 const isArray = Array.isArray;
 const objectCreate = Object.create;
+const objectKeys = Object.keys;
+
+/**
+ * A weakmap that stores all the private data for a factory
+ */
+const privateFactoryData = new WeakMap<Function, PrivateFactoryData>();
+
+/**
+ * An internal function which stubs out a method which, when called at runtime, throws.
+ *
+ * @param method The name of "abstract" method being called
+ */
+function missingMethod(method: string): () => never {
+	return function throwOnMissingMethod(): never {
+		throw new TypeError(`Advice being applied to missing method named: ${method}`);
+	};
+}
+
+/**
+ * Internal function which can label a factory with a name and also sets
+ * the `toString()` method on the prototype to return the approriate
+ * name for instances.
+ *
+ * @param fn The name of the factory to label
+ * @param value The name to supply for the label
+ */
+function assignFactoryName(factory: Function, value: string): void {
+	if (typeof factory === 'function' && factory.prototype) {
+		assignFunctionName(factory, value);
+		defineProperty(factory.prototype, 'toString', {
+			value() {
+				return `[object ${value}]`;
+			},
+			configurable: true
+		});
+	}
+}
 
 /**
  * Internal function which can label a function with a name
  */
-function setFunctionName(fn: Function, value: string): void {
+function assignFunctionName(fn: Function, value: string): void {
 	const nameDescriptor = Object.getOwnPropertyDescriptor(fn, 'name');
 	if (typeof nameDescriptor === 'undefined' || nameDescriptor.configurable) {
 		defineProperty(fn, 'name', {
@@ -58,53 +109,6 @@ function setFunctionName(fn: Function, value: string): void {
 }
 
 /**
- * Internal function which can label a factory with a name and also sets
- * the `toString()` method on the prototype to return the approriate
- * name for instances.
- *
- * @param fn The name of the factory to label
- * @param value The name to supply for the label
- */
-function setFactoryName(factory: Function, value: string): void {
-	if (typeof factory === 'function' && factory.prototype) {
-		setFunctionName(factory, value);
-		defineProperty(factory.prototype, 'toString', {
-			value() {
-				return `[object ${value}]`;
-			},
-			configurable: true
-		});
-	}
-}
-
-/**
- * For a given factory, return the names of the initialization functions that will be
- * invoked upon construction.
- *
- * @param factory The factory that the array of function names should be returned for
- */
-export function getInitFunctionNames(factory: ComposeFactory<any, any>): string[] | undefined {
-	const initFns = privateFactoryData.get(factory).initFns;
-	if (initFns) {
-		return initFns.map((fn) => (<any> fn).name);
-	}
-}
-
-/**
- * A helper funtion to return a function that is rebased to infer that the
- * first argument of the passed function will be the `this` when the function
- * is executed.
- *
- * @param  fn The function to be rebased
- * @return    The rebased function
- */
-function rebase(fn: (base: any, ...args: any[]) => any): (...args: any[]) => any {
-	return function(this: any, ...args: any[]) {
-		return fn.apply(this, [ this ].concat(args));
-	};
-}
-
-/**
  * A helper function that copies own properties and their descriptors
  * from one or more sources to a target object. Includes non-enumerable properties
  *
@@ -113,6 +117,9 @@ function rebase(fn: (base: any, ...args: any[]) => any): (...args: any[]) => any
  */
 function assignProperties(target: any, ...sources: any[]) {
 	sources.forEach((source) => {
+		if (!source) {
+			return;
+		}
 		Object.defineProperties(
 			target,
 			Object.getOwnPropertyNames(source).reduce(
@@ -145,6 +152,33 @@ function assignProperties(target: any, ...sources: any[]) {
 		);
 	});
 	return target;
+}
+
+/**
+ * A helper funtion to return a function that is rebased to infer that the
+ * first argument of the passed function will be the `this` when the function
+ * is executed.
+ *
+ * @param  fn The function to be rebased
+ * @return    The rebased function
+ */
+function rebase(fn: (base: any, ...args: any[]) => any): (...args: any[]) => any {
+	return function(this: any, ...args: any[]) {
+		return fn.apply(this, [ this ].concat(args));
+	};
+}
+
+/**
+ * For a given factory, return the names of the initialization functions that will be
+ * invoked upon construction.
+ *
+ * @param factory The factory that the array of function names should be returned for
+ */
+export function getInitFunctionNames(factory: ComposeFactory<any, any>): string[] | undefined {
+	const initFns = privateFactoryData.get(factory).initFns;
+	if (initFns) {
+		return initFns.map((fn) => (<any> fn).name);
+	}
 }
 
 /* The rebased functions we need to decorate compose constructors with */
@@ -198,7 +232,7 @@ const doFactoryDescriptor = rebase(factoryDescriptor);
 /**
  * A set of functions that are used to decorate the compose factories
  */
-const stampFunctions = {
+const staticMethods = {
 	extend: doExtend,
 	mixin: doMixin,
 	overlay: doOverlay,
@@ -216,23 +250,80 @@ const stampFunctions = {
  *
  * @param base The target constructor
  */
-function stamp(base: any): void {
-	const staticProperties = privateFactoryData.get(base).staticProperties;
-	assign(base, stampFunctions, staticProperties);
+interface FactoryOptions<T, U, O, S> {
+	advice?: AdviceMap;
+	factories?: ComposeFactory<U, O>[];
+	initFunction?: ComposeInitializationFunction<any, O>;
+	className?: string;
+	proto?: T;
+	staticProperties?: S;
 }
 
 /**
- * Take a compose factory and clone it
+ * Internal function that merges (or creates) an advice map
  *
- * @param  base             The base to clone
- * @param  staticProperties Any static properties for the factory
- * @return                  The cloned constructor function
+ * @param sources The advice maps to be merged into a single one
  */
-function cloneFactory<T, O, S>(baseFactory: ComposeFactory<T, O>, staticProperties: S): ComposeFactory<T, O> & S;
-function cloneFactory<T, O>(baseFactory: ComposeFactory<T, O>, name?: string): ComposeFactory<T, O>;
-function cloneFactory<T, O>(name: string | undefined): ComposeFactory<T, O>;
-function cloneFactory<T, O>(): ComposeFactory<T, O>;
-function cloneFactory(baseFactory?: any, staticProperties?: any, name?: string): any {
+function assignAdviceMap(...sources: (AdviceMap | undefined)[]): AdviceMap {
+	const result: AdviceMap = {};
+	sources.forEach((source) => {
+		if (source) {
+			for (const method in source) {
+				result[method] = result[method] ? [ ...result[method], ...source[method] ] : [ ...source[method] ];
+			}
+		}
+	});
+	return result;
+}
+
+/**
+ * An internal function that takes a set of create widget options and returns a set of private factory data
+ *
+ * @param options The set of factory options to use in creating the private factory data
+ */
+function createPrivateFactoryData({
+	advice: optionsAdvice,
+	factories,
+	initFunction,
+	proto,
+	staticProperties
+}: FactoryOptions<any, any, any, any>): PrivateFactoryData {
+	const factoryData = (factories || []).reduce((factoryData, factory) => {
+		const { advice, base, initFns } = privateFactoryData.get(factory);
+		if (advice) {
+			factoryData.advice = assignAdviceMap(factoryData.advice, advice);
+		}
+		if (base) {
+			assignProperties(factoryData.base, base);
+		}
+		const optionsInitFns = factoryData.initFns;
+		initFns.forEach((initFn) => {
+			if (!includes(optionsInitFns, initFn)) {
+				optionsInitFns.push(initFn);
+			}
+		});
+		return factoryData;
+	}, {
+		base: {},
+		initFns: [],
+		staticProperties: staticProperties ? assign({}, staticProperties) : undefined
+	} as PrivateFactoryData);
+
+	if (initFunction) {
+		factoryData.initFns.push(initFunction);
+	}
+
+	if (optionsAdvice) {
+		factoryData.advice = assignAdviceMap(factoryData.advice, optionsAdvice);
+	}
+
+	assignProperties(factoryData.base, proto);
+
+	return factoryData;
+}
+
+function createFactory<T, U, O, S>(options: FactoryOptions<T, U, O, S>): ComposeFactory<T & U, O> & S;
+function createFactory<T, U, O>(options: FactoryOptions<T, U, O, any>): ComposeFactory<T & U, O> & any {
 
 	/**
 	 * A compose factory
@@ -243,7 +334,7 @@ function cloneFactory(baseFactory?: any, staticProperties?: any, name?: string):
 		}
 		const instance = objectCreate(factory.prototype);
 
-		/* Clone any arrays in the instance */
+		/* clone any arrays in the instance */
 		for (const key in instance) {
 			if (isArray(Object.getOwnPropertyDescriptor(factory.prototype, key).value)) {
 				instance[key] = arrayFrom(instance[key]);
@@ -257,70 +348,50 @@ function cloneFactory(baseFactory?: any, staticProperties?: any, name?: string):
 		return instance;
 	}
 
-	/* disambiguate arguments */
-	if (typeof staticProperties === 'string') {
-		name = staticProperties;
-		staticProperties = undefined;
-	}
-	else if (typeof baseFactory === 'string') {
-		name = baseFactory;
-		baseFactory = undefined;
-	}
+	const factoryData = createPrivateFactoryData(options);
 
-	/* determine if there are "custom" static properties/methods */
-	if (staticProperties) {
-		if (isComposeFactory(staticProperties)) {
-			staticProperties = privateFactoryData.get(staticProperties).staticProperties || {};
+	privateFactoryData.set(factory, factoryData);
+
+	const factoryPrototype = factory.prototype;
+
+	/* mixin base properties into the prototype */
+	assignProperties(factoryPrototype, factoryData.base);
+
+	/* apply any advice to the prototype */
+	if (factoryData.advice) {
+		for (const method in factoryData.advice) {
+			factoryData.advice[method].forEach(([ aspect, advice ]) => {
+				const sourceMethod = factoryPrototype[method] || missingMethod(method);
+				switch (aspect) {
+				case 'before':
+					factoryPrototype[method] = aspectBefore(sourceMethod, <BeforeAdvice> advice);
+					break;
+				case 'after':
+					factoryPrototype[method] = aspectAfter(sourceMethod, <AfterAdvice<any>> advice);
+					break;
+				case 'around':
+					factoryPrototype[method] = aspectAround(sourceMethod, <AroundAdvice<any>> advice);
+				}
+			});
 		}
 	}
 
-	/* determine if we are cloning a baseFactory, or if this is a "blank" factory */
-	if (baseFactory) {
-		assignProperties(factory.prototype, baseFactory.prototype);
-		const { advice, base, initFns } = privateFactoryData.get(baseFactory);
-		privateFactoryData.set(factory, {
-			advice: typeof advice !== 'undefined' ? assign({}, advice) : advice,
-			base: assign({}, base),
-			initFns: arrayFrom(initFns),
-			staticProperties
-		});
-	}
-	else {
-		privateFactoryData.set(factory, {
-			base: {},
-			initFns: [],
-			staticProperties
-		});
-	}
-	factory.prototype.constructor = factory;
+	/* assign a constructor to the prototype */
+	factoryPrototype.constructor = factory;
 
-	/* stamp out static factory methods */
-	stamp(factory);
+	/* assign static methods/properties */
+	assign(factory, staticMethods, factoryData.staticProperties);
 
-	/* set the factory "class" name */
-	setFactoryName(factory, name || (baseFactory && baseFactory.name) || DEFAULT_FACTORY_LABEL);
+	/* assign factory name */
+	const className = options.className ||
+		(options.factories && options.factories[0] && options.factories[0].name) ||
+		DEFAULT_FACTORY_LABEL;
+	assignFactoryName(factory, className);
+
+	/* freeze the factory, so it cannot be accidently modified */
 	Object.freeze(factory);
 
-	return factory;
-}
-
-/**
- * Takes any init functions from source and concats them to base and sets the map property for
- * the target
- *
- * @param target The compose factory to copy the init functions onto
- * @param source The ComposeFactory to copy the init functions from
- */
-function concatInitFn<T, O, U, P>(target: ComposeFactory<T, O>, source: ComposeFactory<U, P>): void {
-	const targetInitFns = privateFactoryData.get(target).initFns;
-
-	/* initFn ordering is complicated, see dojo/compose#42 */
-
-	/* Remove any duplicates from source */
-	const sourceInitFns = privateFactoryData.get(source).initFns.filter((fn) => !includes(targetInitFns, fn));
-
-	/* now append the unique source init functions onto the target init functions */
-	privateFactoryData.get(target).initFns = [ ...targetInitFns, ...sourceInitFns ];
+	return factory as ComposeFactory<any, any>;
 }
 
 /**
@@ -415,9 +486,12 @@ function extend<O>(base: ComposeFactory<any, O>, className: any, extension?: any
 		extension = className;
 		className = undefined;
 	}
-	base = cloneFactory(base, className);
-	assignProperties(base.prototype, typeof extension === 'function' ? extension.prototype : extension);
-	return base;
+
+	return createFactory({
+		className,
+		proto: typeof extension === 'function' ? extension.prototype : extension,
+		factories: [ base ]
+	});
 }
 
 /* Overlay API */
@@ -465,9 +539,11 @@ export interface Compose {
  * @param overlayFunction The callback function that will modify the prototype of the factory
  */
 function overlay<T, O>(base: ComposeFactory<T, O>, overlayFunction: OverlayFunction<T>): ComposeFactory<T, O> {
-	base = cloneFactory(base);
-	overlayFunction(base.prototype);
-	return base;
+	const factory = createFactory({
+		factories: [ base ]
+	});
+	overlayFunction(factory.prototype);
+	return factory;
 }
 
 /* AOP/Inheritance API */
@@ -564,6 +640,53 @@ export interface Compose {
 }
 
 /**
+ * Internal function that converts `AspectAdvice` into `AdviceMap` which can then be used for
+ * creating a factory
+ *
+ * @param aspectAdvice The aspect advice to convert into an advice map
+ */
+function aspectAdviceToAdviceMap(aspectAdvice: AspectAdvice | undefined): AdviceMap | undefined {
+	if (!aspectAdvice) {
+		return;
+	}
+
+	const adviceMap: AdviceMap = {};
+	const beforeAdvice = aspectAdvice.before;
+	const afterAdvice = aspectAdvice.after;
+	const aroundAdvice = aspectAdvice.around;
+
+	function mapAdvice(type: string, key: string, advice: { [ key: string ]: any }) {
+		const adviceTuple = [ type, advice[key] ] as AdviceTuple;
+		if (adviceMap[key]) {
+			adviceMap[key].push(adviceTuple);
+		}
+		else {
+			adviceMap[key] = [ adviceTuple ];
+		}
+	}
+
+	if (beforeAdvice) {
+		objectKeys(beforeAdvice).forEach((key) => {
+			/* TODO: Remove ! in 2.1 */
+			mapAdvice('before', key, beforeAdvice!);
+		});
+	}
+	if (afterAdvice) {
+		objectKeys(afterAdvice).forEach((key) => {
+			/* TODO: Remove ! in 2.1 */
+			mapAdvice('after', key, afterAdvice!);
+		});
+	}
+	if (aroundAdvice) {
+		objectKeys(aroundAdvice).forEach((key) => {
+			/* TODO: Remove ! in 2.1 */
+			mapAdvice('around', key, aroundAdvice!);
+		});
+	}
+	return adviceMap;
+}
+
+/**
  * A custom type guard that determines if a value is ComposeMixinable
  *
  * @param value The value to guard for
@@ -582,40 +705,45 @@ function mixin<T, O, U, P>(
 	base: ComposeFactory<T, O>,
 	toMixin: ComposeMixinable<U, P> | ComposeMixinDescriptor<T, O, U, P>
 ): ComposeFactory<T & U, O & P> {
-	const mixin = isComposeMixinable(toMixin) ? toMixin.factoryDescriptor() : toMixin;
-	const mixinType =  mixin.mixin;
-	base = cloneFactory(base, mixin.className || base.name);
-	if (mixinType) {
-		const mixinFactory = isComposeFactory(mixinType) ? mixinType : create(mixinType);
-		concatInitFn(base, mixinFactory);
-		const baseInitFns = privateFactoryData.get(base).initFns;
-		if (mixin.initialize) {
-			if (!includes(baseInitFns, mixin.initialize)) {
-				setFunctionName(
-					mixin.initialize,
-					`mixin${mixin.className || (isComposeFactory(mixin.mixin) && mixin.mixin.name) || base.name}`
-				);
-				baseInitFns.push(mixin.initialize);
-			}
-		}
-		assignProperties(base.prototype, mixinFactory.prototype);
+	/* ensure we are dealing with a mixinDescriptor */
+	const mixinDescriptor = isComposeMixinable(toMixin) ? toMixin.factoryDescriptor() : toMixin;
+
+	/* destructure out most of the factory creation options */
+	const { mixin, initialize: initFunction, aspectAdvice, className } = mixinDescriptor;
+
+	/* we will at least be using the base factory to create the new one */
+	const factories: ComposeFactory<any, any>[] = [ base ];
+	let proto: any;
+
+	/* if mixin is a compose factory, we will pass it as a factory used to create the new factory */
+	if (isComposeFactory(mixin)) {
+		factories.push(mixin);
 	}
-	else if (mixin.initialize) {
-		/* TODO: We should be able to combine with the logic above */
-		const baseInitFns = privateFactoryData.get(base).initFns;
-		if (!includes(baseInitFns, mixin.initialize)) {
-			setFunctionName(
-				mixin.initialize,
-				`mixin${mixin.className || base.name}`
-			);
-			baseInitFns.push(mixin.initialize);
-		}
+	/* otherwise we are dealing with a prototype based mixin */
+	else {
+		/* of which, we can have a constructor function/class, or an object literal (or undefined) */
+		proto = isComposeFactory(mixin) ? undefined : typeof mixin === 'function' ? mixin.prototype : mixin;
 	}
-	if (mixin.aspectAdvice) {
-		/* TODO: aspect() reclones the factory :-( */
-		base = aspect(base, mixin.aspectAdvice);
+
+	/* convert the advice, if any, to the format used by createFactory */
+	const advice = aspectAdviceToAdviceMap(aspectAdvice);
+
+	/* label the initFn */
+	if (initFunction) {
+		assignFunctionName(
+			initFunction,
+			`mixin${className || (isComposeFactory(mixin) && mixin.name) || base.name}`
+		);
 	}
-	return base as ComposeFactory<T & U, O & P>;
+
+	/* return the newly created factory */
+	return createFactory({
+		advice,
+		factories,
+		initFunction,
+		className,
+		proto
+	}) as ComposeFactory<T & U, O & P>;
 }
 
 export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
@@ -724,9 +852,12 @@ function from<T extends Function>(base: GenericClass<any> | ComposeFactory<any, 
  * @param method The name of the method
  */
 function doFrom<T, O>(this: ComposeFactory<T, O>, base: GenericClass<any> | ComposeFactory<any, any>, method: string | symbol): ComposeFactory<T, O> {
-	const clone = cloneFactory(this);
-	(<any> clone.prototype)[method] = base.prototype[method];
-	return clone as ComposeFactory<T, O>;
+	return createFactory({
+		factories: [ this ],
+		proto: {
+			[method]: base.prototype[method]
+		}
+	}) as ComposeFactory<T, O>;
 }
 
 /**
@@ -759,9 +890,12 @@ function before(...args: any[]): GenericFunction<any> {
  * @param advice The advice to apply
  */
 function doBefore<T, O>(this: ComposeFactory<T, O>, method: string | symbol, advice: BeforeAdvice): ComposeFactory<T, O> {
-	const clone = cloneFactory(this);
-	(<any> clone.prototype)[method] = aspectBefore((<any> clone.prototype)[method], advice);
-	return <ComposeFactory<T, O>> clone;
+	return createFactory({
+		factories: [ this ],
+		advice: {
+			[method]: [ [ 'before', advice ] ]
+		}
+	});
 }
 
 /**
@@ -794,9 +928,12 @@ function after(...args: any[]): GenericFunction<any> {
  * @param advice The advice to apply
  */
 function doAfter<T, P, O>(this: ComposeFactory<T, O>, method: string | symbol, advice: AfterAdvice<P>): ComposeFactory<T, O> {
-	const clone = cloneFactory(this);
-	(<any> clone.prototype)[method] = aspectAfter((<any> clone.prototype)[method], advice);
-	return <ComposeFactory <T, O>> clone;
+	return createFactory({
+		factories: [ this ],
+		advice: {
+			[method]: [ [ 'after', advice ] ]
+		}
+	});
 }
 
 /**
@@ -828,35 +965,25 @@ function around(...args: any[]): GenericFunction<any> {
  * @param advice The advice to apply
  */
 function doAround<T, P, O>(this: ComposeFactory<T, O>, method: string | symbol, advice: AroundAdvice<P>): ComposeFactory<T, O> {
-	const clone = cloneFactory(this);
-	(<any> clone.prototype)[method] = aspectAround((<any> clone.prototype)[method], advice);
-	return <ComposeFactory <T, O>> clone;
+	return createFactory({
+		factories: [ this ],
+		advice: {
+			[method]: [ [ 'around', advice ] ]
+		}
+	});
 }
 
+/**
+ * The internal implementation of applying aspect advice to a factory
+ *
+ * @param base The base factory the advice should be applied to
+ * @param advice The advice map to apply to the factory
+ */
 function aspect<T, O>(base: ComposeFactory<T, O>, advice: AspectAdvice): ComposeFactory<T, O> {
-	const clone = cloneFactory(base);
-
-	function mapAdvice(adviceHash: { [ method: string ]: Function }, advisor: Function): void {
-		for (let key in adviceHash) {
-			if (key in clone.prototype) {
-				(<any> clone.prototype)[key] = advisor((<any> clone.prototype)[key], adviceHash[key]);
-			}
-			else {
-				throw new Error('Trying to advise non-existing method: "' + key + '"');
-			}
-		}
-	}
-
-	if (advice.before) {
-		mapAdvice(advice.before, before);
-	}
-	if (advice.after) {
-		mapAdvice(advice.after, after);
-	}
-	if (advice.around) {
-		mapAdvice(advice.around, around);
-	}
-	return clone;
+	return createFactory({
+		factories: [ base ],
+		advice: aspectAdviceToAdviceMap(advice)
+	});
 }
 
 /* Creation API */
@@ -919,25 +1046,37 @@ function create<T, O>(className: string, base: GenericClass<T> | T, initFunction
 function create<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
 function create<T, O, P>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
 function create<O>(className: any, base?: any, initFunction?: ComposeInitializationFunction<any, O>): ComposeFactory<any, any> {
+	/* disambugate arguments */
 	if (typeof className !== 'string') {
 		initFunction = base;
 		base = className;
 		className = undefined;
 	}
-	const factory = cloneFactory(className);
-	if (initFunction) {
-		if (className) {
-			setFunctionName(initFunction, `init${className}`);
-		}
-		privateFactoryData.get(factory).initFns.push(initFunction);
+
+	/* Label the initFunction */
+	if (initFunction && className) {
+		assignFunctionName(initFunction, `init${className}`);
 	}
 
-	/* mixin the base into the prototype */
-	assignProperties(factory.prototype, typeof base === 'function' ? base.prototype : base);
+	let factories: ComposeFactory<any, any>[] | undefined;
+	let proto: any;
 
-	/* return the new constructor */
-	return factory;
+	/* If base is a compose factory, set it as the factory array */
+	if (base && isComposeFactory(base)) {
+		factories = [ base ];
 	}
+	/* Otherwise, we are dealing with a constructor function or a prototype */
+	else {
+		proto = typeof base === 'function' ? base.prototype : base;
+	}
+
+	return createFactory({
+		className,
+		factories,
+		initFunction,
+		proto
+	});
+}
 
 /* Extend factory with static properties */
 
@@ -958,7 +1097,7 @@ export interface Compose {
 	 * @param staticProperties An object literal that contains methods and properties that should be "static" (e.g. added to
 	 *                         the factory, instead of the factory's prototype)
 	 */
-	static<F extends ComposeFactory<T, O>, T, O, S>(factory: F, staticProperties: S): F & S;
+	static<T, O, S>(factory: ComposeFactory<T, O>, staticProperties: S): ComposeFactory<T, O> & S;
 }
 
 /**
@@ -967,8 +1106,11 @@ export interface Compose {
  * @param factory The factory that the static properties should be applied to
  * @param staticProperties The properties to be applied to the factory
  */
-function _static<F extends ComposeFactory<T, O>, T, O, S>(base: F, staticProperties: S): F & S {
-	return <F & S> cloneFactory(base, staticProperties);
+function _static<T, O, S>(base: ComposeFactory<T, O>, staticProperties: S): ComposeFactory<T, O> & S {
+	return createFactory({
+		factories: [ base ],
+		staticProperties
+	});
 }
 
 export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
