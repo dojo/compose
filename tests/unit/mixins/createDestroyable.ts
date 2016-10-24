@@ -1,20 +1,7 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
+import { hasToStringTag } from '../../support/util';
 import createDestroyable, { isDestroyable } from '../../../src/mixins/createDestroyable';
-
-let _hasToStringTag: boolean;
-
-/**
- * Detects if the runtime environment supports specifying a Symbol.toStringTag
- */
-function hasToStringTag(): boolean {
-	if (_hasToStringTag !== undefined) {
-		return _hasToStringTag;
-	}
-	const a: any = {};
-	a[Symbol.toStringTag] = 'foo';
-	return _hasToStringTag = (a + '') === '[object foo]';
-}
 
 registerSuite({
 	name: 'mixins/createDestroyable',

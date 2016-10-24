@@ -1,22 +1,9 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
+import { hasToStringTag } from '../../support/util';
 import Promise from 'dojo-shim/Promise';
 import { Observable, Observer } from 'rxjs/Rx';
 import createStateful, { State } from '../../../src/mixins/createStateful';
-
-let _hasToStringTag: boolean;
-
-/**
- * Detects if the runtime environment supports specifying a Symbol.toStringTag
- */
-function hasToStringTag(): boolean {
-	if (_hasToStringTag !== undefined) {
-		return _hasToStringTag;
-	}
-	const a: any = {};
-	a[Symbol.toStringTag] = 'foo';
-	return _hasToStringTag = (a + '') === '[object foo]';
-}
 
 registerSuite({
 	name: 'mixins/createStateful',
