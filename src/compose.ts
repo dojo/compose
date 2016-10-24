@@ -1,6 +1,7 @@
 import { assign } from 'dojo-core/lang';
 import { from as arrayFrom, includes } from 'dojo-shim/array';
 import WeakMap from 'dojo-shim/WeakMap';
+import Symbol from 'dojo-shim/Symbol';
 import {
 	before as aspectBefore,
 	after as aspectAfter,
@@ -85,9 +86,9 @@ function missingMethod(method: string): () => never {
 function assignFactoryName(factory: Function, value: string): void {
 	if (typeof factory === 'function' && factory.prototype) {
 		assignFunctionName(factory, value);
-		defineProperty(factory.prototype, 'toString', {
-			value() {
-				return `[object ${value}]`;
+		defineProperty(factory.prototype, <any> Symbol.toStringTag, {
+			get() {
+				return value;
 			},
 			configurable: true
 		});
@@ -124,7 +125,7 @@ function assignProperties(target: any, ...sources: any[]) {
 			target,
 			Object.getOwnPropertyNames(source).reduce(
 				(descriptors: PropertyDescriptorMap, key: string) => {
-					if (key !== 'toString' && key !== 'constructor') { /* don't copy toString or constructor */
+					if (key !== 'constructor') { /* don't copy constructor */
 						const sourceDescriptor = Object.getOwnPropertyDescriptor(source, key);
 						const sourceValue = sourceDescriptor && sourceDescriptor.value;
 						const targetDescriptor = Object.getOwnPropertyDescriptor(target, key);
