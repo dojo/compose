@@ -1,5 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
+import { hasToStringTag } from '../../support/util';
 import Promise from 'dojo-shim/Promise';
 import { Observable, Observer } from 'rxjs/Rx';
 import createStateful, { State } from '../../../src/mixins/createStateful';
@@ -415,7 +416,10 @@ registerSuite({
 			assert.strictEqual(count, 2, 'listener called again');
 		}
 	},
-	'toString()'() {
+	'toString()'(this: any) {
+		if (!hasToStringTag()) {
+			this.skip('Environment doesn\'t support Symbol.toStringTag');
+		}
 		const stateful: any = createStateful();
 		assert.strictEqual(stateful.toString(), '[object Stateful]');
 	}

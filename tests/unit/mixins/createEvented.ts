@@ -1,5 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
+import { hasToStringTag } from '../../support/util';
 import createEvented from '../../../src/mixins/createEvented';
 
 registerSuite({
@@ -210,7 +211,10 @@ registerSuite({
 			assert.deepEqual(eventStack, [ 'foo', 'bar', 'bar' ]);
 		}
 	},
-	'toString()'() {
+	'toString()'(this: any) {
+		if (!hasToStringTag()) {
+			this.skip('Environment doesn\'t support Symbol.toStringTag');
+		}
 		const evented = createEvented();
 		assert.strictEqual((<any> evented).toString(), '[object Evented]');
 	}

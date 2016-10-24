@@ -1,5 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
+import { hasToStringTag } from '../../support/util';
 import createDestroyable, { isDestroyable } from '../../../src/mixins/createDestroyable';
 
 registerSuite({
@@ -57,7 +58,10 @@ registerSuite({
 		assert.isFalse(isDestroyable(/foo/));
 		assert.isFalse(isDestroyable(() => { }));
 	},
-	'toString()'() {
+	'toString()'(this: any) {
+		if (!hasToStringTag()) {
+			this.skip('Environment doesn\'t support Symbol.toStringTag');
+		}
 		const destroyable = createDestroyable();
 		assert.strictEqual((<any> destroyable).toString(), '[object Destroyable]');
 	}

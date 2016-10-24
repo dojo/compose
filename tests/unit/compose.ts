@@ -1,23 +1,7 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
+import { hasToStringTag, hasConfigurableName } from '../support/util';
 import compose, { GenericClass, ComposeMixinDescriptor, getInitFunctionNames } from '../../src/compose';
-
-let _hasConfigurableName: boolean;
-
-/**
- * Detects if functions have configurable names, some browsers that are not 100% ES2015
- * compliant do not.
- */
-function hasConfigurableName(): boolean {
-	if (_hasConfigurableName !== undefined) {
-		return _hasConfigurableName;
-	}
-	const nameDescriptor = Object.getOwnPropertyDescriptor(function foo() {}, 'name');
-	if (nameDescriptor && !nameDescriptor.configurable) {
-		return _hasConfigurableName = false;
-	}
-	return _hasConfigurableName = true;
-}
 
 registerSuite({
 	name: 'lib/compose',
@@ -377,17 +361,6 @@ registerSuite({
 				foo: 'bar'
 			}).extend(composeObj);
 			assert.notStrictEqual(createFoo.prototype.constructor, constructor);
-		},
-
-		'toString property not copied'() {
-			function toString() {
-				throw new Error('Should not be copied');
-			}
-			const composeObj = { toString };
-			const createFoo = compose({
-				foo: 'bar'
-			}).extend(composeObj);
-			assert.notStrictEqual(createFoo.prototype.toString, toString);
 		},
 
 		'array prototype property': function() {
@@ -1611,8 +1584,8 @@ registerSuite({
 		},
 
 		'instance to string'(this: any) {
-			if (!hasConfigurableName()) {
-				this.skip('Functions do not have configurable names');
+			if (!hasToStringTag()) {
+				this.skip('Does not natively support Symbol.toStringTag');
 			}
 			const createFoo = compose('Foo', {});
 			const foo = createFoo();
@@ -1654,8 +1627,8 @@ registerSuite({
 		},
 
 		'unlabelled factories use "Compose"'(this: any) {
-			if (!hasConfigurableName()) {
-				this.skip('Functions do not have configurable names');
+			if (!hasToStringTag()) {
+				this.skip('Does not natively support Symbol.toStringTag');
 			}
 			const createEmpty = compose({});
 			const empty = createEmpty();
@@ -1663,8 +1636,8 @@ registerSuite({
 		},
 
 		'factories "inherit" names when not supplied'(this: any) {
-			if (!hasConfigurableName()) {
-				this.skip('Functions do not have configurable names');
+			if (!hasToStringTag()) {
+				this.skip('Does not natively support Symbol.toStringTag');
 			}
 			const createStatic = compose('Static', {})
 				.static({
