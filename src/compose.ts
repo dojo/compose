@@ -17,7 +17,7 @@ import {
 type AdviceTuple = ['before', BeforeAdvice] | ['after', AfterAdvice<any>] | ['around', AroundAdvice<any>];
 
 /**
- * A map of advice to apply to a method, with the `key` be
+ * A map of advice to apply to a method, with the `method` key being a tuple of advice
  */
 type AdviceMap = {
 	[method: string]: AdviceTuple[];
