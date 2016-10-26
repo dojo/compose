@@ -88,6 +88,21 @@ registerSuite({
 			assert.strictEqual(result, 5, 'result equals value set');
 			assert.strictEqual(foo.bar, 1, 'foo.bar should equal 1');
 		},
+		'other compose class'() {
+			let result = 0;
+			const createFoo = compose({
+				foo(a: number) {
+					result = a;
+				}
+			});
+
+			const createFooInit = compose(createFoo, (instance) => {
+				instance.foo(12);
+			});
+
+			createFooInit();
+			assert.strictEqual(result, 12);
+		},
 		'initialise function with ES6 class': function () {
 			let counter = 0;
 
@@ -1411,6 +1426,41 @@ registerSuite({
 				const foo = createAspectFoo();
 				assert.strictEqual(foo.foo('baz'), 'bazfoo', 'should only apply advice in chain');
 			},
+			'diamond problem'() {
+				const createFoo = compose({
+					foo(a: string) {
+						return a;
+					}
+				});
+
+				const createBeforeFoo = createFoo
+					.aspect({
+						before: {
+							foo(...args: any[]) {
+								args[0] = args[0] + 'foo';
+								return args;
+							}
+						}
+					});
+
+				const createFooBar = createFoo
+					.mixin({
+						mixin: {
+							bar: 123
+						}
+					});
+
+				const createBeforeFooBar = createBeforeFoo
+					.mixin(createFooBar);
+
+				const fooBar = createFooBar();
+				assert.strictEqual(fooBar.bar, 123);
+				assert.strictEqual(fooBar.foo('bar'), 'bar', 'Executes unadvised method');
+
+				const beforeFooBar = createBeforeFooBar();
+				assert.strictEqual(beforeFooBar.bar, 123);
+				assert.strictEqual(beforeFooBar.foo('bar'), 'barfoo', 'Executes advised method');
+			},
 			'missing method': function () {
 				const createFoo = compose({
 					foo: function (a: string): string {
@@ -1418,19 +1468,48 @@ registerSuite({
 					}
 				});
 
+				const createBeforeBar = compose.aspect(createFoo, {
+					before: {
+						bar: function(...args: any[]): any[] {
+							args[0] = args[0] + 'bar';
+							return args;
+						}
+					}
+				});
+
+				const beforeBar = createBeforeBar();
+
 				assert.throws(function () {
-					/* tslint:disable */
-					const BeforeFoo = compose.aspect(createFoo, {
-						before: {
-							bar: function(...args: any[]): any[] {
-								args[0] = args[0] + 'bar';
-								return args;
+					(<any> beforeBar).bar();
+				}, TypeError, `Advice being applied to missing method named: bar`);
+			},
+			'forward advice'() {
+				const createFoo = compose({
+					foo: function (a: string): string {
+						return a;
+					}
+				});
+
+				const createBeforeBar = compose.aspect(createFoo, {
+					before: {
+						bar: function(...args: any[]): any[] {
+							args[0] = args[0] + 'bar';
+							return args;
+						}
+					}
+				});
+
+				const createBarFoo = createBeforeBar
+					.mixin({
+						mixin: {
+							bar(a: string): string {
+								return a;
 							}
 						}
 					});
-					/* tslint:enable */
-					BeforeFoo;
-				}, Error, 'Trying to advise non-existing method: "bar"');
+
+				const barFoo = createBarFoo();
+				assert.strictEqual(barFoo.bar('foo'), 'foobar', 'Executes advised method');
 			}
 		},
 		'static': {
