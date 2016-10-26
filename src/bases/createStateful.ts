@@ -1,4 +1,5 @@
 import { deepAssign } from 'dojo-core/lang';
+import { queueTask } from 'dojo-core/queue';
 import { Handle } from 'dojo-interfaces/core';
 import {
 	Evented,
@@ -55,7 +56,7 @@ const observedStateMap = new WeakMap<Stateful<State>, ObservedState>();
  *
  * @param stateful The `Stateful` object to unobserve
  */
-function unobserve(stateful: Stateful<State>): void {
+function completeStatefulState(stateful: Stateful<State>): void {
 	const observedState = observedStateMap.get(stateful);
 	if (observedState) {
 		observedState.handle.destroy();
@@ -77,14 +78,16 @@ function unobserve(stateful: Stateful<State>): void {
  * @param stateful The Stateful instance
  * @param state The State to be set
  */
-function setStatefulState(stateful: Stateful<State>, state: State): void {
-	state = deepAssign(stateWeakMap.get(stateful), state);
+function setStatefulState(target: Stateful<State>, state: State): void {
+	const previousState = stateWeakMap.get(target);
+	const type = previousState && Object.keys(previousState).length ? 'state:changed' : 'state:initialized';
+	state = deepAssign(previousState, state);
 	const eventObject = {
-		type: 'state:changed',
+		type,
 		state,
-		target: stateful
+		target
 	};
-	stateful.emit(eventObject);
+	target.emit(eventObject);
 }
 
 /**
@@ -105,11 +108,15 @@ const createStateful: StatefulFactory = createEvented
 
 			setState(this: Stateful<State>, value: State): void {
 				const observedState = observedStateMap.get(this);
+				const state = stateWeakMap.get(this);
+				if (!state) {
+					throw new Error('Unable to set destroyed state');
+				}
 				if (observedState) {
 					observedState.observable.patch(value, { id: observedState.id });
 				}
 				else {
-					setStatefulState(this, value);
+					queueTask(() => { setStatefulState(this, value); });
 				}
 			},
 
@@ -122,34 +129,34 @@ const createStateful: StatefulFactory = createEvented
 					throw new Error(`Already observing state with ID '${observedState.id}'`);
 				}
 				const stateful = this;
-				observedState = {
-					id,
-					observable,
-					subscription: observable
-						.observe(id)
-						.subscribe(
-							(item) => setStatefulState(stateful, item), /* next handler */
-							(err) => {
-								/* TODO: Should we emit an error, instead of throwing? */
-								throw err;
-							}, /* error handler */
-							() => unobserve(stateful)), /* completed handler */
-					handle: {
-						destroy() {
-							const observedState = observedStateMap.get(stateful);
-							if (observedState) {
-								observedState.subscription.unsubscribe();
-								observedStateMap.delete(stateful);
-							}
+				const handle = {
+					destroy() {
+						const observedState = observedStateMap.get(stateful);
+						if (observedState) {
+							observedState.subscription.unsubscribe();
+							observedStateMap.delete(stateful);
 						}
 					}
 				};
-				observedStateMap.set(stateful, observedState);
-				return observedState.handle;
+				const subscription = observable
+					.observe(id)
+					.subscribe(
+						(state) => {
+							queueTask(() => { setStatefulState(stateful, state); });
+						},
+						(err) => {
+							throw err;
+						},
+						() => {
+							completeStatefulState(stateful);
+						}
+					);
+
+				observedStateMap.set(stateful, { id, observable, subscription, handle });
+				return handle;
 			}
 		},
 		initialize(instance: StatefulMixin<State> & Evented, options: StatefulOptions<State>) {
-			/* Using Object.create(null) will improve performance when looking up properties in state */
 			stateWeakMap.set(instance, Object.create(null));
 			instance.own({
 				destroy() {
