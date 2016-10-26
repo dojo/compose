@@ -1,29 +1,10 @@
-import { Handle } from 'dojo-core/interfaces';
+import { Destroyable } from 'dojo-interfaces/bases';
+import { Handle } from 'dojo-interfaces/core';
 import Promise from 'dojo-shim/Promise';
 import WeakMap from 'dojo-shim/WeakMap';
 import compose, { ComposeFactory } from '../compose';
 
-export interface DestroyableOptions { }
-
-export interface Destroyable {
-	/**
-	 * Take a handle and *own* it, which ensures that the handle's `destroy()` method is called when the
-	 * *owner* is destroyed.
-	 *
-	 * @param handle The handle to own
-	 * @returns A handle to *unown* the passed handle
-	 */
-	own(handle: Handle): Handle;
-
-	/**
-	 * Invoke `destroy()` on any owned handles.
-	 *
-	 * @returns A promise that resolves to `true` if successful, otherwise `false`
-	 */
-	destroy(): Promise<boolean>;
-}
-
-export interface DestroyableFactory extends ComposeFactory<Destroyable, DestroyableOptions> { }
+export interface DestroyableFactory extends ComposeFactory<Destroyable, {}> { }
 
 /**
  * A reference to a function that always returns a promise which resolves to false
