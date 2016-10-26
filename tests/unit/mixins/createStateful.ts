@@ -2,8 +2,9 @@ import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import { hasToStringTag } from '../../support/util';
 import Promise from 'dojo-shim/Promise';
+import { State } from 'dojo-interfaces/bases';
 import { Observable, Observer } from 'rxjs/Rx';
-import createStateful, { State } from '../../../src/mixins/createStateful';
+import createStateful from '../../../src/mixins/createStateful';
 
 registerSuite({
 	name: 'mixins/createStateful',
