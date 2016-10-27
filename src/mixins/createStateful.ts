@@ -5,7 +5,7 @@ import WeakMap from 'dojo-shim/WeakMap';
 import { Observable, Subscription } from './interfaces';
 import createEvented, { Evented, EventedOptions, EventedListener, TargettedEventObject } from './createEvented';
 import { ComposeFactory } from '../compose';
-import createCancelableEvent, { CancelableEvent } from './createCancelableEvent';
+import createCancelableEvent, { CancelableEvent } from './../util/createCancelableEvent';
 
 /**
  * Base State interface
