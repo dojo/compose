@@ -7,7 +7,7 @@ import { Observable, Observer } from 'rxjs/Rx';
 import createStateful from '../../../src/bases/createStateful';
 
 function delay() {
-	return new Promise((resolve) => setTimeout(resolve, 0));
+	return new Promise((resolve) => setTimeout(resolve, 10));
 }
 
 registerSuite({
@@ -380,6 +380,90 @@ registerSuite({
 
 				assert.doesNotThrow(() => {
 					handle.destroy();
+				});
+			});
+		}
+	},
+	'"state:initialized" event type': {
+		'local state'() {
+			let count = 0;
+			interface TestState {
+				foo?: string;
+			}
+
+			const stateful = createStateful<TestState>({
+				state: {
+					foo: 'foo'
+				}
+			});
+
+			stateful.on('state:initialized', (event) => {
+				count++;
+				assert.strictEqual(event.target, stateful);
+				assert.strictEqual(event.type, 'state:initialized');
+				assert.deepEqual(event.state, { foo: 'foo' });
+				assert.strictEqual(event.state, event.target.state);
+			});
+
+			return delay().then(() => {
+				assert.strictEqual(count, 1, 'listener called once');
+
+				stateful.setState({
+					foo: 'bar'
+				});
+				return delay().then(() => {
+					assert.strictEqual(count, 1, 'listener not called again');
+				});
+			});
+		},
+		'observed state'() {
+			let count = 0;
+			let patchCount = 0;
+
+			interface TestState {
+				foo?: string;
+			}
+
+			let observerRef: Observer<TestState>;
+
+			const observer = {
+				observe(id: string): Observable<TestState> {
+					return new Observable(function subscribe(observer: Observer<TestState>) {
+						observerRef = observer;
+						observerRef.next({ foo: 'foo' });
+					});
+				},
+				patch(value: any, options?: { id?: string }): Promise<TestState> {
+					patchCount++;
+					observerRef.next(value);
+					return Promise.resolve(value);
+				}
+			};
+
+			const stateful = createStateful({
+				id: 'foo',
+				stateFrom: observer
+			});
+
+			stateful.on('state:initialized', (event) => {
+				count++;
+				assert.strictEqual(event.target, stateful);
+				assert.strictEqual(event.type, 'state:initialized');
+				assert.deepEqual(event.state, { foo: 'foo' });
+				assert.strictEqual(event.state, event.target.state);
+			});
+
+			return delay().then(() => {
+				assert.deepEqual(stateful.state, { foo: 'foo' });
+
+				assert.strictEqual(count, 1, 'listener called');
+
+				stateful.setState({ foo: 'bar' });
+
+				return delay().then(() => {
+					assert.strictEqual(patchCount, 1, 'patch should have been called');
+					assert.deepEqual(stateful.state, { foo: 'bar' });
+					assert.strictEqual(count, 1, 'listener called');
 				});
 			});
 		}
