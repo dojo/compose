@@ -13,7 +13,7 @@ import Promise from 'dojo-shim/Promise';
 import WeakMap from 'dojo-shim/WeakMap';
 import createEvented from './createEvented';
 import { ComposeFactory } from '../compose';
-import createCancelableEvent from '../util/createCancelableEvent';
+import createCancelableEvent from './createCancelableEvent';
 
 export interface ObservableState<S extends State> {
 	/**
