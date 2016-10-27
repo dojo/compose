@@ -80,14 +80,19 @@ function completeStatefulState(stateful: Stateful<State>): void {
  */
 function setStatefulState(target: Stateful<State>, state: State): void {
 	const previousState = stateWeakMap.get(target);
-	const type = previousState && Object.keys(previousState).length ? 'state:changed' : 'state:initialized';
-	state = deepAssign(previousState, state);
-	const eventObject = {
-		type,
-		state,
-		target
-	};
-	target.emit(eventObject);
+	if (!previousState) {
+		throw new Error('Unable to set destroyed state');
+	}
+	queueTask(() => {
+		const type = previousState && Object.keys(previousState).length ? 'state:changed' : 'state:initialized';
+		state = deepAssign(previousState, state);
+		const eventObject = {
+			type,
+			state,
+			target
+		};
+		target.emit(eventObject);
+	});
 }
 
 /**
@@ -108,15 +113,11 @@ const createStateful: StatefulFactory = createEvented
 
 			setState(this: Stateful<State>, value: State): void {
 				const observedState = observedStateMap.get(this);
-				const state = stateWeakMap.get(this);
-				if (!state) {
-					throw new Error('Unable to set destroyed state');
-				}
 				if (observedState) {
 					observedState.observable.patch(value, { id: observedState.id });
 				}
 				else {
-					queueTask(() => { setStatefulState(this, value); });
+					setStatefulState(this, value);
 				}
 			},
 
@@ -142,7 +143,7 @@ const createStateful: StatefulFactory = createEvented
 					.observe(id)
 					.subscribe(
 						(state) => {
-							queueTask(() => { setStatefulState(stateful, state); });
+							setStatefulState(stateful, state);
 						},
 						(err) => {
 							throw err;
