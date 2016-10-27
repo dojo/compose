@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import createCancelableEvent from '../../../src/mixins/createCancelableEvent';
+import createCancelableEvent from '../../../src/bases/createCancelableEvent';
 
 registerSuite({
 	name: 'util/createCancelableEvent',
