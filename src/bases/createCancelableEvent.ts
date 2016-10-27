@@ -1,38 +1,13 @@
-export interface CancelableEvent<T extends string, U> {
-	/**
-	 * The type of the event
-	 */
-	readonly type: T;
-
-	/**
-	 * The target for the event
-	 */
-	readonly target: U;
-
-	/**
-	 * Can the event be canceled?
-	 */
-	readonly cancelable: boolean;
-
-	/**
-	 * Was the event canceled?
-	 */
-	readonly defaultPrevented: boolean;
-
-	/**
-	 * Cancel the event
-	 */
-	preventDefault(): void;
-}
+import { EventCancelableObject } from 'dojo-interfaces/core';
 
 /**
  * A simple factory that creates an event object which can be cancelled
  *
  * @param options The options for the event
  */
-function createCancelableEvent<T extends string, U>(options: { type: T, target: U }): CancelableEvent<T, U> {
+function createCancelableEvent<T extends string, U>(options: { type: T, target: U }): EventCancelableObject<T, U> {
 	const { type, target } = options;
-	const event: CancelableEvent<T, U> = Object.defineProperties({}, {
+	const event = Object.defineProperties({}, {
 		type: { value: type, enumerable: true },
 		target: { value: target, enumerable: true },
 		cancelable: { value: true, enumerable: true },
