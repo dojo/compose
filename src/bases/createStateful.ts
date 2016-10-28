@@ -83,9 +83,9 @@ function setStatefulState(target: Stateful<State>, state: State): void {
 	if (!previousState) {
 		throw new Error('Unable to set destroyed state');
 	}
+	const type = previousState && Object.keys(previousState).length ? 'state:changed' : 'state:initialized';
+	state = deepAssign(previousState, state);
 	queueTask(() => {
-		const type = previousState && Object.keys(previousState).length ? 'state:changed' : 'state:initialized';
-		state = deepAssign(previousState, state);
 		const eventObject = {
 			type,
 			state,
