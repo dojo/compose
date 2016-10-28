@@ -396,6 +396,8 @@ registerSuite({
 				}
 			});
 
+			assert.deepEqual(stateful.state, { foo: 'foo' });
+
 			stateful.on('state:initialized', (event) => {
 				count++;
 				assert.strictEqual(event.target, stateful);
