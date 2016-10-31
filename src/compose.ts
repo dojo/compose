@@ -1,3 +1,4 @@
+import { deprecated } from 'dojo-core/instrument';
 import { assign } from 'dojo-core/lang';
 import { from as arrayFrom, includes } from 'dojo-shim/array';
 import WeakMap from 'dojo-shim/WeakMap';
@@ -186,6 +187,8 @@ export function getInitFunctionNames(factory: ComposeFactory<any, any>): string[
 
 /**
  * Perform an extension of a class
+ *
+ * @deprecated
  */
 const doExtend = rebase(extend);
 
@@ -193,6 +196,11 @@ const doExtend = rebase(extend);
  * Perform a mixin of a class
  */
 const doMixin = rebase(mixin);
+
+/**
+ * Perform a override of a class
+ */
+const doOverride = rebase(override);
 
 /**
  * Perform an overlay of a class
@@ -234,8 +242,9 @@ const doFactoryDescriptor = rebase(factoryDescriptor);
  * A set of functions that are used to decorate the compose factories
  */
 const staticMethods = {
-	extend: doExtend,
+	extend: doExtend, /* DEPRECATED */
 	mixin: doMixin,
+	override: doOverride,
 	overlay: doOverlay,
 	from: doFrom,
 	before: doBefore,
@@ -440,10 +449,14 @@ export interface ComposeInitializationFunction<T, O> {
 }
 
 /* Extension API */
+
+/* DEPRECATED - This API will be removed in the future */
+
 export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
 	/**
 	 * Extend the factory prototype with the supplied object literal, class, or factory
 	 *
+	 * @deprecated
 	 * @param extension The object literal, class or factory to extend
 	 * @template T The original type of the factory
 	 * @template U The type of the extension
@@ -461,6 +474,7 @@ export interface Compose {
 	 * Extend a compose factory prototype with the supplied object literal, class, or
 	 * factory.
 	 *
+	 * @deprecated
 	 * @param base The base compose factory to extend
 	 * @param extension The object literal, class or factory that is the extension
 	 * @template T The base type of the factory
@@ -477,12 +491,14 @@ export interface Compose {
 /**
  * The internal implementation of extending a compose factory
  *
+ * @deprecated
  * @param base The base compose factory that is being extended
  * @param extension The extension to apply to the compose factory
  */
 function extend<T, O, U, P>(base: ComposeFactory<T, O>, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
 function extend<T, O, U, P>(base: ComposeFactory<T, O>, className: string, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
 function extend<O>(base: ComposeFactory<any, O>, className: any, extension?: any): ComposeFactory<any, O> {
+	deprecated({ message: 'This function will be removed, use "override" instead.', name: 'extend' });
 	if (typeof className !== 'string') {
 		extension = className;
 		className = undefined;
@@ -492,6 +508,84 @@ function extend<O>(base: ComposeFactory<any, O>, className: any, extension?: any
 		className,
 		proto: typeof extension === 'function' ? extension.prototype : extension,
 		factories: [ base ]
+	});
+}
+
+/* Override API */
+
+export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+	/**
+	 * Override certain properties on the existing factory, returning a new factory.  If the properties
+	 * are not present in the existing factory, override will throw.
+	 *
+	 * @param properties The properties to override
+	 */
+	override(properties: any): this;
+
+	/**
+	 * Override certain properties on the existing factory, returning a new factory.  If the properties
+	 * are not present in the existing factory, override with throw.
+	 *
+	 * @param className The class name for the factory
+	 * @param properties The properties to override
+	 */
+	override(className: string, properties: any): this;
+}
+
+export interface Compose {
+	/**
+	 * Override properties on a compose factory, returning a new factory.  If the properties are not
+	 * present on the base factory, override will throw.
+	 *
+	 * @param baseFactory The base compose factory to override
+	 * @param properties The properties to override
+	 */
+	override<T, O>(baseFactory: ComposeFactory<T, O>, properties: any): ComposeFactory<T, O>;
+
+	/**
+	 * Override properties on a compose factory, returning a new factory.  If the properties are not
+	 * present on the base factory, override will throw.
+	 *
+	 * @param baseFactory The base compose factory to override
+	 * @param className The class name for the factory
+	 * @param properties The properties to override
+	 */
+	override<T, O>(baseFactory: ComposeFactory<T, O>, className: string, properties: any): ComposeFactory<T, O>;
+}
+
+/**
+ * The internal implementation of overriding properties on a compose factory
+ *
+ * @param baseFactory The base factory
+ * @param className The name of the class that will be produced by the factory
+ * @param properties The object that contains the properties to override
+ */
+function override<T, O>(baseFactory: ComposeFactory<T, O>, properties: any): ComposeFactory<T, O>;
+function override<T, O>(baseFactory: ComposeFactory<T, O>, className: string, properties: any): ComposeFactory<T, O>;
+function override<T, O>(baseFactory: ComposeFactory<T, O>, className: any, properties?: any): ComposeFactory<T, O> {
+	if (typeof className !== 'string') {
+		properties = className;
+		className = undefined;
+	}
+
+	if (typeof properties !== 'object') {
+		throw new TypeError('Argument "properties" must be an object.');
+	}
+
+	const base = privateFactoryData.get(baseFactory).base;
+
+	/* TODO: In TypeScript 2.1 we should have `partial` types which can then be used to provide type checking at design time
+	 * similiar to this */
+	Object.keys(properties).forEach((key) => {
+		if (!(key in base)) {
+			throw new TypeError(`Attempting to override missing property "${key}"`);
+		}
+	});
+
+	return createFactory({
+		className,
+		proto: properties,
+		factories: [ baseFactory ]
 	});
 }
 
@@ -1134,8 +1228,9 @@ const compose = create as Compose;
 assign(compose, {
 	create,
 	static: _static,
-	extend,
+	extend, /* DEPRECATED */
 	mixin,
+	override,
 	overlay,
 	from,
 	before,
