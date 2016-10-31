@@ -7,7 +7,7 @@ import { State } from 'dojo-interfaces/bases';
 import { Observable, Observer } from 'rxjs/Rx';
 import createStateful from '../../../src/bases/createStateful';
 
-const timingDelay = delay(10);
+const timingDelay = delay(50);
 
 registerSuite({
 	name: 'mixins/createStateful',
@@ -395,6 +395,8 @@ registerSuite({
 					foo: 'foo'
 				}
 			});
+
+			assert.deepEqual(stateful.state, { foo: 'foo' });
 
 			stateful.on('state:initialized', (event) => {
 				count++;
