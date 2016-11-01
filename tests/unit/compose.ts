@@ -1038,6 +1038,19 @@ registerSuite({
 			assert.strictEqual(overrideCount, 1);
 		},
 
+		'overridding arrays'() {
+			const createFoo = compose({
+					foo: [ 'foo', 'bar' ]
+				})
+				.override({
+					foo: [ 'baz', 'qat' ]
+				});
+
+			const foo = createFoo();
+
+			assert.deepEqual(foo.foo, [ 'baz', 'qat' ], 'Array should be overidden, not merged');
+		},
+
 		'className'(this: any) {
 			if (!hasToStringTag()) {
 				this.skip('Does not natively support Symbol.toStringTag');

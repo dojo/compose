@@ -114,10 +114,11 @@ function assignFunctionName(fn: Function, value: string): void {
  * A helper function that copies own properties and their descriptors
  * from one or more sources to a target object. Includes non-enumerable properties
  *
+ * @param overwrite If `true` properties, like arrays, will not be merged, instead overwritten
  * @param target The target that properties should be copied onto
  * @param sources The rest of the parameters treated as sources to apply
  */
-function assignProperties(target: any, ...sources: any[]) {
+function assignProperties(overwrite: boolean, target: any, ...sources: any[]) {
 	sources.forEach((source) => {
 		if (!source) {
 			return;
@@ -133,7 +134,7 @@ function assignProperties(target: any, ...sources: any[]) {
 						const targetValue = targetDescriptor && targetDescriptor.value;
 
 						/* Special handling to merge array proprties */
-						if (isArray(sourceValue) && isArray(targetValue)) {
+						if (!overwrite && isArray(sourceValue) && isArray(targetValue)) {
 							sourceDescriptor.value = sourceValue.reduce(
 								(value: any[], current: any) => {
 									if (!includes(target[key], current)) {
@@ -261,11 +262,39 @@ const staticMethods = {
  * @param base The target constructor
  */
 interface FactoryOptions<T, U, O, S> {
+	/**
+	 * A map of advice to be applied to be merged with any advice from factories and then applied to the prototype
+	 */
 	advice?: AdviceMap;
+
+	/**
+	 * Any factories to mixin to this factory
+	 */
 	factories?: ComposeFactory<U, O>[];
+
+	/**
+	 * Adds an init function to the factory
+	 */
 	initFunction?: ComposeInitializationFunction<any, O>;
+
+	/**
+	 * The name of the class which the factory will construct
+	 */
 	className?: string;
+
+	/**
+	 * The prototype will always overwrite the base, instead of merging any special properties
+	 */
+	overwrite?: boolean;
+
+	/**
+	 * The prototype to mix into the base
+	 */
 	proto?: T;
+
+	/**
+	 * Any static properties to be added to the factory
+	 */
 	staticProperties?: S;
 }
 
@@ -295,6 +324,7 @@ function createPrivateFactoryData({
 	advice: optionsAdvice,
 	factories,
 	initFunction,
+	overwrite,
 	proto,
 	staticProperties
 }: FactoryOptions<any, any, any, any>): PrivateFactoryData {
@@ -304,7 +334,7 @@ function createPrivateFactoryData({
 			factoryData.advice = assignAdviceMap(factoryData.advice, advice);
 		}
 		if (base) {
-			assignProperties(factoryData.base, base);
+			assignProperties(false, factoryData.base, base);
 		}
 		const optionsInitFns = factoryData.initFns;
 		initFns.forEach((initFn) => {
@@ -327,7 +357,7 @@ function createPrivateFactoryData({
 		factoryData.advice = assignAdviceMap(factoryData.advice, optionsAdvice);
 	}
 
-	assignProperties(factoryData.base, proto);
+	assignProperties(Boolean(overwrite), factoryData.base, proto);
 
 	return factoryData;
 }
@@ -365,7 +395,7 @@ function createFactory<T, U, O>(options: FactoryOptions<T, U, O, any>): ComposeF
 	const factoryPrototype = factory.prototype;
 
 	/* mixin base properties into the prototype */
-	assignProperties(factoryPrototype, factoryData.base);
+	assignProperties(false, factoryPrototype, factoryData.base);
 
 	/* apply any advice to the prototype */
 	if (factoryData.advice) {
@@ -584,6 +614,7 @@ function override<T, O>(baseFactory: ComposeFactory<T, O>, className: any, prope
 
 	return createFactory({
 		className,
+		overwrite: true,
 		proto: properties,
 		factories: [ baseFactory ]
 	});
@@ -817,7 +848,7 @@ function mixin<T, O, U, P>(
 	/* otherwise we are dealing with a prototype based mixin */
 	else {
 		/* of which, we can have a constructor function/class, or an object literal (or undefined) */
-		proto = isComposeFactory(mixin) ? undefined : typeof mixin === 'function' ? mixin.prototype : mixin;
+		proto = typeof mixin === 'function' ? mixin.prototype : mixin;
 	}
 
 	/* convert the advice, if any, to the format used by createFactory */
