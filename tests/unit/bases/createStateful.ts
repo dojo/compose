@@ -1,13 +1,10 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import { hasToStringTag } from '../../support/util';
-import { delay } from 'dojo-core/async/timing';
 import Promise from 'dojo-shim/Promise';
 import { State } from 'dojo-interfaces/bases';
 import { Observable, Observer } from 'rxjs/Rx';
 import createStateful from '../../../src/bases/createStateful';
-
-const timingDelay = delay(50);
 
 registerSuite({
 	name: 'mixins/createStateful',
@@ -21,9 +18,7 @@ registerSuite({
 			const stateful = createStateful({
 				state: { foo: 'bar' }
 			});
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state.foo, 'bar', 'state should have been set');
-			});
+			assert.deepEqual(stateful.state.foo, 'bar', 'state should have been set');
 		},
 		'with id and stateFrom'() {
 			let called = 0;
@@ -47,9 +42,7 @@ registerSuite({
 			});
 
 			assert.strictEqual(called, 1);
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state, { foo: 'bar' });
-			});
+			assert.deepEqual(stateful.state, { foo: 'bar' });
 		},
 		'with id of 0'() {
 			/* while the interface specifies a string for an ID, real world usage may very well pass
@@ -76,9 +69,7 @@ registerSuite({
 			});
 
 			assert.strictEqual(called, 1);
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state, { foo: 'bar' });
-			});
+			assert.deepEqual(stateful.state, { foo: 'bar' });
 		},
 		'with only stateForm throws'() {
 			const observer = {
@@ -129,29 +120,21 @@ registerSuite({
 			bar: 'foo'
 		});
 
-		return timingDelay({}).then(() => {
-			assert.deepEqual(stateful.state, { bar: 'foo' });
-			stateful.setState({
-				foo: 1
-			});
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state, { foo: 1, bar: 'foo' });
-				const state = {
-					foo: [ { foo: 'bar' }, { foo: 'baz' } ]
-				};
-				stateful.setState(state);
-				return timingDelay({}).then(() => {
-					assert.notStrictEqual((<any> stateful.state).foo, state.foo, 'state should not be strict equal');
-					assert.deepEqual((<any> stateful.state).foo, state.foo, 'state should be deeply equal');
-					stateful.setState({ bar: undefined });
-					return timingDelay({}).then(() => {
-						assert.isUndefined((<any> stateful.state).bar, 'bar is undefined');
-						state.foo.push({ foo: 'qat' });
-						assert.strictEqual((<any> stateful.state).foo.length, 2, 'state should remain untouched');
-					});
-				});
-			});
+		assert.deepEqual(stateful.state, { bar: 'foo' });
+		stateful.setState({
+			foo: 1
 		});
+		assert.deepEqual(stateful.state, { foo: 1, bar: 'foo' });
+		const state = {
+			foo: [ { foo: 'bar' }, { foo: 'baz' } ]
+		};
+		stateful.setState(state);
+		assert.notStrictEqual((<any> stateful.state).foo, state.foo, 'state should not be strict equal');
+		assert.deepEqual((<any> stateful.state).foo, state.foo, 'state should be deeply equal');
+		stateful.setState({ bar: undefined });
+		assert.isUndefined((<any> stateful.state).bar, 'bar is undefined');
+		state.foo.push({ foo: 'qat' });
+		assert.strictEqual((<any> stateful.state).foo.length, 2, 'state should remain untouched');
 	},
 	'observe state': {
 		'observeState()'() {
@@ -178,25 +161,19 @@ registerSuite({
 			const stateful = createStateful();
 
 			stateful.observeState('foo', observer);
-			return timingDelay({}).then(() => {
-				assert.strictEqual(called, 1);
-				assert.strictEqual(patchCalled, 0);
-				assert.deepEqual(stateful.state, { foo: 'bar' });
+			assert.strictEqual(called, 1);
+			assert.strictEqual(patchCalled, 0);
+			assert.deepEqual(stateful.state, { foo: 'bar' });
 
-				observer.patch({ foo: 'qat' }, { id: 'foo' });
-				return timingDelay({}).then(() => {
-					assert.strictEqual(called, 1);
-					assert.strictEqual(patchCalled, 1);
-					assert.deepEqual(stateful.state, { foo: 'qat' });
+			observer.patch({ foo: 'qat' }, { id: 'foo' });
+			assert.strictEqual(called, 1);
+			assert.strictEqual(patchCalled, 1);
+			assert.deepEqual(stateful.state, { foo: 'qat' });
 
-					stateful.setState({ foo: 'foo'});
-					return timingDelay({}).then(() => {
-						assert.strictEqual(called, 1);
-						assert.strictEqual(patchCalled, 2);
-						assert.deepEqual(stateful.state, { foo: 'foo' });
-					});
-				});
-			});
+			stateful.setState({ foo: 'foo'});
+			assert.strictEqual(called, 1);
+			assert.strictEqual(patchCalled, 2);
+			assert.deepEqual(stateful.state, { foo: 'foo' });
 		},
 		'observeState() - completed/destroyed'() {
 			let called = 0;
@@ -229,20 +206,18 @@ registerSuite({
 			});
 
 			stateful.observeState('foo', observer);
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state, { foo: 'bar' });
+			assert.deepEqual(stateful.state, { foo: 'bar' });
 
-				assert.strictEqual(called, 0);
-				assert.strictEqual(destroyed, 0);
+			assert.strictEqual(called, 0);
+			assert.strictEqual(destroyed, 0);
 
-				observerRef.complete();
+			observerRef.complete();
 
-				assert.strictEqual(called, 1);
-				assert.strictEqual(destroyed, 1);
+			assert.strictEqual(called, 1);
+			assert.strictEqual(destroyed, 1);
 
-				assert.throws(() => {
-					stateful.setState({ foo: 'qat' });
-				});
+			assert.throws(() => {
+				stateful.setState({ foo: 'qat' });
 			});
 		},
 		'observeState() - completed but preventDefaut'() {
@@ -277,24 +252,20 @@ registerSuite({
 			});
 
 			stateful.observeState('foo', observer);
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state, { foo: 'bar' });
+			assert.deepEqual(stateful.state, { foo: 'bar' });
 
-				assert.strictEqual(called, 0);
-				assert.strictEqual(destroyed, 0);
+			assert.strictEqual(called, 0);
+			assert.strictEqual(destroyed, 0);
 
-				observerRef.complete();
+			observerRef.complete();
 
-				assert.strictEqual(called, 1);
-				assert.strictEqual(destroyed, 0);
+			assert.strictEqual(called, 1);
+			assert.strictEqual(destroyed, 0);
 
-				stateful.setState({ foo: 'qat' });
-				return timingDelay({}).then(() => {
-					assert.deepEqual(stateful.state, { foo: 'qat' });
-					assert.strictEqual(called, 1);
-					assert.strictEqual(destroyed, 0);
-				});
-			});
+			stateful.setState({ foo: 'qat' });
+			assert.deepEqual(stateful.state, { foo: 'qat' });
+			assert.strictEqual(called, 1);
+			assert.strictEqual(destroyed, 0);
 		},
 		'observeState() - error'() {
 			const observer = {
@@ -370,102 +341,14 @@ registerSuite({
 			const stateful = createStateful();
 
 			const handle = stateful.observeState('foo', observer);
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state, { foo: 'bar' });
+			assert.deepEqual(stateful.state, { foo: 'bar' });
 
+			handle.destroy();
+			observer.patch({ foo: 'qat' }, { id: 'foo' });
+			assert.deepEqual(stateful.state, { foo: 'bar' });
+
+			assert.doesNotThrow(() => {
 				handle.destroy();
-				observer.patch({ foo: 'qat' }, { id: 'foo' });
-				assert.deepEqual(stateful.state, { foo: 'bar' });
-
-				assert.doesNotThrow(() => {
-					handle.destroy();
-				});
-			});
-		}
-	},
-	'"state:initialized" event type': {
-		'local state'() {
-			let count = 0;
-			interface TestState {
-				foo?: string;
-			}
-
-			const stateful = createStateful<TestState>({
-				state: {
-					foo: 'foo'
-				}
-			});
-
-			assert.deepEqual(stateful.state, { foo: 'foo' });
-
-			stateful.on('state:initialized', (event) => {
-				count++;
-				assert.strictEqual(event.target, stateful);
-				assert.strictEqual(event.type, 'state:initialized');
-				assert.deepEqual(event.state, { foo: 'foo' });
-				assert.strictEqual(event.state, event.target.state);
-			});
-
-			return timingDelay({}).then(() => {
-				assert.strictEqual(count, 1, 'listener called once');
-
-				stateful.setState({
-					foo: 'bar'
-				});
-				return timingDelay({}).then(() => {
-					assert.strictEqual(count, 1, 'listener not called again');
-				});
-			});
-		},
-		'observed state'() {
-			let count = 0;
-			let patchCount = 0;
-
-			interface TestState {
-				foo?: string;
-			}
-
-			let observerRef: Observer<TestState>;
-
-			const observer = {
-				observe(id: string): Observable<TestState> {
-					return new Observable(function subscribe(observer: Observer<TestState>) {
-						observerRef = observer;
-						observerRef.next({ foo: 'foo' });
-					});
-				},
-				patch(value: any, options?: { id?: string }): Promise<TestState> {
-					patchCount++;
-					observerRef.next(value);
-					return Promise.resolve(value);
-				}
-			};
-
-			const stateful = createStateful({
-				id: 'foo',
-				stateFrom: observer
-			});
-
-			stateful.on('state:initialized', (event) => {
-				count++;
-				assert.strictEqual(event.target, stateful);
-				assert.strictEqual(event.type, 'state:initialized');
-				assert.deepEqual(event.state, { foo: 'foo' });
-				assert.strictEqual(event.state, event.target.state);
-			});
-
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state, { foo: 'foo' });
-
-				assert.strictEqual(count, 1, 'listener called');
-
-				stateful.setState({ foo: 'bar' });
-
-				return timingDelay({}).then(() => {
-					assert.strictEqual(patchCount, 1, 'patch should have been called');
-					assert.deepEqual(stateful.state, { foo: 'bar' });
-					assert.strictEqual(count, 1, 'listener called');
-				});
 			});
 		}
 	},
@@ -492,13 +375,9 @@ registerSuite({
 
 			assert.strictEqual(count, 0, 'listener not called yet');
 
-			stateful.setState({
-				foo: 'bar'
-			});
+			stateful.setState({ foo: 'bar' });
 
-			return timingDelay({}).then(() => {
-				assert.strictEqual(count, 1, 'listener called once');
-			});
+			assert.strictEqual(count, 1, 'listener called once');
 		},
 		'observed state'() {
 			let count = 0;
@@ -530,19 +409,16 @@ registerSuite({
 				listeners: { 'state:changed'() { count++; } }
 			});
 
-			return timingDelay({}).then(() => {
-				assert.deepEqual(stateful.state, { foo: 'bar' });
+			assert.deepEqual(stateful.state, { foo: 'bar' });
 
-				assert.strictEqual(count, 0, 'listener not called');
+			assert.strictEqual(count, 1, 'listener not called');
 
-				stateful.setState({ foo: 'qat' });
+			const state = { foo: 'qat' };
+			stateful.setState(state);
 
-				return timingDelay({}).then(() => {
-					assert.strictEqual(patchCount, 1, 'patch should have been called');
-					assert.deepEqual(stateful.state, { foo: 'qat' });
-					assert.strictEqual(count, 1, 'listener called');
-				});
-			});
+			assert.strictEqual(patchCount, 1, 'patch should have been called');
+			assert.deepEqual(stateful.state, state);
+			assert.strictEqual(count, 2, 'listener called');
 		}
 	},
 	'toString()'(this: any) {

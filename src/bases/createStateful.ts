@@ -1,5 +1,4 @@
 import { deepAssign } from 'dojo-core/lang';
-import { queueTask } from 'dojo-core/queue';
 import { Handle } from 'dojo-interfaces/core';
 import {
 	Evented,
@@ -83,16 +82,14 @@ function setStatefulState(target: Stateful<State>, state: State): void {
 	if (!previousState) {
 		throw new Error('Unable to set destroyed state');
 	}
-	const type = previousState && Object.keys(previousState).length ? 'state:changed' : 'state:initialized';
+	const type = 'state:changed';
 	state = deepAssign(previousState, state);
-	queueTask(() => {
-		const eventObject = {
-			type,
-			state,
-			target
-		};
-		target.emit(eventObject);
-	});
+	const eventObject = {
+		type,
+		state,
+		target
+	};
+	target.emit(eventObject);
 }
 
 /**
