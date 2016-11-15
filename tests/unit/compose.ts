@@ -1,10 +1,34 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
+import { setWarn } from 'dojo-core/instrument';
 import { hasToStringTag, hasConfigurableName } from '../support/util';
 import compose, { GenericClass, ComposeMixinDescriptor, getInitFunctionNames } from '../../src/compose';
 
+let warnStack: any[][] = [];
+
+function getLastWarning(): string | undefined {
+	if (!warnStack.length) {
+		return;
+	}
+	const args = warnStack[warnStack.length - 1];
+	return args && args[0];
+}
+
 registerSuite({
 	name: 'lib/compose',
+
+	setup() {
+		/* change the global warning function so we don't end up with a console full of garbage */
+		setWarn(function(...args: any[]) {
+			warnStack.push(args);
+		});
+	},
+
+	teardown() {
+		/* put it back the way it was */
+		setWarn();
+	},
+
 	create: {
 		'es6 base class': function () {
 			let counter = 0;
@@ -347,7 +371,7 @@ registerSuite({
 			assert.strictEqual(foo['nonWritable'], 'constant', 'Didn\'t copy property value');
 
 			/* modules are now emitted in strict mode, which causes a throw
-			* when trying to assign to a read-only property */
+			 * when trying to assign to a read-only property */
 			assert.throws(() => {
 				foo['nonWritable'] = 'variable';
 			}, TypeError);
@@ -511,6 +535,18 @@ registerSuite({
 				assert.deepEqual(createFoo.prototype.arr, [ 'foo', 'bar' ]);
 				assert.deepEqual(createBar.prototype.arr, [ 'foo', 'bar', 'baz' ]);
 			}
+		},
+
+		'deprecated'() {
+			warnStack = [];
+			compose({}).extend({});
+
+			assert.strictEqual(getLastWarning(), 'DEPRECATED: extend: This function will be removed, use "override" instead.');
+
+			warnStack = [];
+			compose.extend(compose({}), {});
+
+			assert.strictEqual(getLastWarning(), 'DEPRECATED: extend: This function will be removed, use "override" instead.');
 		}
 	},
 	mixin: {
@@ -941,6 +977,126 @@ registerSuite({
 			}
 		}
 	},
+
+	override: {
+		'.override()'() {
+			let count = 0;
+			let overrideCount = 0;
+
+			const createFoo = compose.create({
+				foo() {
+					count++;
+				}
+			});
+
+			const createOverideFoo = compose.override(createFoo, {
+				foo() {
+					overrideCount++;
+				}
+			});
+
+			const foo = createFoo();
+			const overrideFoo = createOverideFoo();
+
+			assert.strictEqual(count, 0);
+			assert.strictEqual(overrideCount, 0);
+
+			foo.foo();
+
+			assert.strictEqual(count, 1);
+			assert.strictEqual(overrideCount, 0);
+
+			overrideFoo.foo();
+
+			assert.strictEqual(count, 1);
+			assert.strictEqual(overrideCount, 1);
+		},
+
+		'chaining'() {
+			let count = 0;
+			let overrideCount = 0;
+
+			const createFoo = compose({
+					foo() {
+						count++;
+					}
+				})
+				.override({
+					foo() {
+						overrideCount++;
+					}
+				});
+
+			const foo = createFoo();
+
+			assert.strictEqual(count, 0);
+			assert.strictEqual(overrideCount, 0);
+
+			foo.foo();
+
+			assert.strictEqual(count, 0);
+			assert.strictEqual(overrideCount, 1);
+		},
+
+		'overridding arrays'() {
+			const createFoo = compose({
+					foo: [ 'foo', 'bar' ]
+				})
+				.override({
+					foo: [ 'baz', 'qat' ]
+				});
+
+			const foo = createFoo();
+
+			assert.deepEqual(foo.foo, [ 'baz', 'qat' ], 'Array should be overidden, not merged');
+		},
+
+		'className'(this: any) {
+			if (!hasToStringTag()) {
+				this.skip('Does not natively support Symbol.toStringTag');
+			}
+
+			const createFoo = compose('Foo', {
+					foo() { }
+				})
+				.override('Bar', {
+					foo() { }
+				});
+
+			const foo = createFoo();
+			assert.strictEqual((<any> foo).toString(), '[object Bar]');
+		},
+
+		'not passing object as properties'() {
+			const createFoo = compose({
+				foo() { }
+			});
+
+			assert.throws(() => {
+				createFoo.override('Foo');
+			}, TypeError, 'Argument "properties" must be an object.');
+
+			assert.throws(() => {
+				createFoo.override(function () {
+					return 'foo';
+				});
+			}, TypeError, 'Argument "properties" must be an object.');
+		},
+
+		'missing property in baseFactory'() {
+			const createFoo = compose({
+				foo () { }
+			});
+
+			assert.throws(() => {
+				createFoo.override({
+					foo() { },
+					bar: 2
+				});
+			}, TypeError, 'Attempting to override missing property "bar"');
+		}
+	},
+
 	overlay: {
 		'.overlay()': function () {
 			let count = 0;
