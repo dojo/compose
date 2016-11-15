@@ -604,7 +604,7 @@ function override<T, O>(baseFactory: ComposeFactory<T, O>, className: any, prope
 
 	const base = privateFactoryData.get(baseFactory).base;
 
-	/* TODO: In TypeScript 2.1 we should have `partial` types which can then be used to provide type checking at design time
+	/* TODO: In TypeScript 2.1 we have merge types which can then be used to provide type checking at design time
 	 * similiar to this */
 	Object.keys(properties).forEach((key) => {
 		if (!(key in base)) {
