@@ -242,7 +242,7 @@ const fooBar = fooBarFactory();
 
 fooBar.bar(); // logs "bar"
 ```
-The real beneif of using `mixin` is in those cases where simply modifying the type is not enough, and there is additional behavior that needs to be included via an initialization function or aspects.
+The real benefit of using `mixin` is in those cases where simply modifying the type is not enough, and there is additional behavior that needs to be included via an initialization function or aspects.
 ```typescript
 import * as compose from 'dojo/compose';
 
