@@ -1,6 +1,6 @@
 {
   "name": "dojo-compose",
-  "version": "2.0.0-pre",
+  "version": "2.0.0-beta.17",
   "description": "A composition library, which works well in a TypeScript environment.",
   "homepage": "http://dojotoolkit.org",
   "bugs": {
