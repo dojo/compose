@@ -461,7 +461,14 @@ export interface GenericFunction<T> {
 	(...args: any[]): T;
 }
 
-export interface ComposeInitializationFunction<T, O> {
+/**
+ * A basic string index map of options
+ */
+export interface Options {
+	[options: string]: any;
+}
+
+export interface ComposeInitializationFunction<T, O extends Options> {
 	/**
 	 * A callback function use to initialize a new created instance
 	 *
@@ -482,7 +489,7 @@ export interface ComposeInitializationFunction<T, O> {
 
 /* DEPRECATED - This API will be removed in the future */
 
-export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
 	/**
 	 * Extend the factory prototype with the supplied object literal, class, or factory
 	 *
@@ -543,7 +550,7 @@ function extend<O>(base: ComposeFactory<any, O>, className: any, extension?: any
 
 /* Override API */
 
-export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
 	/**
 	 * Override certain properties on the existing factory, returning a new factory.  If the properties
 	 * are not present in the existing factory, override will throw.
@@ -633,7 +640,7 @@ export interface OverlayFunction<T> {
 	(proto: T): void;
 }
 
-export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
 	/**
 	 * Provide a function that mutates the factories prototype but does not change the factory's class
 	 * structure.
@@ -699,7 +706,7 @@ export interface AspectAdvice {
 /**
  * Either a class, object literal, or a factory
  */
-export type ComposeMixinItem<T, O> = GenericClass<T> | T | ComposeFactory<T, O>;
+export type ComposeMixinItem<T, O extends Options> = GenericClass<T> | T | ComposeFactory<T, O>;
 
 /**
  * An object which provides information on how to mixin into a compose factory
@@ -731,14 +738,14 @@ export interface ComposeMixinDescriptor<T, O, U, P> {
  * Identifies a compose factory or other object that can be transformed into a
  * ComposeMixinDescriptor
  */
-export interface ComposeMixinable<U, P> {
+export interface ComposeMixinable<U extends Options, P> {
 	/**
 	 * A method that offers up a ComposeMixinDescriptor to allow complex mixin in of factories
 	 */
-	factoryDescriptor<T, O>(): ComposeMixinDescriptor<T, O, U, P>;
+	factoryDescriptor<T, O extends Options>(): ComposeMixinDescriptor<T, O, U, P>;
 }
 
-export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
 	/**
 	 * Mixin additional mixins, initialization logic, and aspect advice into the factory
 	 *
@@ -872,7 +879,7 @@ function mixin<T, O, U, P>(
 	}) as ComposeFactory<T & U, O & P>;
 }
 
-export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
 	/**
 	 * Extract a method from another Class or Factory and add it to the returned factory
 	 *
@@ -1114,7 +1121,7 @@ function aspect<T, O>(base: ComposeFactory<T, O>, advice: AspectAdvice): Compose
 
 /* Creation API */
 
-export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
 	/**
 	 * Create a new instance
 	 *
@@ -1137,12 +1144,10 @@ export interface Compose {
 	 * @param initFunction An optional function that will be passed the instance and any creation options
 	 * @param className An optional class name that is used to label the factory for debug purposes
 	 */
-	<T, O>(base: GenericClass<T> | T): ComposeFactory<T, O>;
-	<T, O>(className: string, base: GenericClass<T> | T): ComposeFactory<T, O>;
-	<T, O>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	<T, O>(className: string, base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
-	<T, O, P>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
+	<T, O extends Options, P extends Options>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
+	<T, O extends Options>(className: string, base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	<T, O extends Options, P extends Options>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
+	<T, O extends Options>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
 
 	/**
 	 * Create a new factory based on a supplied Class, Factory or Object prototype with an optional
@@ -1151,12 +1156,10 @@ export interface Compose {
 	 * @param base The base Class, Facotry or Object prototype to use
 	 * @param initFunction An optional function that will be passed the instance and nay creation options
 	 */
-	create<T, O>(base: GenericClass<T> | T): ComposeFactory<T, O>;
-	create<T, O>(className: string, base: GenericClass<T> | T): ComposeFactory<T, O>;
-	create<T, O>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	create<T, O, P>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
 	create<T, O>(className: string, base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
 	create<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
-	create<T, O, P>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
+	create<T, O>(base: GenericClass<T> | T, initFunction?: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
 }
 
 /**
@@ -1206,7 +1209,7 @@ function create<O>(className: any, base?: any, initFunction?: ComposeInitializat
 
 /* Extend factory with static properties */
 
-export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
 	/**
 	 * Add static properties to a factory
 	 *
@@ -1239,7 +1242,7 @@ function _static<T, O, S>(base: ComposeFactory<T, O>, staticProperties: S): Comp
 	});
 }
 
-export interface ComposeFactory<T, O> extends ComposeMixinable<T, O> {
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
 	/**
 	 * The class name of the ComposeFactory
 	 */
