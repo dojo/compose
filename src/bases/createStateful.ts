@@ -104,6 +104,14 @@ const createStateful: StatefulFactory = createEvented
 	.mixin({
 		className: 'Stateful',
 		mixin: {
+			get stateFrom(this: Stateful<State>): ObservableState<State> | undefined {
+				const observedState = observedStateMap.get(this);
+				if (observedState) {
+					return observedState.observable;
+				}
+				return undefined;
+			},
+
 			get state(this: Stateful<State>): State {
 				return stateWeakMap.get(this);
 			},

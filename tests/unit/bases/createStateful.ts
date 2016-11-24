@@ -11,6 +11,7 @@ registerSuite({
 	creation: {
 		'no options'() {
 			const stateful = createStateful();
+			assert.isUndefined(stateful.stateFrom);
 			assert.deepEqual(stateful.state, {}, 'stateful should have empty state');
 			assert.isFunction(stateful.setState, 'stateful should have `setState` function');
 		},
@@ -42,6 +43,7 @@ registerSuite({
 			});
 
 			assert.strictEqual(called, 1);
+			assert.equal(stateful.stateFrom, observer);
 			assert.deepEqual(stateful.state, { foo: 'bar' });
 		},
 		'with id of 0'() {
