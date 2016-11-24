@@ -109,7 +109,6 @@ const createStateful: StatefulFactory = createEvented
 				if (observedState) {
 					return observedState.observable;
 				}
-				return undefined;
 			},
 
 			get state(this: Stateful<State>): State {
