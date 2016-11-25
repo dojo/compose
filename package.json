@@ -25,7 +25,6 @@
   "devDependencies": {
     "@reactivex/rxjs": "5.0.0-beta.6",
     "@types/chai": "~3.4.0",
-    "@types/es6-shim": "~0.31.0",
     "@types/glob": "~5.0.0",
     "@types/grunt": "~0.4.0",
     "dojo-interfaces": ">=2.0.0-alpha.7",
