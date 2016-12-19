@@ -2,8 +2,7 @@ import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import { hasToStringTag } from '../../support/util';
 import Promise from 'dojo-shim/Promise';
-import { State } from 'dojo-interfaces/bases';
-import { Observable, Observer } from 'rxjs/Rx';
+import Observable, { SubscriptionObserver } from 'dojo-shim/Observable';
 import createStateful from '../../../src/bases/createStateful';
 
 registerSuite({
@@ -13,25 +12,18 @@ registerSuite({
 			const stateful = createStateful();
 			assert.isUndefined(stateful.stateFrom);
 			assert.deepEqual(stateful.state, {}, 'stateful should have empty state');
-			assert.isFunction(stateful.setState, 'stateful should have `setState` function');
-		},
-		'with state'() {
-			const stateful = createStateful({
-				state: { foo: 'bar' }
-			});
-			assert.deepEqual(stateful.state.foo, 'bar', 'state should have been set');
 		},
 		'with id and stateFrom'() {
 			let called = 0;
 			const observer = {
-				observe(id: string): Observable<State> {
+				observe(id: string): Observable<Object> {
 					called++;
-					return new Observable(function subscribe(observer: Observer<State>) {
+					return new Observable(function subscribe(observer: SubscriptionObserver<Object>) {
 						observer.next({ foo: 'bar' });
 						observer.complete();
 					});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					assert.strictEqual(options && options.id, 'foo');
 					return Promise.resolve(value);
 				}
@@ -52,14 +44,14 @@ registerSuite({
 			 * 0 should be halnded gracefully */
 			let called = 0;
 			const observer = {
-				observe(id: string): Observable<State> {
+				observe(id: string): Observable<Object> {
 					called++;
-					return new Observable(function subscribe(observer: Observer<State>) {
+					return new Observable(function subscribe(observer: SubscriptionObserver<Object>) {
 						observer.next({ foo: 'bar' });
 						observer.complete();
 					});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					assert.strictEqual(options && options.id, 0);
 					return Promise.resolve(value);
 				}
@@ -75,10 +67,10 @@ registerSuite({
 		},
 		'with only stateForm throws'() {
 			const observer = {
-				observe(id: string): Observable<State> {
+				observe(id: string): Observable<Object> {
 					return new Observable(() => {});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					return Promise.resolve(value);
 				}
 			};
@@ -92,13 +84,13 @@ registerSuite({
 	},
 	'destroy()'() {
 		const observer = {
-			observe(id: string): Observable<State> {
-				return new Observable(function subscribe(observer: Observer<State>) {
+			observe(id: string): Observable<Object> {
+				return new Observable(function subscribe(observer: SubscriptionObserver<Object>) {
 					observer.next({ foo: 'bar' });
 					observer.complete();
 				});
 			},
-			patch(value: any, options?: { id?: string }): Promise<State> {
+			patch(value: any, options?: { id?: string }): Promise<Object> {
 				throw Error('Should not have been called!');
 			}
 		};
@@ -142,17 +134,17 @@ registerSuite({
 		'observeState()'() {
 			let called = 0;
 			let patchCalled = 0;
-			let observerRef: Observer<State>;
+			let observerRef: SubscriptionObserver<Object>;
 			const observer = {
-				observe(id: string): Observable<State> {
+				observe(id: string): Observable<Object> {
 					assert.strictEqual(id, 'foo');
 					called++;
-					return new Observable(function subscribe(observer: Observer<State>) {
+					return new Observable(function subscribe(observer: SubscriptionObserver<Object>) {
 						observerRef = observer;
 						observerRef.next({ foo: 'bar' });
 					});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					patchCalled++;
 					observerRef.next(value);
 					assert.strictEqual(options && options.id, 'foo');
@@ -180,16 +172,16 @@ registerSuite({
 		'observeState() - completed/destroyed'() {
 			let called = 0;
 			let destroyed = 0;
-			let observerRef: Observer<State> = <any> undefined;
+			let observerRef: SubscriptionObserver<Object> = <any> undefined;
 			const observer = {
-				observe(id: string): Observable<State> {
+				observe(id: string): Observable<Object> {
 					assert.strictEqual(id, 'foo');
-					return new Observable(function subscribe(observer: Observer<State>) {
+					return new Observable(function subscribe(observer: SubscriptionObserver<Object>) {
 						observerRef = observer;
 						observerRef.next({ foo: 'bar' });
 					});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					throw new Error('Should not have been called');
 				}
 			};
@@ -225,16 +217,16 @@ registerSuite({
 		'observeState() - completed but preventDefaut'() {
 			let called = 0;
 			let destroyed = 0;
-			let observerRef: Observer<State> = <any> undefined;
+			let observerRef: SubscriptionObserver<Object> = <any> undefined;
 			const observer = {
-				observe(id: string): Observable<State> {
+				observe(id: string): Observable<Object> {
 					assert.strictEqual(id, 'foo');
-					return new Observable(function subscribe(observer: Observer<State>) {
+					return new Observable(function subscribe(observer: SubscriptionObserver<Object>) {
 						observerRef = observer;
 						observerRef.next({ foo: 'bar' });
 					});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					throw new Error('Should not have been called');
 				}
 			};
@@ -271,12 +263,12 @@ registerSuite({
 		},
 		'observeState() - error'() {
 			const observer = {
-				observe(id: string): Observable<State> {
-					return new Observable(function subscribe(observer: Observer<State>) {
+				observe(id: string): Observable<Object> {
+					return new Observable(function subscribe(observer: SubscriptionObserver<Object>) {
 						observer.error(new Error('Ooops...'));
 					});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					return Promise.resolve(value);
 				}
 			};
@@ -289,19 +281,19 @@ registerSuite({
 		},
 		'observeState() - again'() {
 			const observer1 = {
-				observe(id: string): Observable<State> {
+				observe(id: string): Observable<Object> {
 					return new Observable(() => {});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					return Promise.resolve(value);
 				}
 			};
 
 			const observer2 = {
-				observe(id: string): Observable<State> {
-					return new Observable();
+				observe(id: string): Observable<Object> {
+					return new Observable(() => {});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					return Promise.resolve(value);
 				}
 			};
@@ -326,15 +318,15 @@ registerSuite({
 			}, Error);
 		},
 		'observeState() - destroy handle'() {
-			let observerRef: Observer<State>;
+			let observerRef: SubscriptionObserver<Object>;
 			const observer = {
-				observe(id: string): Observable<State> {
-					return new Observable(function subscribe(observer: Observer<State>) {
+				observe(id: string): Observable<Object> {
+					return new Observable(function subscribe(observer: SubscriptionObserver<Object>) {
 						observerRef = observer;
 						observerRef.next({ foo: 'bar' });
 					});
 				},
-				patch(value: any, options?: { id?: string }): Promise<State> {
+				patch(value: any, options?: { id?: string }): Promise<Object> {
 					observerRef.next(value);
 					return Promise.resolve(value);
 				}
@@ -361,11 +353,7 @@ registerSuite({
 				foo?: string;
 			}
 
-			const stateful = createStateful<TestState>({
-				state: {
-					foo: 'foo'
-				}
-			});
+			const stateful = createStateful<TestState>({});
 
 			stateful.on('state:changed', (event) => {
 				count++;
@@ -389,11 +377,11 @@ registerSuite({
 				foo?: string;
 			}
 
-			let observerRef: Observer<TestState>;
+			let observerRef: SubscriptionObserver<TestState>;
 
 			const observer = {
 				observe(id: string): Observable<TestState> {
-					return new Observable(function subscribe(observer: Observer<TestState>) {
+					return new Observable(function subscribe(observer: SubscriptionObserver<TestState>) {
 						observerRef = observer;
 						observerRef.next({ foo: 'bar' });
 					});
