@@ -1,7 +1,7 @@
 import compose, { isComposeFactory } from './compose';
-import createDestroyable from './mixins/createDestroyable';
-import createEvented from './mixins/createEvented';
-import createStateful from './mixins/createStateful';
+import createDestroyable from './bases/createDestroyable';
+import createEvented from './bases/createEvented';
+import createStateful from './bases/createStateful';
 
 export {
 	compose,
