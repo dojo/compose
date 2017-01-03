@@ -6,7 +6,7 @@ import {
 	StatefulOptions,
 	StatefulMixin
 } from 'dojo-interfaces/bases';
-import { StoreObservablePatchable } from 'dojo-interfaces/abilities';
+import { ObservablePatchableStore } from 'dojo-interfaces/abilities';
 import { Subscription } from 'dojo-shim/Observable';
 import WeakMap from 'dojo-shim/WeakMap';
 import createEvented from './createEvented';
@@ -22,7 +22,7 @@ export interface StatefulFactory extends ComposeFactory<Stateful<Object>, Statef
  */
 interface ObservedState {
 	id: string;
-	observable: StoreObservablePatchable<Object>;
+	observable: ObservablePatchableStore<Object>;
 	subscription: Subscription;
 	handle: Handle;
 }
@@ -87,7 +87,7 @@ const createStateful: StatefulFactory = createEvented
 	.mixin({
 		className: 'Stateful',
 		mixin: {
-			get stateFrom(this: Stateful<Object>): StoreObservablePatchable<Object> | undefined {
+			get stateFrom(this: Stateful<Object>): ObservablePatchableStore<Object> | undefined {
 				const observedState = observedStateMap.get(this);
 				if (observedState) {
 					return observedState.observable;
@@ -108,7 +108,7 @@ const createStateful: StatefulFactory = createEvented
 				}
 			},
 
-			observeState(this: Stateful<Object>, id: string, observable: StoreObservablePatchable<Object>): Handle {
+			observeState(this: Stateful<Object>, id: string, observable: ObservablePatchableStore<Object>): Handle {
 				let observedState = observedStateMap.get(this);
 				if (observedState) {
 					if (observedState.id === id && observedState.observable === observable) {

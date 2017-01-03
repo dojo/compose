@@ -26,6 +26,9 @@ registerSuite({
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					assert.strictEqual(options && options.id, 'foo');
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -54,6 +57,9 @@ registerSuite({
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					assert.strictEqual(options && options.id, 0);
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -72,6 +78,9 @@ registerSuite({
 				},
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -92,6 +101,9 @@ registerSuite({
 			},
 			patch(value: any, options?: { id?: string }): Promise<Object> {
 				throw Error('Should not have been called!');
+			},
+			get(id: string): Promise<Object> {
+				return Promise.resolve(id);
 			}
 		};
 
@@ -149,6 +161,9 @@ registerSuite({
 					observerRef.next(value);
 					assert.strictEqual(options && options.id, 'foo');
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -183,6 +198,9 @@ registerSuite({
 				},
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					throw new Error('Should not have been called');
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -228,6 +246,9 @@ registerSuite({
 				},
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					throw new Error('Should not have been called');
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -270,6 +291,9 @@ registerSuite({
 				},
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -286,6 +310,9 @@ registerSuite({
 				},
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -295,6 +322,9 @@ registerSuite({
 				},
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -329,6 +359,9 @@ registerSuite({
 				patch(value: any, options?: { id?: string }): Promise<Object> {
 					observerRef.next(value);
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
@@ -390,6 +423,9 @@ registerSuite({
 					patchCount++;
 					observerRef.next(value);
 					return Promise.resolve(value);
+				},
+				get(id: string): Promise<Object> {
+					return Promise.resolve(id);
 				}
 			};
 
