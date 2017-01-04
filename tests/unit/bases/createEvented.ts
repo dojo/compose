@@ -175,6 +175,77 @@ registerSuite({
 			}, TypeError);
 		}
 	},
+	'wildcards in event type name': {
+		'all event types'() {
+			const eventStack: string[] = [];
+			const evented = createEvented();
+			evented.on('*', (event) => {
+				eventStack.push(event.type);
+			});
+
+			evented.emit({ type: 'foo' });
+			evented.emit({ type: 'bar' });
+			evented.emit({ type: 'foo:bar' });
+
+			assert.deepEqual(eventStack, [ 'foo', 'bar', 'foo:bar' ]);
+		},
+		'event types starting with a pattern'() {
+			const eventStack: string[] = [];
+			const evented = createEvented();
+			evented.on('foo:*', (event) => {
+				eventStack.push(event.type);
+			});
+
+			evented.emit({ type: 'foo' });
+			evented.emit({ type: 'foo:' });
+			evented.emit({ type: 'foo:bar' });
+
+			assert.deepEqual(eventStack, [ 'foo:', 'foo:bar' ]);
+		},
+		'event types ending with a pattern'() {
+			const eventStack: string[] = [];
+			const evented = createEvented();
+			evented.on('*:bar', (event) => {
+				eventStack.push(event.type);
+			});
+
+			evented.emit({ type: 'bar' });
+			evented.emit({ type: ':bar' });
+			evented.emit({ type: 'foo:bar' });
+
+			assert.deepEqual(eventStack, [ ':bar', 'foo:bar' ]);
+		},
+		'event types contains a pattern'() {
+			const eventStack: string[] = [];
+			const evented = createEvented();
+			evented.on('*foo*', (event) => {
+				eventStack.push(event.type);
+			});
+
+			evented.emit({ type: 'foo' });
+			evented.emit({ type: 'foobar' });
+			evented.emit({ type: 'barfoo' });
+			evented.emit({ type: 'barfoobiz' });
+
+			assert.deepEqual(eventStack, [ 'foo', 'foobar', 'barfoo', 'barfoobiz' ]);
+		},
+		'multiple matches'() {
+			const eventStack: string[] = [];
+			const evented = createEvented();
+			evented.on('foo', (event) => {
+				eventStack.push(`foo->${event.type}`);
+			});
+			evented.on('*foo', (event) => {
+				eventStack.push(`*foo->${event.type}`);
+			});
+
+			evented.emit({ type: 'foo' });
+			evented.emit({ type: 'foobar' });
+			evented.emit({ type: 'barfoo' });
+
+			assert.deepEqual(eventStack, [ 'foo->foo', '*foo->foo', '*foo->barfoo' ]);
+		}
+	},
 	'actions': {
 		'listener'() {
 			const eventStack: string[] = [];

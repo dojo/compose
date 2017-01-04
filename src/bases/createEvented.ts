@@ -61,6 +61,26 @@ function handlesArraytoHandle(handles: Handle[]): Handle {
 		}
 	};
 }
+/**
+ * Internal function to check if a target string matches a glob string that contains wildcards.
+ * Note: Due to limited use cases in event type name, currently only `*` that matches 0 or more characters is supported.
+ *
+ * @param globString The glob string that contains wildcards pattern
+ * @param targetString The string under test
+ * @return boolean match result
+ */
+
+function isGlobMatch(globString: string, targetString: string): boolean {
+	if (!globString || !targetString) {
+		return false;
+	}
+	const regex = new RegExp(`^${ globString.replace(/\*/g, '.*') }$`);
+
+	if (regex.test(targetString)) {
+		return true;
+	}
+	return false;
+}
 
 /**
  * Creates a new instance of an `Evented`
@@ -70,10 +90,11 @@ const createEvented: EventedFactory = createDestroyable
 		className: 'Evented',
 		mixin: {
 			emit<E extends EventObject>(this: Evented, event: E): void {
-				const method = listenersMap.get(this).get(event.type);
-				if (method) {
-					method.call(this, event);
-				}
+				listenersMap.get(this).forEach((method, type) => {
+					if (isGlobMatch(type, event.type)) {
+						method.call(this, event);
+					}
+				});
 			},
 
 			on(this: Evented, ...args: any[]): Handle {
