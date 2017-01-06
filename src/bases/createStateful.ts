@@ -19,6 +19,11 @@ export interface StatefulFactory extends ComposeFactory<Stateful<State>, Statefu
 const instanceStateMap = new WeakMap<Stateful<State>, State>();
 
 /**
+ * State change event type
+ */
+const stateChangedEventtype = 'state:changed';
+
+/**
  * Create an instance of a stateful object
  */
 const createStateful: StatefulFactory = createEvented
@@ -31,9 +36,8 @@ const createStateful: StatefulFactory = createEvented
 			setState<S extends State>(this: Stateful<S>, value: Partial<S>) {
 				const oldState = instanceStateMap.get(this);
 				const state = deepAssign({}, oldState, value);
-				const type = 'state:changed';
 				const eventObject = {
-					type,
+					type: stateChangedEventtype,
 					state,
 					target: this
 				};
