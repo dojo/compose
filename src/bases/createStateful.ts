@@ -2,6 +2,7 @@ import { deepAssign } from 'dojo-core/lang';
 import {
 	State,
 	Stateful,
+	StatefulMixin,
 	StatefulOptions
 } from 'dojo-interfaces/bases';
 import WeakMap from 'dojo-shim/WeakMap';
@@ -11,7 +12,7 @@ import { ComposeFactory } from '../compose';
 /**
  * Stateful Factory
  */
-export interface StatefulFactory extends ComposeFactory<Stateful<State>, StatefulOptions<State>> {}
+export interface StatefulFactory extends ComposeFactory<StatefulMixin<State>, StatefulOptions<State>> {}
 
 /**
  * Private map of internal instance state.
@@ -21,7 +22,7 @@ const instanceStateMap = new WeakMap<Stateful<State>, State>();
 /**
  * State change event type
  */
-const stateChangedEventtype = 'state:changed';
+const stateChangedEventType = 'state:changed';
 
 /**
  * Create an instance of a stateful object
@@ -37,7 +38,7 @@ const createStateful: StatefulFactory = createEvented
 				const oldState = instanceStateMap.get(this);
 				const state = deepAssign({}, oldState, value);
 				const eventObject = {
-					type: stateChangedEventtype,
+					type: stateChangedEventType,
 					state,
 					target: this
 				};
