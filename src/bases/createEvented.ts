@@ -31,6 +31,11 @@ export interface EventedFactory extends ComposeFactory<Evented, EventedOptions> 
 const listenersMap = new WeakMap<Evented, EventedCallbackMap>();
 
 /**
+ * A map that contains event type names that contain wildcards and their RegExp mapping
+ */
+const regexMap = new Map<string, RegExp>();
+
+/**
  * A guard which determines if the value is `Actionable`
  *
  * @param value The value to guard against
@@ -71,15 +76,20 @@ function handlesArraytoHandle(handles: Handle[]): Handle {
  */
 
 function isGlobMatch(globString: string, targetString: string): boolean {
-	if (!globString || !targetString) {
-		return false;
-	}
-	const regex = new RegExp(`^${ globString.replace(/\*/g, '.*') }$`);
+	if (globString.indexOf('*') !== -1) {
+		let regex: RegExp;
+		if (regexMap.has(globString)) {
+			regex = regexMap.get(globString)!;
+		}
+		else {
+			regex = new RegExp(`^${ globString.replace(/\*/g, '.*') }$`);
+			regexMap.set(globString, regex);
+		}
+		return regex.test(targetString);
 
-	if (regex.test(targetString)) {
-		return true;
+	} else {
+		return globString === targetString;
 	}
-	return false;
 }
 
 /**
