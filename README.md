@@ -1,8 +1,8 @@
-# dojo-compose
+# @dojo/compose
 
 [![Build Status](https://travis-ci.org/dojo/compose.svg?branch=master)](https://travis-ci.org/dojo/compose)
 [![codecov.io](http://codecov.io/github/dojo/compose/coverage.svg?branch=master)](http://codecov.io/github/dojo/compose?branch=master)
-[![npm version](https://badge.fury.io/js/dojo-compose.svg)](http://badge.fury.io/js/dojo-compose)
+[![npm version](https://badge.fury.io/js/@dojo/compose.svg)](http://badge.fury.io/js/@dojo/compose)
 
 A composition library, which works well in a TypeScript environment.
 
@@ -33,7 +33,7 @@ The `compose` module's default export is a function which creates classes.  This
 If you want to create a new class via a prototype and create an instance of it, you would want to do something like this:
 
 ```typescript
-import compose from 'dojo-compose/compose';
+import compose from '@dojo/compose/compose';
 
 const fooFactory = compose({
 	foo: function () {
@@ -49,7 +49,7 @@ const foo = fooFactory();
 If you want to create a new class via an ES6/TypeScript class and create an instance of it, you would want to do something like this:
 
 ```typescript
-import compose from 'dojo-compose/compose';
+import compose from '@dojo/compose/compose';
 
 class Foo {
 	foo() {
@@ -67,7 +67,7 @@ const foo = fooFactory();
 You can also subclass:
 
 ```typescript
-import compose from 'dojo-compose/compose';
+import compose from '@dojo/compose/compose';
 
 const fooFactory = compose({
 	foo: function () {
@@ -87,7 +87,7 @@ const foo = myFooFactory();
 During creation, `compose` takes a second optional argument, which is an initializer function.  The constructor pattern for all `compose` classes is to take an optional `options` argument.  Therefore the initialization function should take this optional argument:
 
 ```typescript
-import compose from 'dojo-compose/compose';
+import compose from '@dojo/compose/compose';
 
 interface FooOptions {
 	foo?: Function,
@@ -459,15 +459,15 @@ to the 'final' factory in a chain.
 The easiest way to use this package is to install it via `npm`:
 
 ```
-$ npm install dojo-compose
+$ npm install @dojo/compose
 ```
 
 In addition, you can clone this repository and use the Grunt build scripts to manage the package.
 
-Using under TypeScript or ES6 modules, you would generally want to just `import` the `dojo-compose/compose` module:
+Using under TypeScript or ES6 modules, you would generally want to just `import` the `@dojo/compose/compose` module:
 
 ```typescript
-import compose from 'dojo-compose/compose';
+import compose from '@dojo/compose/compose';
 
 const createFoo = compose({
 	foo: 'foo'
