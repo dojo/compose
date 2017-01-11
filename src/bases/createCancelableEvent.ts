@@ -1,4 +1,4 @@
-import { EventCancelableObject } from 'dojo-interfaces/core';
+import { EventCancelableObject } from '@dojo/interfaces/core';
 
 /**
  * A simple factory that creates an event object which can be cancelled

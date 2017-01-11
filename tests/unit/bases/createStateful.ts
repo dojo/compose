@@ -1,7 +1,7 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import createStateful from '../../../src/bases/createStateful';
-import { Stateful, State } from 'dojo-interfaces/bases';
+import { Stateful, State } from '@dojo/interfaces/bases';
 
 registerSuite({
 	name: 'mixins/createStateful',

@@ -1,7 +1,7 @@
-import { Destroyable } from 'dojo-interfaces/bases';
-import { Handle } from 'dojo-interfaces/core';
-import Promise from 'dojo-shim/Promise';
-import WeakMap from 'dojo-shim/WeakMap';
+import { Destroyable } from '@dojo/interfaces/bases';
+import { Handle } from '@dojo/interfaces/core';
+import Promise from '@dojo/shim/Promise';
+import WeakMap from '@dojo/shim/WeakMap';
 import compose, { ComposeFactory } from '../compose';
 
 export interface DestroyableFactory extends ComposeFactory<Destroyable, {}> { }
