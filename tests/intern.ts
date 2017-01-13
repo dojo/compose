@@ -55,9 +55,7 @@ export const loaderOptions = {
 	packages: [
 		{ name: 'src', location: '_build/src' },
 		{ name: 'tests', location: '_build/tests' },
-		{ name: '@dojo/core', location: 'node_modules/@dojo/core' },
-		{ name: '@dojo/has', location: 'node_modules/@dojo/has' },
-		{ name: '@dojo/shim', location: 'node_modules/@dojo/shim' },
+		{ name: '@dojo', location: 'node_modules/@dojo' },
 		{ name: 'rxjs', location: 'node_modules/@reactivex/rxjs/dist/amd' }
 	]
 };
