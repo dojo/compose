@@ -1,6 +1,6 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import { setWarn } from 'dojo-core/instrument';
+import { setWarn } from '@dojo/core/instrument';
 import { hasToStringTag, hasConfigurableName } from '../support/util';
 import compose, { GenericClass, ComposeMixinDescriptor, getInitFunctionNames } from '../../src/compose';
 

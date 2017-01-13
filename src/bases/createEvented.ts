@@ -1,9 +1,9 @@
-import { on } from 'dojo-core/aspect';
+import { on } from '@dojo/core/aspect';
 import {
 	EventObject,
 	EventTargettedObject,
 	Handle
-} from 'dojo-interfaces/core';
+} from '@dojo/interfaces/core';
 import {
 	Evented,
 	EventedOptions,
@@ -11,10 +11,10 @@ import {
 	EventedListenerOrArray,
 	EventedListenersMap,
 	EventedCallback
-} from 'dojo-interfaces/bases';
-import { Actionable } from 'dojo-interfaces/abilities';
-import Map from 'dojo-shim/Map';
-import WeakMap from 'dojo-shim/WeakMap';
+} from '@dojo/interfaces/bases';
+import { Actionable } from '@dojo/interfaces/abilities';
+import Map from '@dojo/shim/Map';
+import WeakMap from '@dojo/shim/WeakMap';
 import { ComposeFactory } from '../compose';
 import createDestroyable from './createDestroyable';
 

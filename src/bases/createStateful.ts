@@ -1,11 +1,11 @@
-import { deepAssign } from 'dojo-core/lang';
+import { deepAssign } from '@dojo/core/lang';
 import {
 	State,
 	Stateful,
 	StatefulMixin,
 	StatefulOptions
-} from 'dojo-interfaces/bases';
-import WeakMap from 'dojo-shim/WeakMap';
+} from '@dojo/interfaces/bases';
+import WeakMap from '@dojo/shim/WeakMap';
 import createEvented from './createEvented';
 import { ComposeFactory } from '../compose';
 

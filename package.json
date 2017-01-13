@@ -1,5 +1,5 @@
 {
-  "name": "dojo-compose",
+  "name": "@dojo/compose",
   "version": "2.0.0-pre",
   "description": "A composition library, which works well in a TypeScript environment.",
   "homepage": "http://dojotoolkit.org",
@@ -18,16 +18,16 @@
     "test": "grunt test"
   },
   "peerDependencies": {
-    "dojo-has": ">=2.0.0-alpha.6",
-    "dojo-shim": ">=2.0.0-beta.3",
-    "dojo-core": ">=2.0.0-alpha.16"
+    "@dojo/has": "2.0.0-alpha.7",
+    "@dojo/shim": "2.0.0-beta.8",
+    "@dojo/core": "2.0.0-alpha.20"
   },
   "devDependencies": {
     "@types/chai": "~3.4.0",
     "@types/glob": "~5.0.0",
     "@types/grunt": "~0.4.0",
-    "dojo-interfaces": ">=2.0.0-alpha.7",
-    "dojo-loader": ">=2.0.0-beta.7",
+    "@dojo/interfaces": "2.0.0-alpha.11",
+    "@dojo/loader": "2.0.0-beta.9",
     "grunt": "^1.0.1",
     "grunt-dojo2": ">=2.0.0-beta.21",
     "intern": "~3.4.1",

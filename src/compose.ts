@@ -1,8 +1,8 @@
-import { deprecated } from 'dojo-core/instrument';
-import { assign } from 'dojo-core/lang';
-import { from as arrayFrom, includes } from 'dojo-shim/array';
-import WeakMap from 'dojo-shim/WeakMap';
-import Symbol from 'dojo-shim/Symbol';
+import { deprecated } from '@dojo/core/instrument';
+import { assign } from '@dojo/core/lang';
+import { from as arrayFrom, includes } from '@dojo/shim/array';
+import WeakMap from '@dojo/shim/WeakMap';
+import Symbol from '@dojo/shim/Symbol';
 import {
 	before as aspectBefore,
 	after as aspectAfter,
