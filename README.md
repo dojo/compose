@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/dojo/compose.svg?branch=master)](https://travis-ci.org/dojo/compose)
 [![codecov.io](http://codecov.io/github/dojo/compose/coverage.svg?branch=master)](http://codecov.io/github/dojo/compose?branch=master)
-[![npm version](https://badge.fury.io/js/@dojo/compose.svg)](http://badge.fury.io/js/@dojo/compose)
+[![npm version](https://badge.fury.io/js/%40dojo%2Fcompose.svg)](https://badge.fury.io/js/%40dojo%2Fcompose)
 
 A composition library, which works well in a TypeScript environment.
 
