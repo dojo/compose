@@ -1656,7 +1656,7 @@ registerSuite({
 			type Bar = { bar: string };
 			type BarOptions = { bar: string };
 			const bar: ComposeCreatedMixin<{foo: string}, {bar: string} & {bar: string}, {bar: string} & {}, {}>  =
-				compose.createMixin<{ foo: string }, Bar, BarOptions, {}>()
+				compose.createMixin<{ foo: string }, BarOptions, {}>()
 					.extend({
 						bar: 'bar'
 					}
@@ -1697,12 +1697,6 @@ registerSuite({
 		},
 
 		'add init function'() {
-			interface Bar {
-				bar: string;
-			}
-			interface Foo {
-				foo: string;
-			}
 			const createFoo = compose({
 				foo: 'original value'
 			}, function(instance, options?: { foo: string }) {
@@ -1713,7 +1707,7 @@ registerSuite({
 				.extend({
 					bar: 'bar'
 				})
-				.init((instance: Foo & Bar, options?: Foo & Bar) => {
+				.init((instance, options?: { foo: string, bar: string }) => {
 					if (options) {
 						instance.bar = options.bar;
 						instance.foo = options.foo;

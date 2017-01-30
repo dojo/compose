@@ -1285,13 +1285,13 @@ class Mixin {
 	// }
 }
 
-function createMixin<Target, T, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, any>): ComposeCreatedMixin<Target, T & Target, O, S> {
+function createMixin<Target, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, any>): ComposeCreatedMixin<Target, Target, O, S> {
 	let mixin: any = new Mixin();
 	return mixin;
 }
 
 export interface Compose {
-	createMixin<Target, T, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, O>): ComposeCreatedMixin<Target, T & Target, O, S>;
+	createMixin<Target, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, O>): ComposeCreatedMixin<Target, Target, O, S>;
 }
 function execute<T, O, U, P, S>(_base: ComposeFactory<T, O>, toMixin: ComposeCreatedMixin<T, U, P, S>): ComposeFactory<T & U, O & P> & S {
 	let base: { [key: string]: Function } = <any> _base,
