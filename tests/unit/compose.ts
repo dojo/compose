@@ -1703,7 +1703,13 @@ registerSuite({
 			interface Foo {
 				foo: string;
 			}
-			const bar = compose.createMixin()
+			const createFoo = compose({
+				foo: 'original value'
+			}, function(instance, options?: { foo: string }) {
+				instance.foo = 'initialized value';
+			});
+
+			const bar = compose.createMixin(createFoo)
 				.extend({
 					bar: 'bar'
 				})
@@ -1714,11 +1720,7 @@ registerSuite({
 					}
 				});
 
-			const createFooBar = compose({
-				foo: 'original value'
-			}, function(instance) {
-				instance.foo = 'initialized value';
-			}).mixin(bar);
+			const createFooBar = createFoo.mixin(bar);
 
 			const fooBar = createFooBar({
 				foo: 'final value',

@@ -1211,8 +1211,8 @@ export interface ComposeCreatedMixin<Target, T, O, S> {
 
 	aspect(advice: AspectAdvice): this;
 
-	init(name: string, init: ComposeInitializationFunction<Target & T, O>): this;
-	init(init: ComposeInitializationFunction<Target & T, O>): this;
+	init<P>(name: string, init: ComposeInitializationFunction<Target & T, P>): ComposeCreatedMixin<Target, T, O & P, S>;
+	init<P>(init: ComposeInitializationFunction<Target & T, P>): ComposeCreatedMixin<Target, T, O & P, S>;
 
 	// target<U>(target: ComposeMixinItem<U, any>): ComposeCreatedMixin<Target & U, T, O>;
 }
@@ -1291,7 +1291,7 @@ function createMixin<Target, T, O, S>(target?: GenericClass<Target> | Target | C
 }
 
 export interface Compose {
-	createMixin<Target, T, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, any>): ComposeCreatedMixin<Target, T & Target, O, S>;
+	createMixin<Target, T, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, O>): ComposeCreatedMixin<Target, T & Target, O, S>;
 }
 function execute<T, O, U, P, S>(_base: ComposeFactory<T, O>, toMixin: ComposeCreatedMixin<T, U, P, S>): ComposeFactory<T & U, O & P> & S {
 	let base: { [key: string]: Function } = <any> _base,
