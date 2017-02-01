@@ -1185,7 +1185,6 @@ function aspect<T, O>(base: ComposeFactory<T, O>, advice: AspectAdvice): Compose
  * Provides essentially the same methods as a compose factory, but is not a callable function
  */
 export interface ComposeCreatedMixin<Target, T, O, S> {
-	// created: Target;
 	extend<U>(extension: U | GenericClass<U>): ComposeCreatedMixin<Target, T & U, O, S>;
 	extend<U>(className: string, extension: U | GenericClass<U>): ComposeCreatedMixin<Target, T & U, O, S>;
 	extend<U, P>(extension: ComposeFactory<U, P>): ComposeCreatedMixin<Target, T & U, O & P, S>;
@@ -1213,8 +1212,6 @@ export interface ComposeCreatedMixin<Target, T, O, S> {
 
 	init<P>(name: string, init: ComposeInitializationFunction<Target & T, P>): ComposeCreatedMixin<Target, T, O & P, S>;
 	init<P>(init: ComposeInitializationFunction<Target & T, P>): ComposeCreatedMixin<Target, T, O & P, S>;
-
-	// target<U>(target: ComposeMixinItem<U, any>): ComposeCreatedMixin<Target & U, T, O>;
 }
 
 class Mixin {

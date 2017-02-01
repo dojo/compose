@@ -644,6 +644,22 @@ registerSuite({
 			assert.strictEqual(fooBar.bar(), 'bar', 'Bar property not present');
 		},
 
+		'mixing in a mixin descriptor with init function'() {
+			const createFooBar = compose({
+					foo: 'foo'
+				})
+				.mixin({
+					mixin: { bar: 'bar' },
+					initialize(instance) {
+						instance.foo = instance.bar = 'foobar';
+					}
+				});
+
+			const fooBar = createFooBar();
+			assert.strictEqual(fooBar.foo, 'foobar', 'Didn\'t properly initialize foo property');
+			assert.strictEqual(fooBar.bar, 'foobar', 'Didn\'t properly initialize foo property');
+		},
+
 		'arrays': {
 			'present in base': function () {
 				const createFoo = compose({
@@ -1524,6 +1540,24 @@ registerSuite({
 					instance.foo = 'bar';
 				});
 			assert.deepEqual(getInitFunctionNames(createFooBarNoClassName), [ 'initBar', 'initFoo', 'initFooToo' ]);
+
+			const createFooBarMixinClassName = createBar
+				.mixin({
+					mixin: createFoo,
+					initialize(instance) {
+						instance.foo = 'bar';
+					}
+				});
+			assert.deepEqual(getInitFunctionNames(createFooBarMixinClassName), [ 'initBar', 'initFoo', 'mixinFoo' ]);
+
+			const createFooBarBaseClassName = createBar
+				.mixin({
+					mixin: { foo: 'foo' },
+					initialize(instance) {
+						instance.foo = 'bar';
+					}
+				});
+			assert.deepEqual(getInitFunctionNames(createFooBarBaseClassName), [ 'initBar', 'mixinBar' ]);
 		},
 
 		'getInitFunctionNames does no throw on environments with non-configurable names'(this: any) {
@@ -1643,8 +1677,9 @@ registerSuite({
 				});
 				// .target({foo: ''});
 			const createFooBar = compose({
-				foo: 'foo'
-			}).mixin(bar);
+					foo: 'foo'
+				})
+				.mixin(bar);
 
 			const fooBar = createFooBar();
 
@@ -1656,24 +1691,22 @@ registerSuite({
 			type Bar = { bar: string };
 			type BarOptions = { bar: string };
 			const bar: ComposeCreatedMixin<{foo: string}, {bar: string} & {bar: string}, {bar: string} & {}, {}>  =
-				compose.createMixin<{ foo: string }, BarOptions, {}>()
-					.extend({
-						bar: 'bar'
-					}
-			);
+				compose.createMixin<{ foo: string }, BarOptions, {}>().extend({ bar: 'bar' });
 
 			const createFooBar = compose({
-				foo: 'foo'
-			}).mixin(bar);
+					foo: 'foo'
+				})
+				.mixin(bar);
 			// Shouldn't compile, wrong target type but does. If
 			// target is added, then neither of these compile.
 			// const createBazBar = compose<{baz: string}, any>({
 			// 	baz: 'baz'
 			// }).mixin(bar);
 			const createBazBar = compose<{baz: string, foo: string}, any>({
-				baz: 'baz',
-				foo: 'foo'
-			}).mixin(bar);
+					baz: 'baz',
+					foo: 'foo'
+				})
+				.mixin(bar);
 			assert.strictEqual(createFooBar().bar, createBazBar().bar);
 			// assert.notOk(createBazBar().foo);
 		},
@@ -1739,10 +1772,10 @@ registerSuite({
 				foo: 'foo',
 				baz: ''
 			}, function(instance: any) {
-				// This runs first, and shouldn't expect anything from subsequent mixins
-				instance.bar = 3;
-				assert.strictEqual(instance.baz, '', 'instance contains baz');
-			})
+					// This runs first, and shouldn't expect anything from subsequent mixins
+					instance.bar = 3;
+					assert.strictEqual(instance.baz, '', 'instance contains baz');
+				})
 				.mixin(createBar)
 				.init(function(instance: any) {
 					// This runs third, as it's the new, optional initialize provided with the mixin
@@ -1809,32 +1842,6 @@ registerSuite({
 				.init(function(instance: { bar: string; baz: number }, options: { bar: string; baz: number }) {
 
 				});
-			/* Doesn't compile with new flow control typing, which maybe is a good thing? */
-			// createBar.mixin({
-			// 	initialize: function(instance: { baz: number }, options: { baz: number }) {
-
-			// 	},
-			// 	mixin: createBaz
-			// });
-			// createBar.mixin({
-			// 	initialize: function(instance: { bar: string }, options: { bar: string }) {
-
-			// 	},
-			// 	mixin: createBaz
-			// });
-			// Shouldn\'t compile
-			// const createBarBazIllegalInstanceType = createBar.mixin({
-			// initialize: function(instance: { baz: number; foo: number }) {
-			//
-			// },
-			// mixin: createBaz
-			// });
-			// const createBarBazIllegalOptionsType = createBar.mixin({
-			// initialize: function(instance: { baz: number; }, options: { baz: number; foo: string; }) {
-			//
-			// },
-			// mixin: createBaz
-			// });
 		},
 
 		'inferring init types'() {
@@ -1974,9 +1981,10 @@ registerSuite({
 				.from(Foo, 'foo');
 
 			const createFooBar = compose({
-				bar: 'qat',
-				foo: function (): string { return 'foo'; }
-			}).mixin(fromFooMixin);
+					bar: 'qat',
+					foo: function (): string { return 'foo'; }
+				})
+				.mixin(fromFooMixin);
 
 			const foobar = createFooBar();
 			assert.strictEqual(foobar.foo(), 'qat', 'Return from ".foo()" should equal "qat"');
