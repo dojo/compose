@@ -1276,10 +1276,6 @@ class Mixin {
 		this._calls.push([ 'init', args ]);
 		return this;
 	}
-
-	// target(...args: any[]) {
-	// 	return this;
-	// }
 }
 
 function createMixin<Target, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, any>): ComposeCreatedMixin<Target, Target, O, S> {
