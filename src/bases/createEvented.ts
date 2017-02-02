@@ -31,6 +31,11 @@ export interface EventedFactory extends ComposeFactory<Evented, EventedOptions> 
 const listenersMap = new WeakMap<Evented, EventedCallbackMap>();
 
 /**
+ * A map that contains event type names that contain wildcards and their RegExp mapping
+ */
+const regexMap = new Map<string, RegExp>();
+
+/**
  * A guard which determines if the value is `Actionable`
  *
  * @param value The value to guard against
@@ -61,6 +66,31 @@ function handlesArraytoHandle(handles: Handle[]): Handle {
 		}
 	};
 }
+/**
+ * Internal function to check if a target string matches a glob string that contains wildcards.
+ * Note: Due to limited use cases in event type name, currently only `*` that matches 0 or more characters is supported.
+ *
+ * @param globString The glob string that contains wildcards pattern
+ * @param targetString The string under test
+ * @return boolean match result
+ */
+
+function isGlobMatch(globString: string, targetString: string): boolean {
+	if (globString.indexOf('*') !== -1) {
+		let regex: RegExp;
+		if (regexMap.has(globString)) {
+			regex = regexMap.get(globString)!;
+		}
+		else {
+			regex = new RegExp(`^${ globString.replace(/\*/g, '.*') }$`);
+			regexMap.set(globString, regex);
+		}
+		return regex.test(targetString);
+
+	} else {
+		return globString === targetString;
+	}
+}
 
 /**
  * Creates a new instance of an `Evented`
@@ -70,10 +100,11 @@ const createEvented: EventedFactory = createDestroyable
 		className: 'Evented',
 		mixin: {
 			emit<E extends EventObject>(this: Evented, event: E): void {
-				const method = listenersMap.get(this).get(event.type);
-				if (method) {
-					method.call(this, event);
-				}
+				listenersMap.get(this).forEach((method, type) => {
+					if (isGlobMatch(type, event.type)) {
+						method.call(this, event);
+					}
+				});
 			},
 
 			on(this: Evented, ...args: any[]): Handle {
