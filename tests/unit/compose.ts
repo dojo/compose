@@ -525,6 +525,26 @@ registerSuite({
 				assert.deepEqual(createFoo.prototype.arr, [ 'foo', 'bar' ]);
 				assert.deepEqual(createBar.prototype.arr, [ 'foo', 'bar', 'baz' ]);
 			}
+		},
+		'readme example'() {
+			class Foo<T> {
+				foo: T;
+			}
+
+			class Bar<T> {
+				bar(opt: T): void {
+				}
+			}
+
+			interface FooBarClass {
+				<T, U>(): Foo<T>&Bar<U>;
+			}
+
+			let fooBarFactory: FooBarClass = compose(Foo).extend(Bar);
+
+			let fooBar = fooBarFactory<number, string>();
+
+			fooBar.bar('three');
 		}
 	},
 	mixin: {
@@ -1513,7 +1533,30 @@ registerSuite({
 			}
 		}
 	},
+	'init()': {
+		'should infer init options type'() {
+			const createFoo = compose({
+				foo: 'foo'
+			}, (instance, options?: { foo: string }) => {
+				instance.foo = (options && options.foo) || instance.foo;
+			});
 
+			const createFooNewInit = createFoo
+				.init((instance, options?) => {
+					instance.foo = ((options && options.foo) || instance.foo) + 'bar';
+				});
+			const createFooExtendInit = createFoo
+				.init((instance, options?: { foo: string, bar: string }) => {
+						instance.foo = (options && options.bar) || 'bar';
+				});
+
+			const newFooBar = createFooNewInit({ foo: 'newfoo' }).foo;
+			const extendFooBar = createFooExtendInit({ foo: 'foo', bar: 'extendfoo'}).foo;
+
+			assert.strictEqual(newFooBar, 'newfoobar', 'Didn\'t run initializer properly');
+			assert.strictEqual(extendFooBar, 'extendfoo', 'Didn\'t run initializer properly');
+		}
+	},
 	debugging: {
 		'getInitFunctionNames'(this: any) {
 			if (!hasConfigurableName()) {

@@ -178,150 +178,67 @@ const fooFactory = compose.create({
     foo: 'bar'
 }).extend(<Bar> {});
 ```
+### Adding Initialization Functions
 
-### Mixing in Traits/State
-
-Oftentimes the need arises to take an existing class and add not just properties, but also behavior, or traits. The `compose` module's default export has a `mixin` property that provides this functionality. It can be used to mix in another compose class:
-
-```typescript
-import * as compose from 'dojo/compose';
-
-const fooFactory = compose.create({
-    foo: 'bar'
-});
-
-const barFactory = compose.create({
-    bar: function () {
-        console.log('bar');
-    }
-});
-
-const fooBarFactory = compose.mixin(fooFactory, barFactory);
-
-const fooBar = fooBarFactory();
-
-fooBar.bar(); // logs "bar"
-```
-NOTE: Using mixin on a ComposeFactory will result in the init function for the mixed in factory to be called first, and any init functions for the base will follow.
-
-It can also be used to mix in an ES6 class.
-Note that when mixing in an ES6 class only methods will be mixed into the resulting class, not state.
-```typescript
-import * as compose from 'dojo/compose';
-
-const fooFactory = compose.create({
-    foo: 'bar'
-});
-
-class Bar {
-    bar() { console.log('bar'); }
-}
-
-const fooBarFactory = compose.mixin(fooFactory, { mixin: Bar });
-
-const fooBar = fooBarFactory();
-
-fooBar.bar(); // logs "bar"
-```
-
-It can also mixin in a plain object, but extend would be more appropriate in this case:
-```typescript
-import * as compose from 'dojo/compose';
-
-const fooFactory = compose.create({
-    foo: 'bar'
-});
-
-const bar = {
-    bar() { console.log('bar'); }
-}
-
-const fooBarFactory = compose.mixin(fooFactory, { mixin: bar });
-
-const fooBar = fooBarFactory();
-
-fooBar.bar(); // logs "bar"
-```
-The real benefit of using `mixin` is in those cases where simply modifying the type is not enough, and there is additional behavior that needs to be included via an initialization function or aspects.
-```typescript
-import * as compose from 'dojo/compose';
-
-const fooFactory = compose.create({
-	foo: 'bar',
-	doSomething: function() {
-		console.log('something');
-	}
-});
-
-const bar = {
-	bar: 'uninitialized'
-};
-
-const initBar = function(instance: { bar: string }) {
-	instance.bar = 'initialized';
-};
-
-const bazFactory = compose.create({
-	baz: 'baz'
-}, function(instance: { baz: string }) {
-	instance.baz = 'also initialized';
-});
-
-const bazAspect: AspectAdvice = {
-	after: {
-		doSomething: function() {
-			console.log('something else');
-		}
-	}
-};
-
-const fooBarBazFactory = fooFactory
-	.mixin({
-		mixin: bar,
-		initialize: initBar
-	})
-	.mixin({
-		mixin: bazFactory,
-		aspectAdvice: bazAspect
-	});
-
-const fooBarBaz = fooBarBazFactory();
-console.log(fooBarBaz.bar); // logs 'initialized'
-console.log(fooBarBaz.baz); // logs 'also initialized'
-fooBarBaz.doSomething(); // logs 'something' and then 'something else'
-```
-
-Additionally, anything with a `factoryDescriptor` function that returns a `ComposeMixinDescriptor` object can be passed directy to mixin.
+As factories are extended or otherwise modified, it is often desirable to
+provide additional initialization logic for the new factory. The `init` method
+can be used to provide a new initializer to an existing factory. The type
+of the instance and options will default to the type of the compose factory
+prototype and the type of the options argument for the last provided
+initializer.
 
 ```typescript
 const createFoo = compose({
-    foo: ''
-})
-const mixin = {
-    factoryDescriptor: function() {
-        return {
-            mixin: {
-                bar: 1
-            },
-            initialize: function(fooBar: { bar: number; foo: string; }) {
-                fooBar.bar = 3;
-                fooBar.foo = 'bar';
-            }
-        };
-    }
-};
+	foo: ''
+}, (instance, options: { foo: string } = { foo: 'foo' }) => {
+	// Instance type is inferred based on the type passed to 
+	// compose
+	instance.foo = options.foo;
+});
 
-const createFooBar = createFoo.mixin(mixin);
-
-const fooBar = createFooBar();
-console.log(fooBar.foo) // logs 'foo'
-console.log(fooBar.bar) // logs 3
+const createFooWithNewInitializer = createFoo
+	.init((instance, options?) => {
+		// If we don't type the options it default to { foo: string }	
+		instance.foo = (options && options.foo) || instance.foo;
+	});
+	
+const createFooBar = createFoo
+	.extend({ bar: 'bar' })
+	.init((instance, options?) => {
+		// Instance type is updated as the factory prototype is
+		// modified, it now has foo and bar properties
+		instance.foo = instance.bar = (options && options.foo) || instance.foo;
+	});
 ```
 
-The previous example, where a `ComposeFactory` was passed directly to `mixin` is possible because as a convenience all instances of `ComposeFactory`
-are initialized with a version of the `factoryDescriptor` function that simply returns the factory itself as the `mixin` property. If a more complicated
-factory descriptor is required, the `factoryDescriptor` method can be overridden using the `static` method, documented below.
 
+Sometimes, as in the `createFooBar` example above, additional properties may need to be added to the options parameter of the initialize function. A new type can be specified as a generic or by explicitly typing options in the function declaration.
+
+```typescript
+const createFoo = compose({
+	foo: ''
+}, (instance, options: { foo: string } = { foo: 'foo' }) => {
+	// Instance type is inferred based on the type passed to 
+	// compose
+	instance.foo = options.foo;
+});
+
+const createFooBar = createFoo
+	.extend({ bar: 'bar' })
+	// Extend options type with generic
+	.init<{ foo: string, bar: string }>((instance, options?) => {
+		instance.foo = (options && options.foo) || 'foo';
+		instance.bar = (options && options.bar) || 'bar';
+	});
+	
+const createFooBarToo = createFoo
+	.extend({ bar: 'bar' })
+	// Extend options type in function signature
+	.init(instance, options?: { foo: string, bar: string }) => {
+		instance.foo = (options && options.foo) || 'foo';
+		instance.bar = (options && options.bar) || 'bar';
+	});
+```
 ### Merging of Arrays
 
 When mixing in or extending classes which contain array literals as a value of a property, `compose` will merge these values
@@ -371,7 +288,7 @@ interface FooBarClass {
 	<T, U>(): Foo<T>&Bar<U>;
 }
 
-let fooBarFactory: FooBarClass = compose(Foo).mixin({ mixin: <any>  Bar });
+let fooBarFactory: FooBarClass = compose(Foo).extend(Bar);
 
 let fooBar = fooBarFactory<number, any>();
 ```
@@ -454,6 +371,74 @@ console.log(createFoo.doFoo()); //logs 'foo'
 Static properties will also be lost when calling mixin or extend. Because of this, static properties should be applied
 to the 'final' factory in a chain.
 
+### Mixins
+
+One of the goals of compose is to enable the reuse of code, and to allow
+clean separation of concerns. Mixins provide a way to encapsulate
+functionality that may be reused across many different factories.
+
+This example shows how to create and apply a mixin:
+```typescript
+const createFoo = compose({ foo: 'foo'});
+
+const fooMixin = compose.createMixin(createFoo);
+
+createFoo.mixin(fooMixin);
+```
+
+In this case the mixin won't actually do anything, because we applied it
+immediately after creating it. Another thing to note in this exapmle, is
+that passing `createFoo` to `createMixin` is optional, but is generally
+a good idea. This lets the mixin know that it should be mixed into something
+that provides at least the same functionality as `createFoo`, so the mixin
+can automatically include the prototype and options types from `createFoo`.
+
+In order to create a mixin that's actually useful, we can use any of the
+`ComposeFactory` methods discussed above. The mixin will record these calls,
+and when mixed into a factory will apply them as if they were called directly
+on the factory.
+
+
+```typescript
+const createFoo = compose({
+	foo: 'foo'
+}, (instance, options?: { foo: string }) => {
+	instance.foo = (options && options.foo) || 'foo';
+});
+
+const createFooBar = createFoo.extend({ bar: 'bar'});
+
+const fooMixin = compose.createMixin(createFoo)
+	// Because we passed createFoo, the types of instance and options
+	// are both { foo: string }
+	.init((instance, options?) => {
+		instance.foo = (options && options.foo) + 'bar';
+	});
+	.extend({ baz: 'baz'});
+	
+const createFooBaz = createFoo.mixin(fooMixin);
+/* Equivalent to calling
+	createFoo
+        .init((instance, options?) => {
+            instance.foo = (options && options.foo) + 'bar';
+        });
+        .extend({ baz: 'baz'});
+*/
+
+const createFooBarBaz = createFooBar.mixin(fooMixin);
+/* Equivalent to calling
+	createFooBar
+        .init((instance, options?) => {
+            instance.foo = (options && options.foo) + 'bar';
+        });
+        .extend({ baz: 'baz'});
+*/
+```
+
+Compose also provides the ability to mixin a factory directly, or a
+`FactoryDescriptor` object, but these are allowed only for the backwards
+compatibility and the `createMixin` API is the preferred method for creating
+and applying mixins.
 ## How do I use this package?
 
 The easiest way to use this package is to install it via `npm`:
@@ -477,7 +462,6 @@ const createFoo = compose({
 
 const foo = createFoo();
 ```
-
 ## How do I contribute?
 
 We appreciate your interest!  Please see the [Contributing Guidelines](https://github.com/dojo/meta/blob/master/CONTRIBUTING.md) and [Style Guide](https://github.com/dojo/meta/blob/master/STYLE.md).
