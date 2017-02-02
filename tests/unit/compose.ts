@@ -1758,6 +1758,32 @@ registerSuite({
 			assert.strictEqual(fooBar.bar, 'new value');
 		},
 
+		'infer options type'() {
+			const createFoo = compose<{ foo: string }, { foo: string }>({
+				foo: 'original value'
+			}, function(instance, options?: { foo: string }) {
+				instance.foo = 'initialized value';
+			});
+
+			const bar = compose.createMixin(createFoo)
+				.extend({
+					bar: 'bar'
+				})
+				.init((instance, options?) => {
+					if (options) {
+						instance.foo = options.foo;
+					}
+				});
+
+			const createFooBar = createFoo.mixin(bar);
+
+			const fooBar = createFooBar({
+				foo: 'final value'
+			});
+
+			assert.strictEqual(fooBar.foo, 'final value');
+		},
+
 		'compose factory and initialize'() {
 			const createBar = compose.createMixin()
 				.extend({
