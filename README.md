@@ -198,7 +198,7 @@ const createFoo = compose({
 
 const createFooWithNewInitializer = createFoo
 	.init((instance, options?) => {
-		// If we don't type the options it default to { foo: string }	
+		// If we don't type the options it defaults to { foo: string }	
 		instance.foo = (options && options.foo) || instance.foo;
 	});
 	
@@ -218,8 +218,6 @@ Sometimes, as in the `createFooBar` example above, additional properties may nee
 const createFoo = compose({
 	foo: ''
 }, (instance, options: { foo: string } = { foo: 'foo' }) => {
-	// Instance type is inferred based on the type passed to 
-	// compose
 	instance.foo = options.foo;
 });
 
@@ -437,7 +435,7 @@ const createFooBarBaz = createFooBar.mixin(fooMixin);
 
 Compose also provides the ability to mixin a factory directly, or a
 `FactoryDescriptor` object, but these are allowed only for the backwards
-compatibility and the `createMixin` API is the preferred method for creating
+compatibility. The `createMixin` API is the preferred method for creating
 and applying mixins.
 ## How do I use this package?
 
