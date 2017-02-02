@@ -631,8 +631,8 @@ export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T
 	 * @param name An optional name for the function for debugging purposes
 	 * @param init The initialization function
 	 */
-	init(name: string, init: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	init(init: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	init<P extends O>(name: string, init: ComposeInitializationFunction<T, P>): ComposeFactory<T, P>;
+	init<P extends O>(init: ComposeInitializationFunction<T, P>): ComposeFactory<T, P>;
 }
 
 export interface Compose {
@@ -643,8 +643,8 @@ export interface Compose {
 	 * @param base The base compose factory
 	 * @param init The initialization function
 	 */
-	init<T, O>(name: string, base: ComposeFactory<T, O>, init: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
-	init<T, O>(base: ComposeFactory<T, O>, init: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	init<T, O, P extends O>(name: string, base: ComposeFactory<T, O>, init: ComposeInitializationFunction<T, P>): ComposeFactory<T, P>;
+	init<T, O, P extends O>(base: ComposeFactory<T, O>, init: ComposeInitializationFunction<T, P>): ComposeFactory<T, P>;
 }
 
 /**
