@@ -1300,63 +1300,52 @@ export interface ComposeCreatedMixin<Target, T, O, S> {
 class Mixin {
 	_calls: ([string, any[]])[];
 
-	constructor() {
-		this._calls = [];
+	constructor(calls?: ([string, any[]])[]) {
+		this._calls = calls || [];
 	}
 
 	static(...args: any[]) {
-		this._calls.push([ 'static', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'static', args ] ]);
 	}
 
 	extend(...args: any[]) {
-		this._calls.push([ 'extend', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'extend', args ] ]);
 	}
 
 	mixin(...args: any[]) {
-		this._calls.push([ 'mixin', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'mixin', args ] ]);
 	}
 
 	overlay(...args: any[]) {
-		this._calls.push([ 'overlay', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'overlay', args ] ]);
 	}
 
 	override(...args: any[]) {
-		this._calls.push([ 'override', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'override', args ] ]);
 	}
 
 	from(...args: any[]) {
-		this._calls.push([ 'from', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'from', args ] ]);
 	}
 
 	before(...args: any[]) {
-		this._calls.push([ 'before', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'before', args ] ]);
 	}
 
 	after(...args: any[]) {
-		this._calls.push([ 'after', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'after', args ] ]);
 	}
 
 	around(...args: any[]) {
-		this._calls.push([ 'around', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'around', args ] ]);
 	}
 
 	aspect(...args: any[]) {
-		this._calls.push([ 'aspect', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'aspect', args ] ]);
 	}
 
 	init(...args: any[]) {
-		this._calls.push([ 'init', args ]);
-		return this;
+		return new Mixin([ ...this._calls, [ 'init', args ] ]);
 	}
 }
 

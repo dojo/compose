@@ -10,20 +10,20 @@ import {
 	EventedListener,
 	EventedListenerOrArray,
 	EventedListenersMap,
-	EventedCallback
+	EventedCallback, Destroyable
 } from '@dojo/interfaces/bases';
 import { Actionable } from '@dojo/interfaces/abilities';
 import Map from '@dojo/shim/Map';
 import WeakMap from '@dojo/shim/WeakMap';
-import { ComposeFactory } from '../compose';
-import createDestroyable from './createDestroyable';
+import { ComposeCreatedMixin } from '../compose';
+import destroyableMixin from './destroyableMixin';
 
 /**
  * A map of callbacks where the key is the event `type`
  */
 type EventedCallbackMap = Map<string, EventedCallback<EventObject>>;
 
-export interface EventedFactory extends ComposeFactory<Evented, EventedOptions> { }
+export interface EventedMixin extends ComposeCreatedMixin<{}, Evented & Destroyable, EventedOptions, {}> { }
 
 /**
  * A weak map that contains a map of the listeners for an `Evented`
@@ -95,46 +95,43 @@ function isGlobMatch(globString: string, targetString: string): boolean {
 /**
  * Creates a new instance of an `Evented`
  */
-const createEvented: EventedFactory = createDestroyable
-	.mixin({
-		className: 'Evented',
-		mixin: {
-			emit<E extends EventObject>(this: Evented, event: E): void {
-				listenersMap.get(this).forEach((method, type) => {
-					if (isGlobMatch(type, event.type)) {
-						method.call(this, event);
-					}
-				});
-			},
-
-			on(this: Evented, ...args: any[]): Handle {
-				const listenerMap = listenersMap.get(this);
-				if (args.length === 2) { /* overload: on(type, listener) */
-					const [ type, listeners ] = <[ string, EventedListenerOrArray<any, EventTargettedObject<any>>]> args;
-					if (Array.isArray(listeners)) {
-						const handles = listeners.map((listener) => on(listenerMap, type, resolveListener(listener)));
-						return handlesArraytoHandle(handles);
-					}
-					else {
-						return on(listenerMap, type, resolveListener(listeners));
-					}
+const eventedMixin: EventedMixin = destroyableMixin
+	.extend('Evented', {
+		emit<E extends EventObject>(this: Evented, event: E): void {
+			listenersMap.get(this).forEach((method, type) => {
+				if (isGlobMatch(type, event.type)) {
+					method.call(this, event);
 				}
-				else if (args.length === 1) { /* overload: on(listeners) */
-					const [ listenerMapArg ] = <[EventedListenersMap<any>]> args;
-					const handles = Object.keys(listenerMapArg).map((type) => this.on(type, listenerMapArg[type]));
+			});
+		},
+
+		on(this: Evented, ...args: any[]): Handle {
+			const listenerMap = listenersMap.get(this);
+			if (args.length === 2) { /* overload: on(type, listener) */
+				const [ type, listeners ] = <[ string, EventedListenerOrArray<any, EventTargettedObject<any>>]> args;
+				if (Array.isArray(listeners)) {
+					const handles = listeners.map((listener) => on(listenerMap, type, resolveListener(listener)));
 					return handlesArraytoHandle(handles);
 				}
-				else { /* unexpected signature */
-					throw new TypeError('Invalid arguments');
+				else {
+					return on(listenerMap, type, resolveListener(listeners));
 				}
 			}
-		},
-		initialize(instance: Evented, options: EventedOptions) {
-			listenersMap.set(instance, new Map<string, EventedCallback<EventObject>>());
-			if (options && options.listeners) {
-				instance.own(instance.on(options.listeners));
+			else if (args.length === 1) { /* overload: on(listeners) */
+				const [ listenerMapArg ] = <[EventedListenersMap<any>]> args;
+				const handles = Object.keys(listenerMapArg).map((type) => this.on(type, listenerMapArg[type]));
+				return handlesArraytoHandle(handles);
 			}
+			else { /* unexpected signature */
+				throw new TypeError('Invalid arguments');
+			}
+		}
+	})
+	.init((instance, options?: EventedOptions) => {
+		listenersMap.set(instance, new Map<string, EventedCallback<EventObject>>());
+		if (options && options.listeners) {
+			instance.own(instance.on(options.listeners));
 		}
 	});
 
-export default createEvented;
+export default eventedMixin;

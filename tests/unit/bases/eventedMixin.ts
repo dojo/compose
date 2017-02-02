@@ -1,10 +1,12 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import { hasToStringTag } from '../../support/util';
-import createEvented from '../../../src/bases/createEvented';
+import eventedMixin from '../../../src/bases/eventedMixin';
+import compose from '../../../src/compose';
 
+const createEvented = compose({}).mixin(eventedMixin);
 registerSuite({
-	name: 'mixins/createEvented',
+	name: 'mixins/eventedMixin',
 	creation() {
 		const evented = createEvented();
 		assert(evented);

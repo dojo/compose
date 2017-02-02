@@ -7,8 +7,8 @@ registerSuite({
 	'validate api'() {
 		assert.isFunction(main.compose);
 		assert.isFunction(main.isComposeFactory);
-		assert.isFunction(main.createDestroyable);
-		assert.isFunction(main.createEvented);
-		assert.isFunction(main.createStateful);
+		assert.isFunction(main.compose({}).mixin(main.destroyableMixin));
+		assert.isFunction(main.compose({}).mixin(main.eventedMixin));
+		assert.isFunction(main.compose({}).mixin(main.statefulMixin));
 	}
 });

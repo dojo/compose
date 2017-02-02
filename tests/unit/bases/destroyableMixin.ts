@@ -1,10 +1,12 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
 import { hasToStringTag } from '../../support/util';
-import createDestroyable, { isDestroyable } from '../../../src/bases/createDestroyable';
+import destroyableMixin, { isDestroyable } from '../../../src/bases/destroyableMixin';
+import compose from '../../../src/compose';
 
+const createDestroyable = compose({}).mixin(destroyableMixin);
 registerSuite({
-	name: 'mixins/createDestroyable',
+	name: 'mixins/destroyableMixin',
 	'own/destroy handle'() {
 		let count = 0;
 

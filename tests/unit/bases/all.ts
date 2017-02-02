@@ -1,4 +1,4 @@
-import './createDestroyable';
-import './createEvented';
-import './createStateful';
+import './destroyableMixin';
+import './eventedMixin';
+import './statefulMixin';
 import './createCancelableEvent';
