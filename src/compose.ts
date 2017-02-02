@@ -1,4 +1,3 @@
-import { deprecated } from '@dojo/core/instrument';
 import { assign } from '@dojo/core/lang';
 import { from as arrayFrom, includes } from '@dojo/shim/array';
 import WeakMap from '@dojo/shim/WeakMap';
@@ -178,9 +177,9 @@ function rebase(fn: (base: any, ...args: any[]) => any): (...args: any[]) => any
  * @param factory The factory that the array of function names should be returned for
  */
 export function getInitFunctionNames(factory: ComposeFactory<any, any>): string[] | undefined {
-	const initFns = privateFactoryData.get(factory).initFns;
-	if (initFns) {
-		return initFns.map((fn) => (<any> fn).name);
+	const factoryData = privateFactoryData.get(factory);
+	if (factoryData) {
+		return factoryData.initFns.map((fn) => (<any> fn).name);
 	}
 }
 
@@ -189,7 +188,6 @@ export function getInitFunctionNames(factory: ComposeFactory<any, any>): string[
 /**
  * Perform an extension of a class
  *
- * @deprecated
  */
 const doExtend = rebase(extend);
 
@@ -218,6 +216,8 @@ const doAspect = rebase(aspect);
  */
 const doStatic = rebase(_static);
 
+const doInit = rebase(init);
+
 /**
  * Take a mixin and return a factory descriptor for the mixin
  *
@@ -232,18 +232,17 @@ function factoryDescriptor<T, O, U, P>(mixin: ComposeFactory<U, P>): ComposeMixi
 		mixin,
 		className: mixin.name
 	};
-};
+}
 
 /**
  * Generate a factory descriptor for a class
  */
 const doFactoryDescriptor = rebase(factoryDescriptor);
-
 /**
  * A set of functions that are used to decorate the compose factories
  */
 const staticMethods = {
-	extend: doExtend, /* DEPRECATED */
+	extend: doExtend,
 	mixin: doMixin,
 	override: doOverride,
 	overlay: doOverlay,
@@ -253,7 +252,8 @@ const staticMethods = {
 	around: doAround,
 	aspect: doAspect,
 	factoryDescriptor: doFactoryDescriptor,
-	static: doStatic
+	static: doStatic,
+	init: doInit
 };
 
 /**
@@ -428,7 +428,7 @@ function createFactory<T, U, O>(options: FactoryOptions<T, U, O, any>): ComposeF
 		DEFAULT_FACTORY_LABEL;
 	assignFactoryName(factory, className);
 
-	/* freeze the factory, so it cannot be accidently modified */
+	/* freeze the factory, so it cannot be accidentally modified */
 	Object.freeze(factory);
 
 	return factory as ComposeFactory<any, any>;
@@ -493,7 +493,6 @@ export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T
 	/**
 	 * Extend the factory prototype with the supplied object literal, class, or factory
 	 *
-	 * @deprecated
 	 * @param extension The object literal, class or factory to extend
 	 * @template T The original type of the factory
 	 * @template U The type of the extension
@@ -511,7 +510,6 @@ export interface Compose {
 	 * Extend a compose factory prototype with the supplied object literal, class, or
 	 * factory.
 	 *
-	 * @deprecated
 	 * @param base The base compose factory to extend
 	 * @param extension The object literal, class or factory that is the extension
 	 * @template T The base type of the factory
@@ -528,14 +526,12 @@ export interface Compose {
 /**
  * The internal implementation of extending a compose factory
  *
- * @deprecated
  * @param base The base compose factory that is being extended
  * @param extension The extension to apply to the compose factory
  */
 function extend<T, O, U, P>(base: ComposeFactory<T, O>, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
 function extend<T, O, U, P>(base: ComposeFactory<T, O>, className: string, extension: ComposeFactory<U, P>): ComposeFactory<T & U, O & P>;
 function extend<O>(base: ComposeFactory<any, O>, className: any, extension?: any): ComposeFactory<any, O> {
-	deprecated({ message: 'This function will be removed, use "override" instead.', name: 'extend' });
 	if (typeof className !== 'string') {
 		extension = className;
 		className = undefined;
@@ -627,6 +623,55 @@ function override<T, O>(baseFactory: ComposeFactory<T, O>, className: any, prope
 	});
 }
 
+/* Init API */
+export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
+	/**
+	 * Add an initialization function to the factory's chain
+	 *
+	 * @param name An optional name for the function for debugging purposes
+	 * @param init The initialization function
+	 */
+	init(name: string, init: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	init(init: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+}
+
+export interface Compose {
+	/**
+	 * Add the supplied initialization function to the factory's chain
+	 *
+	 * @param name Optional name for the init function
+	 * @param base The base compose factory
+	 * @param init The initialization function
+	 */
+	init<T, O>(name: string, base: ComposeFactory<T, O>, init: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+	init<T, O>(base: ComposeFactory<T, O>, init: ComposeInitializationFunction<T, O>): ComposeFactory<T, O>;
+}
+
+/**
+ * The internal implementation of adding an initialization functoin
+ *
+ * @param base The base compose factory
+ * @param className The optional name for the init function
+ * @param initFunction The initialization function
+ */
+function init<T, O>(base: ComposeFactory<T, O>, className: any, initFunction: ComposeInitializationFunction<T, O>): ComposeFactory<T, O> {
+	if (typeof className !== 'string') {
+		initFunction = className;
+		className = undefined;
+	}
+
+	/* Label the initFunction */
+	if (initFunction && className) {
+		assignFunctionName(initFunction, `init${className}`);
+	}
+
+	return createFactory({
+		className,
+		factories: [ base ],
+		initFunction
+	});
+}
+
 /* Overlay API */
 
 export interface OverlayFunction<T> {
@@ -702,7 +747,6 @@ export interface AspectAdvice {
 }
 
 /* Mixin API */
-
 /**
  * Either a class, object literal, or a factory
  */
@@ -749,10 +793,13 @@ export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T
 	/**
 	 * Mixin additional mixins, initialization logic, and aspect advice into the factory
 	 *
-	 * @param mixin An object literal that describes what to mixin
+	 * @param mixin An object literal that describes what to mixin, or a ComposeCreatedMixin that has "recorded"
+	 * a series of operations to be performed to the base factory.
 	 */
+	mixin<U, P, S>(mixin: ComposeCreatedMixin<T, U, P, S>): ComposeFactory<T & U, O & P> & S;
 	mixin<U, P>(mixin: ComposeMixinable<U, P>): ComposeFactory<T & U, O & P>;
 	mixin<U, P>(mixin: ComposeMixinDescriptor<T, O, U, P>): ComposeFactory<T & U, O & P>;
+	mixin<U, P, S>(mixin: ComposeCreatedMixin<T, U, P, S>): ComposeFactory<T & U, O & P> & S;
 }
 
 export interface Compose {
@@ -760,7 +807,8 @@ export interface Compose {
 	 * Mixin additional mixins, initialization logic, and aspect advice into a factory
 	 *
 	 * @param base The base factory that is the target of the mixin
-	 * @param mixin An object literal that describes what to mixin
+	 * @param mixin An object literal that describes what to mixin, or a ComposeCreatedMixin that has "recorded"
+	 * a series of operations to be performed to the base factory.
 	 */
 	mixin<T, O, U, P>(
 		base: ComposeFactory<T, O>,
@@ -770,6 +818,10 @@ export interface Compose {
 		base: ComposeFactory<T, O>,
 		mixin: ComposeMixinDescriptor<T, O, U, P>
 	): ComposeFactory<T & U, O & P>;
+	mixin<T, O, U, P, S>(
+		base: ComposeFactory<T, O>,
+		mixin: ComposeCreatedMixin<T, U, P, S>
+	): ComposeFactory<T & U, O & P> & S;
 }
 
 /**
@@ -829,54 +881,66 @@ function isComposeMixinable(value: any): value is ComposeMixinable<any, any> {
 }
 
 /**
+ * A custom type guard that determines if a value is a ComposeCreatedMixin
+ */
+function isCreatedMixin(value: any): value is ComposeCreatedMixin<any, any, any, any> {
+	return value instanceof Mixin;
+}
+
+/**
  * The internal implementation of mixin in values into a compose factory
  *
  * @param base The base compose factory that is the target for being mixed in
+ * @param name Optional name parameter
  * @param toMixin The value to be mixed in
  */
-function mixin<T, O, U, P>(
-	base: ComposeFactory<T, O>,
-	toMixin: ComposeMixinable<U, P> | ComposeMixinDescriptor<T, O, U, P>
-): ComposeFactory<T & U, O & P> {
-	/* ensure we are dealing with a mixinDescriptor */
-	const mixinDescriptor = isComposeMixinable(toMixin) ? toMixin.factoryDescriptor() : toMixin;
+function mixin<T, O, U, P, S>(
+	base: any,
+	toMixin: ComposeMixinable<U, P> | ComposeMixinDescriptor<T, O, U, P> | ComposeCreatedMixin<T, U, P, S>
+): ComposeFactory<T & U, O & P> | (ComposeFactory<T & U, O & P> & S) {
+	if (isCreatedMixin(toMixin)) {
+		return execute(base, toMixin) as (ComposeFactory<T & U, O & P> & S);
+	} else {
+		/* ensure we are dealing with a mixinDescriptor */
+		const mixinDescriptor = isComposeMixinable(toMixin) ? toMixin.factoryDescriptor() : toMixin;
 
-	/* destructure out most of the factory creation options */
-	const { mixin, initialize: initFunction, aspectAdvice, className } = mixinDescriptor;
+		/* destructure out most of the factory creation options */
+		const { mixin, initialize: initFunction, aspectAdvice, className } = mixinDescriptor;
 
-	/* we will at least be using the base factory to create the new one */
-	const factories: ComposeFactory<any, any>[] = [ base ];
-	let proto: any;
+		/* we will at least be using the base factory to create the new one */
+		const factories: ComposeFactory<any, any>[] = [ base ];
+		let proto: any;
 
-	/* if mixin is a compose factory, we will pass it as a factory used to create the new factory */
-	if (isComposeFactory(mixin)) {
-		factories.push(mixin);
-	}
-	/* otherwise we are dealing with a prototype based mixin */
-	else {
-		/* of which, we can have a constructor function/class, or an object literal (or undefined) */
-		proto = typeof mixin === 'function' ? mixin.prototype : mixin;
-	}
+		/* if mixin is a compose factory, we will pass it as a factory used to create the new factory */
+		if (isComposeFactory(mixin)) {
+			factories.push(mixin);
+		}
+		/* otherwise we are dealing with a prototype based mixin */
+		else {
+			/* of which, we can have a constructor function/class, or an object literal (or undefined) */
+			proto = typeof mixin === 'function' ? mixin.prototype : mixin;
+		}
 
-	/* convert the advice, if any, to the format used by createFactory */
-	const advice = aspectAdviceToAdviceMap(aspectAdvice);
+		/* convert the advice, if any, to the format used by createFactory */
+		const advice = aspectAdviceToAdviceMap(aspectAdvice);
 
-	/* label the initFn */
-	if (initFunction) {
-		assignFunctionName(
+		/* label the initFn */
+		if (initFunction) {
+			assignFunctionName(
+				initFunction,
+				`mixin${className || (isComposeFactory(mixin) && mixin.name) || base.name}`
+			);
+		}
+
+		/* return the newly created factory */
+		return createFactory({
+			advice,
+			factories,
 			initFunction,
-			`mixin${className || (isComposeFactory(mixin) && mixin.name) || base.name}`
-		);
+			className,
+			proto
+		}) as ComposeFactory<T & U, O & P>;
 	}
-
-	/* return the newly created factory */
-	return createFactory({
-		advice,
-		factories,
-		initFunction,
-		className,
-		proto
-	}) as ComposeFactory<T & U, O & P>;
 }
 
 export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
@@ -1119,6 +1183,219 @@ function aspect<T, O>(base: ComposeFactory<T, O>, advice: AspectAdvice): Compose
 	});
 }
 
+/**
+ * Provides essentially the same methods as a compose factory, but is not a callable function.
+ * The arguments passed to each method modify the type of the generics, and when mixed into a ComposeFactory
+ * the resulting factory is the same as if these calls were made directly on the factory.
+ * The T and O generics behave similarly to in a compose factory, the S generic keeps track of any static modifications
+ * that have been made to the mixin, and the Target type indicates what type this mixin needs to be mixed into. The
+ * instance type in any initializer functions passed to init will be typed as Target & T if not specified.
+ */
+export interface ComposeCreatedMixin<Target, T, O, S> {
+	/**
+	 * Extend a compose factory prototype with the supplied object literal, class, or
+	 * factory.
+	 *
+	 * @param extension The object literal, class or factory that is the extension
+	 * @template T The base type of the factory
+	 * @template U The type of the extension
+	 * @template O The type of the base factory options
+	 * @template P The type of the extension factory options
+	 */
+	extend<U>(extension: U | GenericClass<U>): ComposeCreatedMixin<Target, T & U, O, S>;
+	extend<U>(className: string, extension: U | GenericClass<U>): ComposeCreatedMixin<Target, T & U, O, S>;
+	extend<U, P>(extension: ComposeFactory<U, P>): ComposeCreatedMixin<Target, T & U, O & P, S>;
+	extend<U, P>(className: string, extension: ComposeFactory<U, P>): ComposeCreatedMixin<Target, T & U, O & P, S>;
+
+	/**
+	 * Override certain properties on the existing factory, returning a new factory.  If the properties
+	 * are not present in the existing factory, override will throw.
+	 *
+	 * @param properties The properties to override
+	 */
+	override(properties: any): this;
+	override(className: string, properties: any): this;
+
+	/**
+	 * Add static properties to a factory
+	 *
+	 * @param staticProperties An object literal that contains methods and properties that should be "static" (e.g.
+	 * added to the factory, instead of the factory's prototype)
+	 */
+	static<Z>(staticProperties: Z): ComposeCreatedMixin<Target, T, O, S & Z>;
+
+	/**
+	 * A static method that takes a compose factory and applies an overlay function to the factory,
+	 * returning a new compose factory with a mutated prototype.
+	 *
+	 * @param overlayFunction The function which receives the base factory's prototype
+	 * @template T The type of the factory's prototype
+	 * @template O The options for the factory's creation
+	 */
+	overlay(overlayFunction: OverlayFunction<T>): this;
+
+	/**
+	 * Mixin additional mixins, initialization logic, and aspect advice into the factory
+	 *
+	 * @param mixin An object literal that describes what to mixin, or a ComposeCreatedMixin that has "recorded"
+	 * a series of operations to be performed to the base factory.
+	 */
+	mixin<U, P>(mixin: ComposeMixinable<U, P>): ComposeCreatedMixin<Target, T & U, O & P, S>;
+	mixin<U, P>(mixin: ComposeMixinDescriptor<T, O, U, P>): ComposeCreatedMixin<Target, T & U, O & P, S>;
+	mixin<U, P, Z>(mixin: ComposeCreatedMixin<T, U, P, Z>): ComposeCreatedMixin<Target, T & U, O & P, S & Z>;
+
+	/**
+	 * Extract a method from another Class or Factory and add it to the returned factory
+	 *
+	 * @param base The base Class or Factory
+	 * @param method The name of the method to extract
+	 */
+	from(base: GenericClass<any> | ComposeFactory<any, any>, method: string): this;
+
+	/**
+	 * Apply advice *before* the named method (join-point)
+	 *
+	 * @param method The method to apply the advice to
+	 * @param advice The advice to be applied
+	 */
+	before(method: string, advice: BeforeAdvice): this;
+
+	/**
+	 * Apply advice *after* the named method (join-point)
+	 *
+	 * @param method The method to apply the advice to
+	 * @param advice The advice to be applied
+	 */
+	after<P>(method: string, advice: AfterAdvice<P>): this;
+
+	/**
+	 * Apply advice *around* the named method (join-point)
+	 *
+	 * @param method The method to apply the advice to
+	 * @param advice The advice to be applied
+	 */
+	around<P>(method: string, advice: AroundAdvice<P>): this;
+
+	/**
+	 * Provide an object literal which can contain a map of advice to apply
+	 *
+	 * @param advice An object literal which contains the maps of advice to apply
+	 */
+	aspect(advice: AspectAdvice): this;
+
+	/**
+	 * Add the supplied initialization function to the factory's chain
+	 *
+	 * @param name Optional name for the init function
+	 * @param init The initialization function
+	 */
+	init<P extends O>(name: string, init: ComposeInitializationFunction<Target & T, P>): ComposeCreatedMixin<Target, T, P, S>;
+	init<P extends O>(init: ComposeInitializationFunction<Target & T, P>): ComposeCreatedMixin<Target, T, P, S>;
+}
+
+/**
+ * Class that provides an implementation of the ComposeCreatedMixin interface. All method calls record their arguments
+ * and which method was called. When the mixin is applied these calls are retrieved and executed on the target factory.
+ */
+class Mixin {
+	_calls: ([string, any[]])[];
+
+	constructor() {
+		this._calls = [];
+	}
+
+	static(...args: any[]) {
+		this._calls.push([ 'static', args ]);
+		return this;
+	}
+
+	extend(...args: any[]) {
+		this._calls.push([ 'extend', args ]);
+		return this;
+	}
+
+	mixin(...args: any[]) {
+		this._calls.push([ 'mixin', args ]);
+		return this;
+	}
+
+	overlay(...args: any[]) {
+		this._calls.push([ 'overlay', args ]);
+		return this;
+	}
+
+	override(...args: any[]) {
+		this._calls.push([ 'override', args ]);
+		return this;
+	}
+
+	from(...args: any[]) {
+		this._calls.push([ 'from', args ]);
+		return this;
+	}
+
+	before(...args: any[]) {
+		this._calls.push([ 'before', args ]);
+		return this;
+	}
+
+	after(...args: any[]) {
+		this._calls.push([ 'after', args ]);
+		return this;
+	}
+
+	around(...args: any[]) {
+		this._calls.push([ 'around', args ]);
+		return this;
+	}
+
+	aspect(...args: any[]) {
+		this._calls.push([ 'aspect', args ]);
+		return this;
+	}
+
+	init(...args: any[]) {
+		this._calls.push([ 'init', args ]);
+		return this;
+	}
+}
+
+/**
+ * Creates a ComposeCreatedMixin. If provided, the target is used to determine the initial types for the mixin target,
+ * base, and in the case that the target is a ComposeFactory, the options.
+ * @param target Optional parameter that allows the Target, T, and sometimes O types to be inferred
+ */
+function createMixin<Target, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, O>): ComposeCreatedMixin<Target, Target, O, S> {
+	let mixin: any = new Mixin();
+	return mixin;
+}
+
+export interface Compose {
+	/**
+	 * Creates a ComposeCreatedMixin. If provided, the target is used to determine the initial types for the mixin target,
+	 * base, and in the case that the target is a ComposeFactory, the options.
+	 * @param target Optional parameter that allows the Target, T, and sometimes O types to be inferred
+	 */
+	createMixin<Target, O, S>(target?: GenericClass<Target> | Target | ComposeFactory<Target, O>): ComposeCreatedMixin<Target, Target, O, S>;
+}
+
+/**
+ * Applies a ComposeCreatedMixin to a ComposeFactory, returning a new ComposeFactory
+ * @param _base The compose factory to apply the mixin to
+ * @param toMixin The mixin to apply
+ */
+function execute<T, O, U, P, S>(_base: ComposeFactory<T, O>, toMixin: ComposeCreatedMixin<T, U, P, S>): ComposeFactory<T & U, O & P> & S {
+	let base: { [key: string]: Function } = <any> _base,
+		mixin = <Mixin> <any> toMixin,
+		calls = mixin._calls;
+
+	for (let i = 0; i < calls.length; i++) {
+		let [fn, args] = calls[i];
+		base = base[fn].apply(base, args);
+	}
+	return base as any;
+}
+
 /* Creation API */
 
 export interface ComposeFactory<T, O extends Options> extends ComposeMixinable<T, O> {
@@ -1175,7 +1452,7 @@ function create<T, O>(className: string, base: GenericClass<T> | T, initFunction
 function create<T, O, P>(base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
 function create<T, O, P>(className: string, base: ComposeFactory<T, O>, initFunction?: ComposeInitializationFunction<T, O & P>): ComposeFactory<T, O & P>;
 function create<O>(className: any, base?: any, initFunction?: ComposeInitializationFunction<any, O>): ComposeFactory<any, any> {
-	/* disambugate arguments */
+	/* disambiguate arguments */
 	if (typeof className !== 'string') {
 		initFunction = base;
 		base = className;
@@ -1262,7 +1539,7 @@ const compose = create as Compose;
 assign(compose, {
 	create,
 	static: _static,
-	extend, /* DEPRECATED */
+	extend,
 	mixin,
 	override,
 	overlay,
@@ -1270,7 +1547,8 @@ assign(compose, {
 	before,
 	after,
 	around,
-	aspect
+	aspect,
+	createMixin
 });
 
 export default compose;
