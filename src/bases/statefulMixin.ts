@@ -1,10 +1,13 @@
 import { deepAssign } from '@dojo/core/lang';
 import {
 	State,
-	Stateful
+	Stateful, StatefulOptions
 } from '@dojo/interfaces/bases';
 import WeakMap from '@dojo/shim/WeakMap';
 import eventedMixin from './eventedMixin';
+import { ComposeCreatedMixin } from '../compose';
+
+export interface StatefulMixin extends ComposeCreatedMixin<{}, Stateful<State>, StatefulOptions<State>, {}> { }
 
 /**
  * Private map of internal instance state.
@@ -19,7 +22,7 @@ const stateChangedEventType = 'state:changed';
 /**
  * Create an instance of a stateful object
  */
-export default eventedMixin
+const statefulMixin: StatefulMixin = eventedMixin
 	.extend('Stateful', {
 		get state(this: Stateful<State>) {
 			return instanceStateMap.get(this);
@@ -39,3 +42,4 @@ export default eventedMixin
 	.init((instance: Stateful<State>) => {
 		instanceStateMap.set(instance, Object.create(null));
 	});
+export default statefulMixin;

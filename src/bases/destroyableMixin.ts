@@ -3,7 +3,9 @@ import { Handle } from '@dojo/interfaces/core';
 import Promise from '@dojo/shim/Promise';
 import WeakMap from '@dojo/shim/WeakMap';
 import compose from '../compose';
+import { ComposeCreatedMixin } from '../compose';
 
+export interface DestroyableMixin extends ComposeCreatedMixin<{}, Destroyable, {}, {}> { }
 /**
  * A reference to a function that always returns a promise which resolves to false
  */
@@ -37,7 +39,7 @@ export function isDestroyable(value: any): value is Destroyable {
  * A mixin which adds the concepts of being able to *destroy* handles which the instance
  * *owns*
  */
-export default compose.createMixin()
+const destroyableMixin: DestroyableMixin = compose.createMixin()
 	.extend('Destroyable', {
 		own(this: Destroyable, handle: Handle): Handle {
 			const handles = handlesWeakMap.get(this);
@@ -64,3 +66,4 @@ export default compose.createMixin()
 	.init((instance) => {
 		handlesWeakMap.set(instance, []);
 	});
+export default destroyableMixin;
