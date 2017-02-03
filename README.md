@@ -49,7 +49,9 @@ The library was specifically designed to work well in a environment where TypeSc
 
 The TypeScript 2.2 team made a recent change to their Class implementation that improves support for mixins and composable classes, which may be sufficient for most use cases.
 
-In parallel, we've found that there remain significant challenges in properly typing widgets and other composed classes, which is a potential barrier to entry for new and experienced users. As such, we are exploring options for leveraging TypeScript 2.2 Classes for Dojo 2, which may change dojo/compose or may reduce our reliance on it. We'll have an update once we know more. Regardless of the final approach we take, Dojo 2 will have a solid solution for object composition.
+In parallel, we've found that there remain challenges in properly typing widgets and other composed classes, which is a potential barrier to entry for new and experienced users. Furthermore, we're finding that the promise of composition has not been fully appreciated with `@dojo/widgets`. For example, with the `createDialog` widget, it's already dependent on `themeable` and `createWidgetBase`. Both of these depend on `createEvented`, which depends on `createDestroyable`. While four layers deep isn't terrible, `dojo/compose` is not currently preventing us from repeating history unfortunately.
+
+As such, we are exploring options for leveraging TypeScript 2.2 Classes for Dojo 2, which may change dojo/compose or may reduce our reliance on it. We'll have an update once we know more. Regardless of the final approach we take, Dojo 2 will have a solid solution for object composition.
 
 ## Features
 
