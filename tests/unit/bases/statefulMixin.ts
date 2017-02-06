@@ -1,10 +1,12 @@
 import * as registerSuite from 'intern!object';
 import * as assert from 'intern/chai!assert';
-import createStateful from '../../../src/bases/createStateful';
+import statefulMixin from '../../../src/bases/statefulMixin';
 import { Stateful, State } from '@dojo/interfaces/bases';
+import compose from '../../../src/compose';
 
+const createStateful = compose({}).mixin(statefulMixin);
 registerSuite({
-	name: 'mixins/createStateful',
+	name: 'mixins/statefulMixin',
 	creation() {
 		const stateful = createStateful();
 		assert.deepEqual(stateful.state, {}, 'stateful should have empty state');

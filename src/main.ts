@@ -1,12 +1,12 @@
 import compose, { isComposeFactory } from './compose';
-import createDestroyable from './bases/createDestroyable';
-import createEvented from './bases/createEvented';
-import createStateful from './bases/createStateful';
+import destroyableMixin from './bases/destroyableMixin';
+import eventedMixin from './bases/eventedMixin';
+import statefulMixin from './bases/statefulMixin';
 
 export {
 	compose,
 	isComposeFactory,
-	createDestroyable,
-	createEvented,
-	createStateful
+	destroyableMixin,
+	eventedMixin,
+	statefulMixin
 };

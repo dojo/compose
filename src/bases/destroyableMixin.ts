@@ -2,10 +2,10 @@ import { Destroyable } from '@dojo/interfaces/bases';
 import { Handle } from '@dojo/interfaces/core';
 import Promise from '@dojo/shim/Promise';
 import WeakMap from '@dojo/shim/WeakMap';
-import compose, { ComposeFactory } from '../compose';
+import compose from '../compose';
+import { ComposeCreatedMixin } from '../compose';
 
-export interface DestroyableFactory extends ComposeFactory<Destroyable, {}> { }
-
+export interface DestroyableMixin extends ComposeCreatedMixin<{}, Destroyable, {}, {}> { }
 /**
  * A reference to a function that always returns a promise which resolves to false
  */
@@ -27,7 +27,7 @@ function destroyed(): never {
 const handlesWeakMap = new WeakMap<Destroyable, Handle[]>();
 
 /**
- * A type guard that determines if the value is a Destroyable
+ * A type guard that determines if the value is a destroyableMixin
  *
  * @param value The value to guard for
  */
@@ -39,30 +39,31 @@ export function isDestroyable(value: any): value is Destroyable {
  * A mixin which adds the concepts of being able to *destroy* handles which the instance
  * *owns*
  */
-const createDestroyable: DestroyableFactory = compose('Destroyable', {
-	own(this: Destroyable, handle: Handle): Handle {
-		const handles = handlesWeakMap.get(this);
-		handles.push(handle);
-		return {
-			destroy() {
-				handles.splice(handles.indexOf(handle));
-				handle.destroy();
-			}
-		};
-	},
+const destroyableMixin: DestroyableMixin = compose.createMixin()
+	.extend('Destroyable', {
+		own(this: Destroyable, handle: Handle): Handle {
+			const handles = handlesWeakMap.get(this);
+			handles.push(handle);
+			return {
+				destroy() {
+					handles.splice(handles.indexOf(handle));
+					handle.destroy();
+				}
+			};
+		},
 
-	destroy(this: Destroyable) {
-		return new Promise((resolve) => {
-			handlesWeakMap.get(this).forEach((handle) => {
-				handle && handle.destroy && handle.destroy();
+		destroy(this: Destroyable) {
+			return new Promise((resolve) => {
+				handlesWeakMap.get(this).forEach((handle) => {
+					handle && handle.destroy && handle.destroy();
+				});
+				this.destroy = noop;
+				this.own = destroyed;
+				resolve(true);
 			});
-			this.destroy = noop;
-			this.own = destroyed;
-			resolve(true);
-		});
-	}
-}, (instance) => {
-	handlesWeakMap.set(instance, []);
-});
-
-export default createDestroyable;
+		}
+	})
+	.init((instance) => {
+		handlesWeakMap.set(instance, []);
+	});
+export default destroyableMixin;
