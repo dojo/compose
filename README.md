@@ -12,7 +12,7 @@ A composition library, which works well in a TypeScript environment.
 
 In creating this library, we were looking to solve the following problems with Classes and inheritance in ES6+ and TypeScript:
 
-* Single inheritance: ES6 classes are essentially syntactic sugar around prototypical inheritance. A descent class can only derive from a single ancestor class
+* Single inheritance: ES6 classes are essentially syntactic sugar around prototypal inheritance. A descended class can only derive from a single ancestor class
 * Confusion around mixins and inheritance
 * No plans to add mixins to ES6+ (original proposal was withdrawn)
 * TypeScript class decorators do not augment the shape of the underlying class based on the decorator, and were not an effective mechanism to provide mixins/traits functionality
