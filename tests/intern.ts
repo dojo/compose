@@ -56,7 +56,7 @@ export const loaderOptions = {
 		{ name: 'src', location: '_build/src' },
 		{ name: 'tests', location: '_build/tests' },
 		{ name: '@dojo', location: 'node_modules/@dojo' },
-		{ name: 'rxjs', location: 'node_modules/@reactivex/rxjs/dist/amd' }
+		{ name: 'grunt-dojo2', location: 'node_modules/grunt-dojo2' }
 	]
 };
 
