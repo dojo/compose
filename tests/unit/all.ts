@@ -1,3 +1,4 @@
+import 'intern';
 import './aspect';
 import './compose';
 import './main';
