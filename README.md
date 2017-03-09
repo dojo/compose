@@ -53,7 +53,32 @@ In parallel, we've found that there remain challenges in properly typing widgets
 
 As such, we are exploring options for leveraging TypeScript 2.2 Classes for Dojo 2, which may change dojo/compose or may reduce our reliance on it. We'll have an update once we know more. Regardless of the final approach we take, Dojo 2 will have a solid solution for object composition.
 
+## Usage
+
+To use `@dojo/compose`, install the package along with its required peer dependencies:
+
+```bash
+npm install @dojo/compose
+
+# peer dependencies
+npm install @dojo/core
+npm install @dojo/has
+npm install @dojo/shim
+```
+
 ## Features
+
+- [Class Creation](#class-creation)
+  - [Creation](#creation)
+  - [Creation with Initializer](#creation-with-initializer)
+- [Class Extension](#class-extension)
+  - [Implementing an Interface](#implementing-an-interface)
+- [Adding Initialization Functions](#adding-initialization-functions)
+- [Merging of Arrays](#merging-of-arrays)
+- [Using Generics](#using-generics)
+- [Overlaying Functionality](#overlaying-functionality)
+- [Adding static properties to a factory](#adding-static-properties-to-a-factory)
+- [Mixins](#mixins)
 
 The examples below are provided in TypeScript syntax.  The package does work under JavaScript, but for clarity, the examples will only include one syntax.  See below for how to utilize the package under JavaScript.
 
@@ -499,7 +524,13 @@ const foo = createFoo();
 
 We appreciate your interest!  Please see the [Contributing Guidelines](https://github.com/dojo/meta/blob/master/CONTRIBUTING.md) and [Style Guide](https://github.com/dojo/meta/blob/master/STYLE.md).
 
-## Testing
+### Installation
+
+To start working with this package, clone the repository and run `npm install`.
+
+In order to build the project run `grunt dev` or `grunt dist`.
+
+### Testing
 
 Test cases MUST be written using [Intern](https://theintern.github.io) using the Object test interface and Assert assertion interface.
 
