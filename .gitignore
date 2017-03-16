@@ -6,6 +6,7 @@
 *.js.map
 !/*.js
 !/tasks/*.js
+deploy_key
 dist
 _build
 node_modules
@@ -16,3 +17,4 @@ tests/typings/dist/
 html-report
 coverage-unmapped.json
 yarn.lock
+/_apidoc

@@ -8,6 +8,10 @@ env:
   - BROWSERSTACK_ACCESS_KEY: mG2qbEFJCZY2qLsM7yfx
   - SAUCE_USERNAME: dojo2-ts-ci
   - SAUCE_ACCESS_KEY: e92610e3-834e-4bec-a3b5-6f7b9d874601
+before_install:
+- if [ ${TRAVIS_BRANCH-""} == "master" ] && [ -n ${encrypted_12c8071d2874_key-""} ]; then openssl aes-256-cbc -K
+  $encrypted_12c8071d2874_key -iv $encrypted_12c8071d2874_iv
+  -in deploy_key.enc -out deploy_key -d; fi
 install:
 - npm install grunt-cli
 - npm install
@@ -18,6 +22,7 @@ script:
 - grunt remapIstanbul:ci
 - grunt uploadCoverage
 - grunt dist
+- grunt doc
 notifications:
   slack:
     secure: xRRAbHYKa/dtmyP3imcwAJpm1c1S5cYrcfJ9zHb8ZXuGEzLxPQP8iVm2U5GJwyTHF/ovTmq3wqKvDvJyr0nS5i9YyfWUFrbG5cpgzr82sWTnZwLsjZC/Fk7K2jN9BvC1sC2m6deo4Mfc3Wrgzaox3xjssv3BnrkPqnZuZvreQZH2oA/oj6IOt6BRQW3WybDqbSSbltfH+7DF0gCvbVJj93D5hcAwMyFK60eqVAFHeQpzxIVOEjdzp4DkQjrTGU0nkz/AVIAM1FxI2LKhdRDiVeCnOOUQ831DphVxMuuYqdn0Ny8A6uf4JNx4o88ZixYavikEcv+V7SU5ov1GnPSksxfSR9QbxOfeEiHbvRc38U7mNKtWTOBymgA4Nns1Sbm/5Er1FvjI73hDwdYqkyrHSj8bIWWTJjzURg+7M+UADkaffRg3x5MwwslBCTGCxvvh9QDrRAbS1aVYZkTnPzh2I+j9L0veo5vi9rfF6lxG6KqABNGbvbgSEwzxR4IQ2eMEDvMVUFRgpjO+EobhX/QGBLvRNMzzI3lb6l657qk4N/S/ppUTt3OYweU7TushzFZiq+QzcZfJJmh8pCVyNnMyKM35h8EYv7FlLhVWZMtWHBIMAsWw4+eHwxPD46wYT74iXysjsmcUWAaqwFmjCh5NovyT8+uS3BI4Z3eZokknGbE=
