@@ -95,7 +95,7 @@ registerSuite({
 				foo(a: number) {
 					result = a;
 				}
-				bar: number = 1;
+				bar = 1;
 			}
 
 			const createFoo = compose(Foo);
