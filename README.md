@@ -1,12 +1,12 @@
 # @dojo/compose
 
+**WARNING** This package is deprecated in favor of functionality found elsewhere in Dojo 2. This package is not being further developed at this time as its feature set is redundant with other capabilities.
+
 [![Build Status](https://travis-ci.org/dojo/compose.svg?branch=master)](https://travis-ci.org/dojo/compose)
 [![codecov.io](http://codecov.io/github/dojo/compose/coverage.svg?branch=master)](http://codecov.io/github/dojo/compose?branch=master)
 [![npm version](https://badge.fury.io/js/%40dojo%2Fcompose.svg)](https://badge.fury.io/js/%40dojo%2Fcompose)
 
 A composition library, which works well in a TypeScript environment.
-
-**WARNING** This is *beta* software.  While we do not anticipate significant changes to the API at this stage, we may feel the need to do so.  This is not yet production ready, so you should use at your own risk.
 
 ## Background
 
